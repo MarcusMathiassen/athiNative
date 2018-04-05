@@ -40,12 +40,26 @@ class MACOSViewController: NSViewController {
 
     }
     
+    override func rightMouseDown(with event: NSEvent) {
+        renderer.particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
+        particleCountLabel?.stringValue = "Particles: " + String(renderer.particleSystem.particles.count)
+    }
+    
     override func mouseUp(with event: NSEvent) {
         isMouseDown = false
     }
 
+    @IBAction func particleCollisionButton(_ sender: NSButton) {
+        renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
+    }
+    @IBAction func useQuadtree(_ sender: NSButton) {
+        renderer.particleSystem.useQuadtree = (sender.state.rawValue == 0) ? false : true
+    }
     @IBOutlet weak var particleCountLabel: NSTextField!
     
+    @IBAction func clearParticlesButton(_ sender: NSButton) {
+        renderer.particleSystem.eraseParticles()
+    }
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
         particleSize = sender.floatValue
     }

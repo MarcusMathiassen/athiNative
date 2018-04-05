@@ -36,6 +36,15 @@ func toViewspace(_ point: float2) -> float2 {
     return w;
 }
 
+func getBeginAndEnd(i: Int, containerSize: Int, segments: Int) -> (Int, Int) {
+    let parts = containerSize / segments
+    let leftovers = containerSize % segments
+    let begin = parts * i
+    var end = parts * (i + 1)
+    if i == segments - 1 { end += leftovers }
+    return (begin, end)
+}
+
 /**
     Returns a random float between min and max
 */

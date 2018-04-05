@@ -19,6 +19,17 @@ class IOSViewController: UIViewController {
     var renderer: Renderer!
     var mtkView: MTKView!
     
+    @IBAction func enableParticleCollision(_ sender: UISwitch) {
+        renderer.particleSystem.enableCollisions = sender.isOn
+    }
+    @IBAction func useQuadtree(_ sender: UISwitch) {
+        renderer.particleSystem.useQuadtree = sender.isOn
+    }
+    @IBAction func enableMultithreadingSwitch(_ sender: UISwitch) {
+        useMultihreading = sender.isOn
+
+    }
+    
     @IBAction func clearAllButton(_ sender: UIButton) {
         renderer.particleSystem.eraseParticles()
     }

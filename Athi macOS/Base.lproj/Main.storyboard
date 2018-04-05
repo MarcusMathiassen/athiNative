@@ -709,11 +709,11 @@
                         <rect key="frame" x="0.0" y="0.0" width="658" height="607"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" misplaced="YES" blendingMode="withinWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="rTq-qb-p2k">
+                            <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" misplaced="YES" blendingMode="withinWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="rTq-qb-p2k">
                                 <rect key="frame" x="9" y="569" width="638" height="27"/>
                                 <subviews>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZEy-ar-s9P">
-                                        <rect key="frame" x="9" y="5" width="204" height="17"/>
+                                        <rect key="frame" x="9" y="5" width="64" height="17"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " id="RSE-JS-xsQ">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" red="1" green="1" blue="1" alpha="0.84999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
@@ -737,6 +737,39 @@
                                     <constraint firstItem="BCQ-Q1-Umb" firstAttribute="top" secondItem="rTq-qb-p2k" secondAttribute="top" constant="5" id="wMd-OE-UgY"/>
                                 </constraints>
                             </visualEffectView>
+                            <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tb7-Ul-V6o">
+                                <rect key="frame" x="8" y="528" width="72" height="32"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="push" title="Clear" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YEq-bL-qIK">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="clearParticlesButton:" target="XfG-lQ-9wD" id="mR3-PO-fsF"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2M3-Rk-uTJ">
+                                <rect key="frame" x="12" y="505" width="134" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="Particle Collisions" bezelStyle="regularSquare" imagePosition="left" state="on" transparent="YES" inset="2" id="Ugo-rT-p6J">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="particleCollisionButton:" target="XfG-lQ-9wD" id="zEt-j5-T3d"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qR2-NK-iro">
+                                <rect key="frame" x="12" y="485" width="134" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="Enable Quadtree" bezelStyle="regularSquare" imagePosition="left" state="on" transparent="YES" inset="2" id="AvW-du-eIQ">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="useQuadtree:" target="XfG-lQ-9wD" id="sd9-1y-KWF"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstItem="rTq-qb-p2k" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="9" id="APO-4A-1d1"/>
@@ -755,7 +788,7 @@
                 </viewController>
                 <customObject id="rPt-NT-nkU" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="75" y="814"/>
+            <point key="canvasLocation" x="75" y="813.5"/>
         </scene>
     </scenes>
 </document>
