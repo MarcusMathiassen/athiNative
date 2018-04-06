@@ -69,6 +69,7 @@ class Quad {
         
         renderEncoder?.pushDebugGroup("Draw Fullscreen Quad")
         renderEncoder?.setRenderPipelineState(pipelineState!)
+        renderEncoder?.setTriangleFillMode(.fill)
 
         var dir = direction
         renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)

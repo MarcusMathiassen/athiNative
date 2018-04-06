@@ -56,6 +56,9 @@ class MACOSViewController: NSViewController {
     @IBAction func useQuadtree(_ sender: NSButton) {
         renderer.particleSystem.useQuadtree = (sender.state.rawValue == 0) ? false : true
     }
+    @IBAction func wireframeSwitch(_ sender: NSButton) {
+        renderer.fillMode = (sender.state.rawValue == 0) ? .fill : .lines
+    }
     @IBOutlet weak var framerateLabel: NSTextField!
     @IBOutlet weak var frametimeLabel: NSTextField!
     @IBOutlet weak var particleCountLabel: NSTextField!
@@ -67,6 +70,11 @@ class MACOSViewController: NSViewController {
         renderer.blurStrength = sender.floatValue
 
     }
+    @IBAction func particleVerticesStepper(_ sender: NSStepper) {
+       let val = Int(sender.intValue)
+        renderer.particleSystem.setVerticesPerParticle(num: val == 0 ? 9 : val)
+    }
+
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
         particleSize = sender.floatValue
     }

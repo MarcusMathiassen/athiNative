@@ -37,6 +37,8 @@ struct Particle {
 class ParticleSystem {
     
     // Options
+    var shouldUpdate: Bool = false
+    
     var borderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
     var gravityForce: Float = -0.981
@@ -90,7 +92,7 @@ class ParticleSystem {
         }
         
         
-        buildVertices()
+        buildVertices(numVertices: numVerticesPerParticle)
     }
 
     
@@ -102,8 +104,7 @@ class ParticleSystem {
 
         renderEncoder?.label = "ParticleSystem"
         renderEncoder?.setRenderPipelineState(pipelineState!)
-        renderEncoder?.setTriangleFillMode(.fill)
-        
+
         colorBuffer = device?.makeBuffer(bytes: colors, length: MemoryLayout<float4>.size * particles.count, options: .cpuCacheModeWriteCombined)
         modelBuffer = device?.makeBuffer(bytes: models, length: MemoryLayout<float4x4>.size * particles.count, options: .cpuCacheModeWriteCombined)
         
@@ -122,6 +123,12 @@ class ParticleSystem {
     
     
     func update() {
+        
+        if (self.shouldUpdate) {
+            buildVertices(numVertices: numVerticesPerParticle)
+            shouldUpdate = false
+        }
+        
         
         if enableCollisions {
             
@@ -215,14 +222,20 @@ class ParticleSystem {
     
     
     
-    
+    func setVerticesPerParticle(num: Int) {
+        numVerticesPerParticle = num
+        shouldUpdate = true
+    }
     
 
-    func buildVertices() {
+    func buildVertices(numVertices: Int) {
+
+        positions.removeAll()
+        
         // Setup the particle vertices
         var k: Float = 0
         var lastVert = float2(0)
-        for i in 0 ..< numVerticesPerParticle+3 {
+        for i in 0 ..< numVertices+3 {
             switch k
             {
             case 0:
@@ -230,7 +243,7 @@ class ParticleSystem {
                 positions.append(lastVert)
             case 1:
                 k += 1
-                let cont =  Float(i) * Float.pi * 2 / Float(numVerticesPerParticle)
+                let cont =  Float(i) * Float.pi * 2 / Float(numVertices)
                 let x = cos(cont)
                 let y = sin(cont)
                 lastVert = float2(x, y)

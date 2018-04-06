@@ -23,9 +23,6 @@ var framebufferWidth: Float = 0
 
 var viewport = float2(512,512)
 
-var wireframeMode: Bool = false
-var fillMode: MTLTriangleFillMode = .fill
-
 struct Vertex {
     var position: float2
     var color: float4
@@ -55,6 +52,10 @@ func addTransform(_ transform: Transform) {
 
 class Renderer: NSObject, MTKViewDelegate {
     
+    
+    var wireframeMode: Bool = false
+    var fillMode: MTLTriangleFillMode = .fill
+
     
     var framerate: Int = 0
     var frametime: Float = 0
@@ -145,7 +146,6 @@ class Renderer: NSObject, MTKViewDelegate {
         if renderPassDesc != nil {
 
             if (!enablePostProcessing) {
-                
                 let renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
                 
                 renderEncoder?.label = "Main pass"
@@ -162,7 +162,6 @@ class Renderer: NSObject, MTKViewDelegate {
                 commandBuffer?.commit()
                 frametime = Float((getTime() - startTime) * 1000.0)
                 framerate = Int(1000 / frametime)
-
                 return
             }
             
@@ -200,7 +199,6 @@ class Renderer: NSObject, MTKViewDelegate {
             renderEncoder?.setTriangleFillMode(fillMode)
             
             // Go through all scenes and render
-            particleSystem.update()
             particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
             
             quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(0,1 * blurStrength))
@@ -215,12 +213,6 @@ class Renderer: NSObject, MTKViewDelegate {
     }
     
     func updateVariables() {
-        
-        if !wireframeMode {
-            fillMode = .lines
-        } else  {
-            fillMode = .fill
-        }
         
     }
     
