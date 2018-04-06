@@ -9,11 +9,11 @@
 import Cocoa
 import MetalKit
 
-var mtkView: MTKView?
-
 // Our macOS specific view controller
 class MACOSViewController: NSViewController {
     
+    var mtkView: MTKView?
+    var timer: Timer?
     var renderer: Renderer!
 
     // Allow view to receive keypress (remove the purr sound)
@@ -28,22 +28,16 @@ class MACOSViewController: NSViewController {
     }
     
     override func mouseDragged(with event: NSEvent) {
-        particleCountLabel?.stringValue = "Particles: " + String(renderer.particleSystem.particles.count)
-        
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
         mousePos *= pixelScale
     }
     
     override func mouseDown(with event: NSEvent) {
         isMouseDown = true
-        
-        particleCountLabel?.stringValue = "Particles: " + String(renderer.particleSystem.particles.count)
-
     }
     
     override func rightMouseDown(with event: NSEvent) {
         renderer.particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-        particleCountLabel?.stringValue = "Particles: " + String(renderer.particleSystem.particles.count)
     }
     
     override func mouseUp(with event: NSEvent) {
@@ -68,9 +62,24 @@ class MACOSViewController: NSViewController {
         particleSize = sender.floatValue
     }
     
+    func startVariableUpdater() {
+        // Configure a timer to fetch the data.
+        self.timer = Timer(fire: Date(), interval: (1.0/60.0),
+                           repeats: true, block: { (timer) in
+                            
+                            self.particleCountLabel?.stringValue = "Particles: " + String(self.renderer.particleSystem.particles.count)
+                            
+        })
+        
+        // Add the timer to the current run loop.
+        RunLoop.current.add(self.timer!, forMode: .defaultRunLoopMode)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-    
+        
+        startVariableUpdater()
+        
         pixelScale = Float(NSScreen.screens[0].backingScaleFactor)
     
         screenWidth = Float(view.frame.width)

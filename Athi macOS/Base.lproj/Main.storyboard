@@ -2,6 +2,7 @@
 <document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14109"/>
+        <capability name="box content view" minToolsVersion="7.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -709,86 +710,89 @@
                         <rect key="frame" x="0.0" y="0.0" width="658" height="607"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tb7-Ul-V6o">
-                                <rect key="frame" x="8" y="528" width="72" height="32"/>
-                                <buttonCell key="cell" type="push" title="Clear" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YEq-bL-qIK">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="clearParticlesButton:" target="XfG-lQ-9wD" id="mR3-PO-fsF"/>
-                                </connections>
-                            </button>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2M3-Rk-uTJ">
-                                <rect key="frame" x="12" y="505" width="134" height="25"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="21" id="UeA-gV-KBw"/>
-                                    <constraint firstAttribute="width" constant="130" id="khK-U6-fdn"/>
-                                </constraints>
-                                <buttonCell key="cell" type="check" title="Particle Collisions" bezelStyle="regularSquare" imagePosition="left" transparent="YES" inset="2" id="Ugo-rT-p6J">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="particleCollisionButton:" target="XfG-lQ-9wD" id="zEt-j5-T3d"/>
-                                </connections>
-                            </button>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="qR2-NK-iro">
-                                <rect key="frame" x="12" y="485" width="134" height="18"/>
-                                <buttonCell key="cell" type="check" title="Enable Quadtree" bezelStyle="regularSquare" imagePosition="left" state="on" transparent="YES" inset="2" id="AvW-du-eIQ">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="useQuadtree:" target="XfG-lQ-9wD" id="sd9-1y-KWF"/>
-                                </connections>
-                            </button>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ZEy-ar-s9P">
-                                <rect key="frame" x="18" y="570" width="202" height="17"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="198" id="Isk-JZ-xyY"/>
-                                </constraints>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " placeholderString="Particle: 0" id="RSE-JS-xsQ">
-                                    <font key="font" metaFont="system"/>
-                                    <color key="textColor" red="1" green="1" blue="1" alpha="0.84999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
-                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
-                            <slider wantsLayer="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BCQ-Q1-Umb">
-                                <rect key="frame" x="378" y="568" width="262" height="19"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="258" id="2q5-eW-sm9"/>
-                                </constraints>
-                                <sliderCell key="cell" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="u0c-oo-oBw"/>
-                                <connections>
-                                    <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="U36-hs-h9D"/>
-                                </connections>
-                            </slider>
-                            <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="amb-UI-gWW">
-                                <rect key="frame" x="12" y="465" width="120" height="18"/>
+                            <box fixedFrame="YES" boxType="custom" borderWidth="2" cornerRadius="2" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="N9D-VF-Ora">
+                                <rect key="frame" x="20" y="337" width="195" height="250"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <buttonCell key="cell" type="check" title="Post Processing" bezelStyle="regularSquare" imagePosition="left" inset="2" id="QM3-g1-HpT">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="postprocessingButton:" target="XfG-lQ-9wD" id="mqR-xr-MMp"/>
-                                </connections>
-                            </button>
+                                <view key="contentView" ambiguous="YES" id="316-yU-Pi1">
+                                    <rect key="frame" x="2" y="2" width="191" height="246"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" fixedFrame="YES" blendingMode="withinWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="1bb-HT-2Eo">
+                                            <rect key="frame" x="0.0" y="0.0" width="193" height="246"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <subviews>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2M3-Rk-uTJ">
+                                                    <rect key="frame" x="7" y="190" width="134" height="25"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="check" title="Particle Collisions" bezelStyle="regularSquare" imagePosition="left" inset="2" id="Ugo-rT-p6J">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="particleCollisionButton:" target="XfG-lQ-9wD" id="zEt-j5-T3d"/>
+                                                    </connections>
+                                                </button>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qR2-NK-iro">
+                                                    <rect key="frame" x="7" y="170" width="134" height="18"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="check" title="Enable Quadtree" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="AvW-du-eIQ">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="useQuadtree:" target="XfG-lQ-9wD" id="sd9-1y-KWF"/>
+                                                    </connections>
+                                                </button>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="amb-UI-gWW">
+                                                    <rect key="frame" x="7" y="150" width="120" height="18"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="check" title="Post Processing" bezelStyle="regularSquare" imagePosition="left" inset="2" id="QM3-g1-HpT">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="postprocessingButton:" target="XfG-lQ-9wD" id="mqR-xr-MMp"/>
+                                                    </connections>
+                                                </button>
+                                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZEy-ar-s9P">
+                                                    <rect key="frame" x="7" y="221" width="202" height="17"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " placeholderString="Particle: 0" id="RSE-JS-xsQ">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" red="1" green="1" blue="1" alpha="0.84999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+                                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <slider wantsLayer="YES" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BCQ-Q1-Umb">
+                                                    <rect key="frame" x="7" y="114" width="168" height="19"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <sliderCell key="cell" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="u0c-oo-oBw"/>
+                                                    <connections>
+                                                        <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="U36-hs-h9D"/>
+                                                    </connections>
+                                                </slider>
+                                                <box verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="wBU-yU-GEK">
+                                                    <rect key="frame" x="9" y="137" width="164" height="5"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                </box>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tb7-Ul-V6o">
+                                                    <rect key="frame" x="107" y="13" width="72" height="32"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="push" title="Clear" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YEq-bL-qIK">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="clearParticlesButton:" target="XfG-lQ-9wD" id="mR3-PO-fsF"/>
+                                                    </connections>
+                                                </button>
+                                            </subviews>
+                                        </visualEffectView>
+                                    </subviews>
+                                </view>
+                                <color key="borderColor" red="1" green="1" blue="1" alpha="0.41999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+                            </box>
                         </subviews>
-                        <constraints>
-                            <constraint firstItem="ZEy-ar-s9P" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" constant="20" symbolic="YES" id="1rB-Bi-EGh"/>
-                            <constraint firstItem="2M3-Rk-uTJ" firstAttribute="trailing" secondItem="qR2-NK-iro" secondAttribute="trailing" id="3l7-Pq-lp2"/>
-                            <constraint firstItem="2M3-Rk-uTJ" firstAttribute="leading" secondItem="qR2-NK-iro" secondAttribute="leading" id="7Y7-03-MCr"/>
-                            <constraint firstAttribute="trailing" secondItem="BCQ-Q1-Umb" secondAttribute="trailing" constant="20" symbolic="YES" id="DJK-BP-lPD"/>
-                            <constraint firstItem="tb7-Ul-V6o" firstAttribute="leading" secondItem="2M3-Rk-uTJ" secondAttribute="leading" id="Roo-Qb-eRD"/>
-                            <constraint firstItem="2M3-Rk-uTJ" firstAttribute="top" secondItem="tb7-Ul-V6o" secondAttribute="bottom" constant="7" id="ae0-B5-ZdL"/>
-                            <constraint firstItem="qR2-NK-iro" firstAttribute="top" secondItem="2M3-Rk-uTJ" secondAttribute="bottom" constant="6" symbolic="YES" id="fhS-je-qWX"/>
-                            <constraint firstItem="ZEy-ar-s9P" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="20" symbolic="YES" id="ihB-cK-dQS"/>
-                            <constraint firstItem="tb7-Ul-V6o" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="14" id="lTH-Vh-2vf"/>
-                            <constraint firstItem="tb7-Ul-V6o" firstAttribute="top" secondItem="ZEy-ar-s9P" secondAttribute="bottom" constant="14" id="mkd-j5-z6n"/>
-                            <constraint firstItem="ZEy-ar-s9P" firstAttribute="baseline" secondItem="BCQ-Q1-Umb" secondAttribute="baseline" id="way-sj-HoC"/>
-                        </constraints>
                         <connections>
                             <outlet property="particleCountLabel" destination="ZEy-ar-s9P" id="eVi-9S-ZLu"/>
                         </connections>

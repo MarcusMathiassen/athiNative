@@ -137,7 +137,7 @@ class Renderer: NSObject, MTKViewDelegate {
 
             if (!enablePostProcessing) {
                 
-                var renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
+                let renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
                 
                 renderEncoder?.label = "Main pass"
                 renderEncoder?.setTriangleFillMode(fillMode)
