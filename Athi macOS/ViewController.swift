@@ -48,7 +48,7 @@ class MACOSViewController: NSViewController {
         renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
     }
     @IBAction func backgroundColorWell(_ sender: NSColorWell) {
-        backgroundColor = sender.color
+        backgroundColor =  sender.color.usingColorSpace(NSColorSpace.adobeRGB1998)!
     }
     @IBAction func postprocessingButton(_ sender: NSButton) {
         renderer.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
@@ -56,10 +56,16 @@ class MACOSViewController: NSViewController {
     @IBAction func useQuadtree(_ sender: NSButton) {
         renderer.particleSystem.useQuadtree = (sender.state.rawValue == 0) ? false : true
     }
+    @IBOutlet weak var framerateLabel: NSTextField!
+    @IBOutlet weak var frametimeLabel: NSTextField!
     @IBOutlet weak var particleCountLabel: NSTextField!
     
     @IBAction func clearParticlesButton(_ sender: NSButton) {
         renderer.particleSystem.eraseParticles()
+    }
+    @IBAction func blurStrengthSlider(_ sender: NSSlider) {
+        renderer.blurStrength = sender.floatValue
+
     }
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
         particleSize = sender.floatValue
@@ -71,6 +77,10 @@ class MACOSViewController: NSViewController {
                            repeats: true, block: { (timer) in
                             
                             self.particleCountLabel?.stringValue = "Particles: " + String(self.renderer.particleSystem.particles.count)
+                            
+                            self.frametimeLabel?.stringValue = "Frametime: " + String(self.renderer.frametime)
+                            
+                                                        self.framerateLabel?.stringValue = "Framerate: " + String(self.renderer.framerate)
                             
         })
         

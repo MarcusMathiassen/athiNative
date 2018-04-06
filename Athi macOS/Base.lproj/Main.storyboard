@@ -710,15 +710,15 @@
                         <rect key="frame" x="0.0" y="0.0" width="658" height="607"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <box fixedFrame="YES" boxType="custom" cornerRadius="1" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="N9D-VF-Ora">
+                            <box fixedFrame="YES" boxType="custom" borderWidth="2" cornerRadius="2" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="N9D-VF-Ora">
                                 <rect key="frame" x="27" y="340" width="195" height="247"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <view key="contentView" ambiguous="YES" id="316-yU-Pi1">
-                                    <rect key="frame" x="1" y="1" width="193" height="245"/>
+                                    <rect key="frame" x="2" y="2" width="191" height="243"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" fixedFrame="YES" blendingMode="withinWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="1bb-HT-2Eo">
-                                            <rect key="frame" x="0.0" y="-1" width="193" height="246"/>
+                                            <rect key="frame" x="0.0" y="-3" width="193" height="246"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <subviews>
                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2M3-Rk-uTJ">
@@ -755,7 +755,7 @@
                                                     </connections>
                                                 </button>
                                                 <box verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="lQm-3m-wDF">
-                                                    <rect key="frame" x="48" y="82" width="96" height="5"/>
+                                                    <rect key="frame" x="33" y="82" width="130" height="5"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                 </box>
                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tb7-Ul-V6o">
@@ -769,14 +769,6 @@
                                                         <action selector="clearParticlesButton:" target="XfG-lQ-9wD" id="mR3-PO-fsF"/>
                                                     </connections>
                                                 </button>
-                                                <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q2u-3e-CaE">
-                                                    <rect key="frame" x="31" y="17" width="19" height="59"/>
-                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <sliderCell key="cell" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
-                                                    <connections>
-                                                        <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="2jj-R0-Xhg"/>
-                                                    </connections>
-                                                </slider>
                                                 <colorWell fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="web-KO-npJ">
                                                     <rect key="frame" x="33" y="209" width="44" height="23"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -785,6 +777,22 @@
                                                         <action selector="backgroundColorWell:" target="XfG-lQ-9wD" id="lYz-jE-Hbw"/>
                                                     </connections>
                                                 </colorWell>
+                                                <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q2u-3e-CaE">
+                                                    <rect key="frame" x="31" y="11" width="19" height="67"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <sliderCell key="cell" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
+                                                    <connections>
+                                                        <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="2jj-R0-Xhg"/>
+                                                    </connections>
+                                                </slider>
+                                                <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GLK-ZN-zPG">
+                                                    <rect key="frame" x="54" y="11" width="19" height="67"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <sliderCell key="cell" continuous="YES" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="right" sliderType="linear" id="x3r-Sk-XSD"/>
+                                                    <connections>
+                                                        <action selector="blurStrengthSlider:" target="XfG-lQ-9wD" id="Pgu-OK-R0d"/>
+                                                    </connections>
+                                                </slider>
                                             </subviews>
                                             <animations>
                                                 <caTransition key="subviews">
@@ -804,23 +812,41 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                                 </view>
                                 <color key="borderColor" red="1" green="1" blue="1" alpha="0.41999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
                             </box>
-                            <box wantsLayer="YES" fixedFrame="YES" boxType="custom" cornerRadius="1" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="QSr-e5-YQU">
-                                <rect key="frame" x="20" y="20" width="190" height="37"/>
+                            <box wantsLayer="YES" fixedFrame="YES" boxType="custom" borderWidth="2" cornerRadius="2" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="QSr-e5-YQU">
+                                <rect key="frame" x="27" y="20" width="167" height="115"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <view key="contentView" wantsLayer="YES" ambiguous="YES" id="2K0-Oo-MZt">
-                                    <rect key="frame" x="1" y="1" width="188" height="35"/>
+                                    <rect key="frame" x="2" y="2" width="163" height="111"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" fixedFrame="YES" blendingMode="withinWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="Y8m-D0-Hfo">
-                                            <rect key="frame" x="0.0" y="0.0" width="191" height="35"/>
+                                            <rect key="frame" x="0.0" y="-2" width="391" height="113"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <subviews>
                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Sfs-tS-ELt">
-                                                    <rect key="frame" x="7" y="10" width="134" height="17"/>
+                                                    <rect key="frame" x="7" y="88" width="150" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " placeholderString="Particle: 0" id="PBd-zN-62G">
                                                         <font key="font" metaFont="system"/>
                                                         <color key="textColor" red="1" green="1" blue="1" alpha="0.84999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+                                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mjz-Ac-MgR">
+                                                    <rect key="frame" x="7" y="63" width="123" height="17"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Frametime: " placeholderString="Frametime: 0" id="Ul5-OP-ZbP">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="s28-Sn-G3G">
+                                                    <rect key="frame" x="7" y="38" width="123" height="17"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Framerate:" placeholderString="Framerate:" id="WA2-1V-066">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                     </textFieldCell>
                                                 </textField>
@@ -846,6 +872,8 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                         </subviews>
                     </view>
                     <connections>
+                        <outlet property="framerateLabel" destination="s28-Sn-G3G" id="ndr-Bk-7U0"/>
+                        <outlet property="frametimeLabel" destination="mjz-Ac-MgR" id="yrN-bx-PtF"/>
                         <outlet property="particleCountLabel" destination="Sfs-tS-ELt" id="Fao-t6-PAX"/>
                     </connections>
                 </viewController>

@@ -61,6 +61,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var deltaTime: Float = 0
     
     var enablePostProcessing: Bool = false
+    var blurStrength: Float = 2
     
     var particleSystem: ParticleSystem
     
@@ -119,6 +120,7 @@ class Renderer: NSObject, MTKViewDelegate {
     }
 
     func draw(in view: MTKView) {
+        let startTime = getTime()
         
         updateInput()
         
@@ -130,7 +132,8 @@ class Renderer: NSObject, MTKViewDelegate {
         commandBuffer?.label = "MyCommandBuffer"
         
         #if os(macOS)
-        let clearColor = MTLClearColor(red: Double(backgroundColor.redComponent), green: Double(backgroundColor.greenComponent), blue: Double(backgroundColor.blueComponent), alpha: Double(backgroundColor.alphaComponent))
+        let bck = backgroundColor.cgColor
+        let clearColor = MTLClearColor(red: Double(bck.components![0]), green: Double(bck.components![1]), blue: Double(bck.components![2]), alpha: Double(bck.components![3]))
         #else
         let clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         #endif
@@ -157,6 +160,9 @@ class Renderer: NSObject, MTKViewDelegate {
                 renderEncoder?.endEncoding()
                 commandBuffer?.present(view.currentDrawable!)
                 commandBuffer?.commit()
+                frametime = Float((getTime() - startTime) * 1000.0)
+                framerate = Int(1000 / frametime)
+
                 return
             }
             
@@ -197,14 +203,15 @@ class Renderer: NSObject, MTKViewDelegate {
             particleSystem.update()
             particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
             
-            quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(0,5))
-            quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(5,0))
+            quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(0,1 * blurStrength))
+            quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(1 * blurStrength,0))
             
             renderEncoder?.endEncoding()
             commandBuffer?.present(view.currentDrawable!)
         }
-
         commandBuffer?.commit()
+        frametime = Float((getTime() - startTime) * 1000.0)
+        framerate = Int(1000 / frametime)
     }
     
     func updateVariables() {
