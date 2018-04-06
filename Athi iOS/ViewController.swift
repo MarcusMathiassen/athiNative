@@ -19,6 +19,9 @@ class IOSViewController: UIViewController {
     var renderer: Renderer!
     var mtkView: MTKView!
     
+    @IBAction func enablePostProcessingSwitch(_ sender: UISwitch) {
+        renderer.enablePostProcessing = sender.isOn
+    }
     @IBAction func enableParticleCollision(_ sender: UISwitch) {
         renderer.particleSystem.enableCollisions = sender.isOn
     }
@@ -123,6 +126,16 @@ class IOSViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        pixelScale = 2
+        
+        screenWidth = Float(view.frame.width)
+        screenHeight = Float(view.frame.height)
+        
+        framebufferWidth = Float(view.frame.width) * pixelScale
+        framebufferHeight = Float(view.frame.height) * pixelScale
+
+        
         startAccelerometers()
         startGyros()
         view.isMultipleTouchEnabled = true

@@ -64,11 +64,18 @@
                                     <action selector="useQuadtree:" destination="BV1-FR-VrT" eventType="valueChanged" id="OfL-qG-dRa"/>
                                 </connections>
                             </switch>
-                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Vca-oI-7f1">
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="Vca-oI-7f1">
                                 <rect key="frame" x="312" y="496" width="49" height="31"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <connections>
                                     <action selector="enableParticleCollision:" destination="BV1-FR-VrT" eventType="valueChanged" id="TIg-1T-abT"/>
+                                </connections>
+                            </switch>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="l7P-QN-Zgg">
+                                <rect key="frame" x="312" y="457" width="49" height="31"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <connections>
+                                    <action selector="enablePostProcessingSwitch:" destination="BV1-FR-VrT" eventType="valueChanged" id="6tv-RI-wMl"/>
                                 </connections>
                             </switch>
                         </subviews>

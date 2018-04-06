@@ -15,3 +15,5 @@ var useMultihreading: Bool = false
 
 var gyroRotation = float3(0,0,0)
 var accelerometer = float3(0,0,0)
+
+var viewportSize = float2(0,0)

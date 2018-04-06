@@ -34,7 +34,7 @@ struct Particle {
     }
 }
 
-class ParticleSystem: Entity {
+class ParticleSystem {
     
     // Options
     var borderCollision: Bool = true
@@ -54,45 +54,18 @@ class ParticleSystem: Entity {
     var colors: [float4] = []
     var models: [float4x4] = []
     
-    var positionBuffer: MTLBuffer?
-    var colorBuffer: MTLBuffer?
-    var modelBuffer: MTLBuffer?
-
-    weak var device: MTLDevice?
-    var pipelineState: MTLRenderPipelineState?
-    
-    
     var vp = float4x4(0)
     var tempGravityForce = float2(0)
     
-    init(device: MTLDevice?) {
-        
-        // Setup the particle vertices
-        var k: Float = 0
-        var lastVert = float2(0)
-        for i in 0 ..< numVerticesPerParticle+3 {
-           switch k
-           {
-           case 0:
-               k += 1
-               positions.append(lastVert)
-           case 1:
-               k += 1
-               let cont =  Float(i) * Float.pi * 2 / Float(numVerticesPerParticle)
-               let x = cos(cont)
-               let y = sin(cont)
-               lastVert = float2(x, y)
-               positions.append(lastVert)
-           case 2:
-               k += 1
-               k = 0
-               positions.append(float2(0,0))
-           default:
-               k = 0
-           }
-       }
+    // Metal stuff
+    weak var device: MTLDevice?
 
-        positionBuffer = device?.makeBuffer(bytes: positions, length: MemoryLayout<float2>.stride * positions.count, options: .cpuCacheModeWriteCombined)
+    var positionBuffer: MTLBuffer?
+    var colorBuffer: MTLBuffer?
+    var modelBuffer: MTLBuffer?
+    var pipelineState: MTLRenderPipelineState?
+    
+    init(device: MTLDevice?) {
         
         self.device = device
         
@@ -101,68 +74,54 @@ class ParticleSystem: Entity {
         let fragFunc = library?.makeFunction(name: "particleFrag")
         
         let pipelineDesc = MTLRenderPipelineDescriptor()
-        pipelineDesc.label = "ParticleSystem Pipeline"
+        pipelineDesc.label = "pipelineDesc"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.sampleCount = 2
-        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        
+        pipelineDesc.sampleCount = 4
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
+        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
+
         do {
             try pipelineState = device?.makeRenderPipelineState(descriptor: pipelineDesc)
         }
         catch {
             print("ParticleSystem Pipeline: Creating pipeline state failed")
         }
+        
+        
+        buildVertices()
+    }
+
+    
+    func draw(renderEncoder: MTLRenderCommandEncoder?, vp: float4x4) {
+        
+        if particles.count == 0 { return }
+    
+        self.vp = vp
+
+        renderEncoder?.label = "ParticleSystem"
+        renderEncoder?.setRenderPipelineState(pipelineState!)
+        renderEncoder?.setTriangleFillMode(.fill)
+        
+        colorBuffer = device?.makeBuffer(bytes: colors, length: MemoryLayout<float4>.size * particles.count, options: .cpuCacheModeWriteCombined)
+        modelBuffer = device?.makeBuffer(bytes: models, length: MemoryLayout<float4x4>.size * particles.count, options: .cpuCacheModeWriteCombined)
+        
+        renderEncoder?.setVertexBuffer(positionBuffer, offset: 0, index: 0)
+        renderEncoder?.setVertexBuffer(colorBuffer, offset: 0, index: 1)
+        renderEncoder?.setVertexBuffer(modelBuffer, offset: 0, index: 2)
+        
+        renderEncoder?.drawPrimitives(
+            type: .triangle,
+            vertexStart: 0,
+            vertexCount: positions.count,
+            instanceCount: particles.count
+        )
     }
     
-    func eraseParticles() {
-        particles.removeAll()
-        models.removeAll()
-        colors.removeAll()
-    }
     
-    func addParticle(position: float2, color: float4, radius: Float) {
-
-        var p = Particle()
-        p.id = particles.count
-        p.pos = position
-        if hasInitialVelocity { p.vel = randFloat2(-5,5) }
-        p.radius = radius
-        p.mass = Float.pi * radius * radius
-
-        // Add new particle
-        particles.append(p)
-        
-        // Add new color
-        colors.append(color)
-        
-        // Add new transform
-        models.append(float4x4())
-    }
-
-    func collisionQuadtree(containerOfNodes: [[Int]] , begin: Int, end: Int) {
-      for k in begin ..< end {
-        for i in 0 ..< containerOfNodes[k].count {
-          for j in 1 + i ..< containerOfNodes[k].count {
-              if collisionCheck(&particles[containerOfNodes[k][i]], &particles[containerOfNodes[k][j]]) { 
-                collisionResolve(&particles[containerOfNodes[k][i]], &particles[containerOfNodes[k][j]])
-            }
-          }
-        }
-      }
-    }
-        
-    func collisionLogNxN(total: Int, begin: Int, end: Int) {
-        for i in begin ..< end {
-            for j in 1 + i ..< total {
-                if collisionCheck(&particles[i], &particles[j]) {
-                    collisionResolve(&particles[i], &particles[j])
-                }
-            }
-        }
-    }
-
-    override func update() {
+    
+    func update() {
         
         if enableCollisions {
             
@@ -173,15 +132,15 @@ class ParticleSystem: Entity {
                     quadtree.input(data: particles)
                     var containerOfNodes: [[Int]] = []
                     quadtree.getNodesOfIndices(containerOfNodes: &containerOfNodes)
-
-
-//                    DispatchQueue.concurrentPerform(iterations: 8) { (i: Int) in
-//                        let (begin, end) = getBeginAndEnd(i: i, containerSize: containerOfNodes.count, segments: 8)
-//                        collisionQuadtree(containerOfNodes: containerOfNodes, begin: begin, end: end)
-//                    }
+                    
+                    
+                    //                    DispatchQueue.concurrentPerform(iterations: 8) { (i: Int) in
+                    //                        let (begin, end) = getBeginAndEnd(i: i, containerSize: containerOfNodes.count, segments: 8)
+                    //                        collisionQuadtree(containerOfNodes: containerOfNodes, begin: begin, end: end)
+                    //                    }
                     collisionQuadtree(containerOfNodes: containerOfNodes, begin: 0, end: containerOfNodes.count)
-
-            }
+                    
+                }
                 else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
             } else {
                 if useQuadtree {
@@ -197,69 +156,8 @@ class ParticleSystem: Entity {
                 else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
             }
         }
-
-    }
-    
-    func updateBuffers() {
-        colorBuffer = device?.makeBuffer(bytes: colors, length: MemoryLayout<float4>.size * particles.count, options: .cpuCacheModeWriteCombined)
-        modelBuffer = device?.makeBuffer(bytes: models, length: MemoryLayout<float4x4>.size * particles.count, options: .cpuCacheModeWriteCombined)
-    }
-    
-    func updateParticlesData(begin: Int, end: Int) {
         
-        let fbW = framebufferWidth
-        let fbH = framebufferHeight
-        let clEl = collisionEnergyLoss
         
-        for i in begin ..< end {
-            particles[i].acc = tempGravityForce
-            
-            // Border collision
-            if (particles[i].pos.x < 0 + particles[i].radius) {
-                particles[i].pos.x = 0 + particles[i].radius
-                particles[i].vel.x = -particles[i].vel.x * clEl
-            }
-            if (particles[i].pos.x > fbW - particles[i].radius) {
-                particles[i].pos.x = fbW - particles[i].radius
-                particles[i].vel.x = -particles[i].vel.x * clEl
-            }
-            if (particles[i].pos.y < 0 + particles[i].radius) {
-                particles[i].pos.y = 0 + particles[i].radius
-                particles[i].vel.y = -particles[i].vel.y * clEl
-            }
-            if (particles[i].pos.y > fbH - particles[i].radius) {
-                particles[i].pos.y = fbH - particles[i].radius
-                particles[i].vel.y = -particles[i].vel.y * clEl
-            }
-            
-            particles[i].update()
-            
-            let p = particles[i]
-            
-            // Update models
-            var transform = Transform()
-            transform.pos = float3(p.pos.x, p.pos.y, 0)
-            transform.scale = float3(p.radius, p.radius, 0)
-            transform.rot.z = p.rotation
-            let model = vp * transform.getModel()
-            models[i] = model
-        }
-    }
-    
-    override func draw(renderEncoder: MTLRenderCommandEncoder?, vp: float4x4) {
-        if particles.count == 0 {
-            return
-        }
-        
-        self.vp = vp
-        
-        updateBuffers()
-
-        renderEncoder?.label = "ParticleSystem"
-        renderEncoder?.setRenderPipelineState(pipelineState!)
-        renderEncoder?.setTriangleFillMode(.fill)
-        
-        // Update particles
         
         if enableGravity {
             
@@ -311,20 +209,43 @@ class ParticleSystem: Entity {
                 models[i] = model
             }
         }
-        
-        renderEncoder?.setVertexBuffer(positionBuffer, offset: 0, index: 0)
-        renderEncoder?.setVertexBuffer(colorBuffer, offset: 0, index: 1)
-        renderEncoder?.setVertexBuffer(modelBuffer, offset: 0, index: 2)
-        
-        renderEncoder?.drawPrimitives(
-            type: .triangle,
-            vertexStart: 0,
-            vertexCount: positions.count,
-            instanceCount: particles.count
-        )
     }
+    
+    
+    
+    
+    
+    
+    
 
-
+    func buildVertices() {
+        // Setup the particle vertices
+        var k: Float = 0
+        var lastVert = float2(0)
+        for i in 0 ..< numVerticesPerParticle+3 {
+            switch k
+            {
+            case 0:
+                k += 1
+                positions.append(lastVert)
+            case 1:
+                k += 1
+                let cont =  Float(i) * Float.pi * 2 / Float(numVerticesPerParticle)
+                let x = cos(cont)
+                let y = sin(cont)
+                lastVert = float2(x, y)
+                positions.append(lastVert)
+            case 2:
+                k += 1
+                k = 0
+                positions.append(float2(0,0))
+            default:
+                k = 0
+            }
+        }
+        
+        positionBuffer = device?.makeBuffer(bytes: positions, length: MemoryLayout<float2>.stride * positions.count, options: .cpuCacheModeWriteCombined)
+    }
 
     func collisionCheck(_ a: inout Particle, _ b: inout Particle) -> Bool  {
 
@@ -497,5 +418,94 @@ class ParticleSystem: Entity {
       a.pos += a_pos_move
       b.pos += b_pos_move
     }
+
+    func updateParticlesData(begin: Int, end: Int) {
+        
+        let fbW = framebufferWidth
+        let fbH = framebufferHeight
+        let clEl = collisionEnergyLoss
+        
+        for i in begin ..< end {
+            particles[i].acc = tempGravityForce
+            
+            // Border collision
+            if (particles[i].pos.x < 0 + particles[i].radius) {
+                particles[i].pos.x = 0 + particles[i].radius
+                particles[i].vel.x = -particles[i].vel.x * clEl
+            }
+            if (particles[i].pos.x > fbW - particles[i].radius) {
+                particles[i].pos.x = fbW - particles[i].radius
+                particles[i].vel.x = -particles[i].vel.x * clEl
+            }
+            if (particles[i].pos.y < 0 + particles[i].radius) {
+                particles[i].pos.y = 0 + particles[i].radius
+                particles[i].vel.y = -particles[i].vel.y * clEl
+            }
+            if (particles[i].pos.y > fbH - particles[i].radius) {
+                particles[i].pos.y = fbH - particles[i].radius
+                particles[i].vel.y = -particles[i].vel.y * clEl
+            }
+            
+            particles[i].update()
+            
+            let p = particles[i]
+            
+            // Update models
+            var transform = Transform()
+            transform.pos = float3(p.pos.x, p.pos.y, 0)
+            transform.scale = float3(p.radius, p.radius, 0)
+            transform.rot.z = p.rotation
+            let model = vp * transform.getModel()
+            models[i] = model
+        }
+    }
     
+    
+    func eraseParticles() {
+        particles.removeAll()
+        models.removeAll()
+        colors.removeAll()
+    }
+    
+    func addParticle(position: float2, color: float4, radius: Float) {
+        
+        var p = Particle()
+        p.id = particles.count
+        p.pos = position
+        if hasInitialVelocity { p.vel = randFloat2(-5,5) }
+        p.radius = radius
+        p.mass = Float.pi * radius * radius
+        
+        // Add new particle
+        particles.append(p)
+        
+        // Add new color
+        colors.append(color)
+        
+        // Add new transform
+        models.append(float4x4())
+    }
+    
+    func collisionQuadtree(containerOfNodes: [[Int]] , begin: Int, end: Int) {
+        for k in begin ..< end {
+            for i in 0 ..< containerOfNodes[k].count {
+                for j in 1 + i ..< containerOfNodes[k].count {
+                    if collisionCheck(&particles[containerOfNodes[k][i]], &particles[containerOfNodes[k][j]]) {
+                        collisionResolve(&particles[containerOfNodes[k][i]], &particles[containerOfNodes[k][j]])
+                    }
+                }
+            }
+        }
+    }
+    
+    func collisionLogNxN(total: Int, begin: Int, end: Int) {
+        for i in begin ..< end {
+            for j in 1 + i ..< total {
+                if collisionCheck(&particles[i], &particles[j]) {
+                    collisionResolve(&particles[i], &particles[j])
+                }
+            }
+        }
+    }
+
 }

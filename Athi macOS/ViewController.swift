@@ -9,11 +9,12 @@
 import Cocoa
 import MetalKit
 
+var mtkView: MTKView?
+
 // Our macOS specific view controller
 class MACOSViewController: NSViewController {
     
     var renderer: Renderer!
-    var mtkView: MTKView!
 
     // Allow view to receive keypress (remove the purr sound)
     override var acceptsFirstResponder : Bool {
@@ -52,6 +53,9 @@ class MACOSViewController: NSViewController {
     @IBAction func particleCollisionButton(_ sender: NSButton) {
         renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
     }
+    @IBAction func postprocessingButton(_ sender: NSButton) {
+        renderer.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
+    }
     @IBAction func useQuadtree(_ sender: NSButton) {
         renderer.particleSystem.useQuadtree = (sender.state.rawValue == 0) ? false : true
     }
@@ -66,6 +70,14 @@ class MACOSViewController: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    
+        pixelScale = Float(NSScreen.screens[0].backingScaleFactor)
+    
+        screenWidth = Float(view.frame.width)
+        screenHeight = Float(view.frame.height)
+        
+        framebufferWidth = Float(view.frame.width) * pixelScale
+        framebufferHeight = Float(view.frame.height) * pixelScale
 
         guard let mtkView = self.view as? MTKView else {
             print("View attached to ViewController is not an MTKView")
