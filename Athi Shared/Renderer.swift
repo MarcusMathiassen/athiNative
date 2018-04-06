@@ -78,7 +78,7 @@ class Renderer: NSObject, MTKViewDelegate {
         view.autoResizeDrawable = true // auto updates the views resolution on resizing
         view.preferredFramesPerSecond = 60
         view.sampleCount = 4
-        view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
+        view.clearColor = MTLClearColorMake(1.0, 0.0, 0.0, 1.0)
         view.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
         view.framebufferOnly = false
     
@@ -129,7 +129,13 @@ class Renderer: NSObject, MTKViewDelegate {
         let commandBuffer = commandQueue?.makeCommandBuffer()
         commandBuffer?.label = "MyCommandBuffer"
         
-        let blackClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        #if os(macOS)
+        let clearColor = MTLClearColor(red: Double(backgroundColor.redComponent), green: Double(backgroundColor.greenComponent), blue: Double(backgroundColor.blueComponent), alpha: Double(backgroundColor.alphaComponent))
+        #else
+        let clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        #endif
+        
+        view.clearColor = clearColor
         
         let renderPassDesc = view.currentRenderPassDescriptor
     
@@ -154,7 +160,7 @@ class Renderer: NSObject, MTKViewDelegate {
                 return
             }
             
-            renderPassDesc?.colorAttachments[0].clearColor = blackClearColor
+            renderPassDesc?.colorAttachments[0].clearColor = clearColor
             renderPassDesc?.colorAttachments[0].loadAction = .clear
             renderPassDesc?.colorAttachments[0].texture = texture
             renderPassDesc?.colorAttachments[0].resolveTexture = textureResolve
@@ -176,7 +182,7 @@ class Renderer: NSObject, MTKViewDelegate {
             
             // Second pass
             
-            renderPassDesc?.colorAttachments[0].clearColor = blackClearColor
+            renderPassDesc?.colorAttachments[0].clearColor = clearColor
             renderPassDesc?.colorAttachments[0].loadAction = .clear
             renderPassDesc?.colorAttachments[0].texture = texture
             renderPassDesc?.colorAttachments[0].resolveTexture = view.currentDrawable?.texture

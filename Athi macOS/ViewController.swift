@@ -47,6 +47,9 @@ class MACOSViewController: NSViewController {
     @IBAction func particleCollisionButton(_ sender: NSButton) {
         renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
     }
+    @IBAction func backgroundColorWell(_ sender: NSColorWell) {
+        backgroundColor = sender.color
+    }
     @IBAction func postprocessingButton(_ sender: NSButton) {
         renderer.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
     }
@@ -75,6 +78,7 @@ class MACOSViewController: NSViewController {
         RunLoop.current.add(self.timer!, forMode: .defaultRunLoopMode)
     }
     
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
