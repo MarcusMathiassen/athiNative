@@ -50,6 +50,9 @@ class MACOSViewController: NSViewController {
     @IBAction func particleCollisionButton(_ sender: NSButton) {
         renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
     }
+    @IBAction func gravitySwitch(_ sender: NSButton) {
+        renderer.particleSystem.enableGravity = (sender.state.rawValue == 0) ? false : true
+    }
     @IBOutlet weak var particleColorWellOutlet: NSColorWell!
     @IBAction func particleColorWell(_ sender: NSColorWell) {
         

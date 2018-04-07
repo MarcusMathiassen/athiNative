@@ -197,7 +197,12 @@ class ParticleSystem {
             } else {
                 tempGravityForce.y = gravityForce
             }
+        } else {
+            tempGravityForce *= 0
         }
+        
+        
+        
         if enableMultithreading {
             for _ in 0 ..< samples {
                 DispatchQueue.concurrentPerform(iterations: 4) { (i: Int) in
@@ -216,7 +221,6 @@ class ParticleSystem {
                     // Do transformations on the data
                     p.acc = tempGravityForce
                     p.borderCollision()
-                    p.acc /= Float(samples)
                     p.update()
 
                     // Update the particle with the new data
