@@ -6,10 +6,13 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
+
+let kGravitationalConstant = 6.67408e-6
+
+
 var pixelScale: Float = 0
 
 var particleSize: Float = 5
-var isMouseDown: Bool = false
 
 var particleColorCycle: Bool = true
 

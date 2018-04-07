@@ -25,11 +25,24 @@ class MACOSViewController: NSViewController {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
         mousePos *= pixelScale
         //print("Mouse position:", mousePos)
+        
+        
+        if !isMouseDown {
+            return
+        }
+    }
+    
+    override func scrollWheel(with event: NSEvent) {
+        mouseSize += Float(event.scrollingDeltaY)
+        if mouseSize < 0 { mouseSize = 1.0 }
+        print(mouseSize)
     }
     
     override func mouseDragged(with event: NSEvent) {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
         mousePos *= pixelScale
+        
+        isMouseDragging = true
     }
     
     override func mouseDown(with event: NSEvent) {
@@ -42,6 +55,7 @@ class MACOSViewController: NSViewController {
     
     override func mouseUp(with event: NSEvent) {
         isMouseDown = false
+        isMouseDragging = false
     }
 
     @IBAction func particleUpdateSamples(_ sender: NSSliderCell) {
@@ -53,6 +67,7 @@ class MACOSViewController: NSViewController {
     @IBAction func gravitySwitch(_ sender: NSButton) {
         renderer.particleSystem.enableGravity = (sender.state.rawValue == 0) ? false : true
     }
+    @IBOutlet weak var mouseOptionButton: NSPopUpButton!
     @IBOutlet weak var particleColorWellOutlet: NSColorWell!
     @IBAction func particleColorWell(_ sender: NSColorWell) {
         
@@ -85,6 +100,9 @@ class MACOSViewController: NSViewController {
     @IBOutlet weak var frametimeLabel: NSTextField!
     @IBOutlet weak var particleCountLabel: NSTextField!
     
+    @IBAction func treeOptimalSize(_ sender: NSButton) {
+        renderer.particleSystem.useTreeOptimalSize = (sender.state.rawValue == 0) ? false : true
+    }
     @IBAction func clearParticlesButton(_ sender: NSButton) {
         renderer.particleSystem.eraseParticles()
     }
@@ -123,6 +141,14 @@ class MACOSViewController: NSViewController {
                                 
                             self.particleColorWellOutlet.color = pc
                             
+                            let mouseVal =  self.mouseOptionButton.indexOfSelectedItem
+                            switch mouseVal {
+                            case 0: gMouseOption = MouseOption.Spawn
+                            case 1: gMouseOption = MouseOption.Color
+                            case 2: gMouseOption = MouseOption.Drag
+                                default: break
+                            }
+                            
         })
         
         // Add the timer to the current run loop.
@@ -134,7 +160,6 @@ class MACOSViewController: NSViewController {
         super.viewDidLoad()
         
         startVariableUpdater()
-        
         
         colorSpace = NSScreen.screens[0].colorSpace!
         pixelScale = Float(NSScreen.screens[0].backingScaleFactor)

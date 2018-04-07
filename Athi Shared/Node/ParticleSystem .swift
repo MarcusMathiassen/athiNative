@@ -43,10 +43,8 @@ struct Particle {
     mutating func update() {
 
         // Update pos/vel/acc
-        vel.x += acc.x * Float(0.16667)
-        vel.y += acc.y * Float(0.16667)
-        pos.x += vel.x * Float(0.16667)
-        pos.y += vel.y * Float(0.16667)
+        vel += acc
+        pos += vel
         acc *= 0
 
         torque *= 0.999
@@ -83,6 +81,10 @@ class ParticleSystem {
     var vp = float4x4(0)
     var tempGravityForce = float2(0)
     
+    var listOfNodesOfIDs: [[Int]] = []
+    var quadtree: Quadtree?
+    var useTreeOptimalSize: Bool = true
+    
     // Metal stuff
     weak var device: MTLDevice?
 
@@ -113,8 +115,7 @@ class ParticleSystem {
         catch {
             print("ParticleSystem Pipeline: Creating pipeline state failed")
         }
-        
-        
+    
         buildVertices(numVertices: numVerticesPerParticle)
     }
 
@@ -143,8 +144,6 @@ class ParticleSystem {
         )
     }
     
-    
-    
     func update() {
         
         if (self.shouldUpdate) {
@@ -154,33 +153,60 @@ class ParticleSystem {
         
         
         if enableCollisions {
+
             for _ in 0 ..< samples {
                 if enableMultithreading {
                     if useQuadtree {
                         
-                        let quadtree = Quadtree(min: float2(0,0), max: float2(framebufferWidth, framebufferHeight))
-                        quadtree.input(data: particles)
-                        var containerOfNodes: [[Int]] = []
-                        quadtree.getNodesOfIndices(containerOfNodes: &containerOfNodes)
+                        // Clear the nodes
+                        listOfNodesOfIDs.removeAll()
+
+                        var min: float2
+                        var max: float2
+                        if (useTreeOptimalSize) {
+                          let (mi, ma) = getMinAndMaxPosition();
+                          min = mi
+                          max = ma
+                          quadtree = Quadtree(min: min, max: max)
+                        } else {
+                          quadtree = Quadtree(min: float2(0,0), max: float2(framebufferWidth, framebufferHeight))                          
+                        }
+                        
+                        quadtree?.input(data: particles)
+                        
+                        quadtree?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
                         
                         
     //                    DispatchQueue.concurrentPerform(iterations: 8) { (i: Int) in
     //                        let (begin, end) = getBeginAndEnd(i: i, containerSize: containerOfNodes.count, segments: 8)
     //                        collisionQuadtree(containerOfNodes: containerOfNodes, begin: begin, end: end)
     //                    }
-                        collisionQuadtree(containerOfNodes: containerOfNodes, begin: 0, end: containerOfNodes.count)
+                        collisionQuadtree(containerOfNodes: listOfNodesOfIDs, begin: 0, end: listOfNodesOfIDs.count)
 
                     }
                     else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
                 } else {
                     if useQuadtree {
                         
-                        let quadtree = Quadtree(min: float2(0,0), max: float2(framebufferWidth, framebufferHeight))
-                        quadtree.input(data: particles)
-                        var containerOfNodes: [[Int]] = []
-                        quadtree.getNodesOfIndices(containerOfNodes: &containerOfNodes)
+                        // Clear the nodes
+                        listOfNodesOfIDs.removeAll()
                         
-                        collisionQuadtree(containerOfNodes: containerOfNodes, begin: 0, end: containerOfNodes.count)
+                        var min: float2
+                        var max: float2
+                        if (useTreeOptimalSize) {
+                            let (mi, ma) = getMinAndMaxPosition();
+                            min = mi
+                            max = ma
+                            quadtree = Quadtree(min: min, max: max)
+                        } else {
+                            quadtree = Quadtree(min: float2(0,0), max: float2(framebufferWidth, framebufferHeight))
+                        }
+                        
+                        quadtree?.input(data: particles)
+                        
+                        quadtree?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
+                        
+                        collisionQuadtree(containerOfNodes: listOfNodesOfIDs, begin: 0, end: listOfNodesOfIDs.count)
                         
                     }
                     else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
@@ -516,6 +542,87 @@ class ParticleSystem {
                 }
             }
         }
+    }
+
+    /**
+      Returns an array of ids that fit inside the circle
+    */
+    func getParticlesInCircle(position: float2, radius: Float) -> [Int] {
+
+      var ids: [Int] = []
+
+      var p = Particle()
+      p.pos = position
+      p.radius = radius
+
+      // Brute-force
+      for otherParticle in particles {
+        if collisionCheck(p, otherParticle) {
+          ids.append(otherParticle.id)
+        }
+      }
+
+      return ids
+    }
+    
+    
+    /**
+     Returns the minimum and maximum position found of all particles
+     */
+    func getMinAndMaxPosition() -> (float2, float2) {
+        
+        var max = float2(Float((-INT_MAX)), Float(-INT_MAX))
+        var min = float2(Float((INT_MAX)),  Float(INT_MAX))
+        
+        for p in particles {
+            max.x = (p.pos.x > max.x) ? p.pos.x : max.x
+            max.y = (p.pos.y > max.y) ? p.pos.y : max.y
+            min.x = (p.pos.x < min.x) ? p.pos.x : min.x
+            min.y = (p.pos.y < min.y) ? p.pos.y : min.y
+        }
+        
+        return (min, max)
+    }
+    
+
+    func gravityWell(a: inout Particle, point: float2) {
+      let x1 = a.pos.x
+      let y1 = a.pos.y
+      let x2 = point.x
+      let y2 = point.y
+      let m1 = a.mass
+      let m2 = Float(1e6)
+
+      let dx = x2 - x1
+      let dy = y2 - y1
+      let d = sqrt(dx * dx + dy * dy)
+
+      let angle = atan2(dy, dx)
+      let G = Float(kGravitationalConstant)
+      let F = G * m1 * m2 / d * d
+
+      a.vel.x += F * cos(angle)
+      a.vel.y += F * sin(angle)
+    }
+
+
+    func attractionForce(p: inout Particle, point: float2) {
+
+      // Set up variables
+      let x1: Float = p.pos.x
+      let y1: Float = p.pos.y
+      let x2: Float = point.x
+      let y2: Float = point.y
+
+      // Get distance between balls.
+      let dx: Float = x2 - x1
+      let dy: Float = y2 - y1
+      let d: Float = sqrt(dx * dx + dy * dy)
+
+      let angle: Float = atan2(dy, dx)
+      p.vel.x += d * cos(angle)
+      p.vel.y += d * sin(angle)
+      p.vel *= 0.05
     }
 
 }

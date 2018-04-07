@@ -168,26 +168,41 @@ class Renderer: NSObject, MTKViewDelegate {
     
     func updateInput() {
         
-        if(isKeyPressed(key: KEY_CODES.Key_W)) {
-            
-            //            particleSystem.addParticle(position: mousePos, color: float4(1), radius: 10)
-            
-            //            scene.addTriangle(mousePos, 10)
+        if (!isMouseDown) {
+            gmouseAttachedToIDs.removeAll()
+            return
         }
         
-        if (isMouseDown) {
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+        switch gMouseOption {
+            case MouseOption.Spawn:
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+                particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            
+            case MouseOption.Drag:
+                let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
+                if (gmouseAttachedToIDs.isEmpty) {
+                    for id in particleIDsToDrag {
+                        gmouseAttachedToIDs.append(id);
+                    }
+                }
+                for id in gmouseAttachedToIDs {
+                    particleSystem.attractionForce(p: &particleSystem.particles[id], point: mousePos)
+                }
+            
+            case MouseOption.Color:
+                let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
+                for id in particleIDsToDrag {
+                    particleSystem.colors[particleSystem.particles[id].id] = particleSystem.particleColor
+                }
         }
-        
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {

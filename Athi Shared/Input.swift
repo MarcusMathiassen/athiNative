@@ -6,6 +6,19 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
+
+enum MouseOption: Int {
+    case Spawn = 0
+    case Drag = 1
+    case Color = 2
+}
+
+var gMouseOption = MouseOption.Spawn
+var mouseSize: Float = 20.0
+var isMouseDown: Bool = false
+var isMouseDragging: Bool = false
+var gmouseAttachedToIDs: [Int] = []
+
 enum KEY_CODES: Int {
     case Key_W = 13
     case Key_S = 1
@@ -26,10 +39,10 @@ private var KEY_COUNT = 256
     
 private var keyList = [Bool].init(repeating: false, count: KEY_COUNT)
     
-func setKeyPressed(key: UInt16, isOn: Bool){
+func setKeyPressed(key: UInt16, isOn: Bool) {
     keyList[Int(key)] = isOn
 }
 
-func isKeyPressed(key: KEY_CODES)->Bool{
+func isKeyPressed(key: KEY_CODES)->Bool {
     return keyList[Int(key.rawValue)] == true
 }

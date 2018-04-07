@@ -137,6 +137,9 @@ class Quadtree {
         }
     }
 
+    /**
+        Returns all nodes that contains objects
+    */
     func getNodesOfIndices(containerOfNodes: inout [[Int]]) {
 
         if self.sw != nil {
@@ -150,7 +153,37 @@ class Quadtree {
         if !self.indices.isEmpty {
             containerOfNodes.append(self.indices)
         }
+    }
 
+    /**
+        Returns the neighbour nodes to the input object
+    */
+    func getNeighbours(containerOfNodes: inout [[Int]], p: Particle) {
+      if self.sw != nil {
+        if (self.sw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { sw?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
+        if (self.se?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { se?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
+        if (self.nw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { nw?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
+        if (self.ne?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { ne?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
+        return;
+      }
+
+       if !self.indices.isEmpty {
+        containerOfNodes.append(indices);
+       }
+    }
+
+    /**
+        Colors neighbour nodes to the input object
+    */
+    func colorNeighbours(p: Particle, color: float4) {
+        if self.sw != nil {
+            if (self.sw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { sw?.colorNeighbours(p: p, color: color) }
+            if (self.se?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { se?.colorNeighbours(p: p, color: color) }
+            if (self.nw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { nw?.colorNeighbours(p: p, color: color) }
+            if (self.ne?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { ne?.colorNeighbours(p: p, color: color) }
+            return
+        }
+        bounds.color = color
     }
     
 }
