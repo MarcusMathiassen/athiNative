@@ -29,7 +29,7 @@ class IOSViewController: UIViewController {
         renderer.particleSystem.useQuadtree = sender.isOn
     }
     @IBAction func enableMultithreadingSwitch(_ sender: UISwitch) {
-        useMultihreading = sender.isOn
+        renderer.particleSystem.enableMultithreading = sender.isOn
 
     }
     

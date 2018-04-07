@@ -724,7 +724,7 @@
                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2M3-Rk-uTJ">
                                                     <rect key="frame" x="31" y="320" width="134" height="25"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <buttonCell key="cell" type="check" title="Particle Collisions" bezelStyle="regularSquare" imagePosition="left" inset="2" id="Ugo-rT-p6J">
+                                                    <buttonCell key="cell" type="check" title="Particle Collisions" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Ugo-rT-p6J">
                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                         <font key="font" metaFont="system"/>
                                                     </buttonCell>
@@ -746,7 +746,7 @@
                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="amb-UI-gWW">
                                                     <rect key="frame" x="31" y="277" width="120" height="18"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <buttonCell key="cell" type="check" title="Post Processing" bezelStyle="regularSquare" imagePosition="left" inset="2" id="QM3-g1-HpT">
+                                                    <buttonCell key="cell" type="check" title="Post Processing" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="QM3-g1-HpT">
                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                         <font key="font" metaFont="system"/>
                                                     </buttonCell>
@@ -755,7 +755,7 @@
                                                     </connections>
                                                 </button>
                                                 <box verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="lQm-3m-wDF">
-                                                    <rect key="frame" x="33" y="268" width="130" height="5"/>
+                                                    <rect key="frame" x="31" y="67" width="130" height="5"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                 </box>
                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tb7-Ul-V6o">
@@ -778,23 +778,23 @@
                                                     </connections>
                                                 </colorWell>
                                                 <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q2u-3e-CaE">
-                                                    <rect key="frame" x="31" y="197" width="19" height="67"/>
+                                                    <rect key="frame" x="31" y="84" width="19" height="88"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <sliderCell key="cell" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
+                                                    <sliderCell key="cell" state="on" alignment="left" maxValue="100" doubleValue="10" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
                                                     <connections>
                                                         <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="2jj-R0-Xhg"/>
                                                     </connections>
                                                 </slider>
                                                 <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GLK-ZN-zPG">
-                                                    <rect key="frame" x="54" y="197" width="19" height="67"/>
+                                                    <rect key="frame" x="54" y="84" width="24" height="88"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <sliderCell key="cell" continuous="YES" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="right" sliderType="linear" id="x3r-Sk-XSD"/>
+                                                    <sliderCell key="cell" continuous="YES" alignment="left" maxValue="20" doubleValue="4.2105263157894735" tickMarkPosition="right" numberOfTickMarks="20" allowsTickMarkValuesOnly="YES" sliderType="linear" id="x3r-Sk-XSD"/>
                                                     <connections>
                                                         <action selector="blurStrengthSlider:" target="XfG-lQ-9wD" id="Pgu-OK-R0d"/>
                                                     </connections>
                                                 </slider>
                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ylt-yR-4na">
-                                                    <rect key="frame" x="90" y="246" width="85" height="18"/>
+                                                    <rect key="frame" x="31" y="257" width="85" height="18"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <buttonCell key="cell" type="check" title="Wireframe" bezelStyle="regularSquare" imagePosition="left" inset="2" id="maB-4a-WBO">
                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -805,7 +805,7 @@
                                                     </connections>
                                                 </button>
                                                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L3d-Bh-hsx">
-                                                    <rect key="frame" x="89" y="215" width="19" height="27"/>
+                                                    <rect key="frame" x="147" y="85" width="19" height="27"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <stepperCell key="cell" continuous="YES" alignment="left" increment="3" minValue="9" maxValue="3000" doubleValue="120" id="790-gF-bQU"/>
                                                     <connections>
@@ -813,7 +813,7 @@
                                                     </connections>
                                                 </stepper>
                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Sfs-tS-ELt">
-                                                    <rect key="frame" x="31" y="12" width="150" height="17"/>
+                                                    <rect key="frame" x="30" y="9" width="150" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " placeholderString="Particle: 0" id="PBd-zN-62G">
                                                         <font key="font" metaFont="system"/>
@@ -822,7 +822,7 @@
                                                     </textFieldCell>
                                                 </textField>
                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mjz-Ac-MgR">
-                                                    <rect key="frame" x="31" y="37" width="123" height="17"/>
+                                                    <rect key="frame" x="30" y="28" width="123" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Frametime: " placeholderString="Frametime: 0" id="Ul5-OP-ZbP">
                                                         <font key="font" metaFont="system"/>
@@ -831,7 +831,7 @@
                                                     </textFieldCell>
                                                 </textField>
                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="s28-Sn-G3G">
-                                                    <rect key="frame" x="31" y="62" width="123" height="17"/>
+                                                    <rect key="frame" x="30" y="44" width="123" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Framerate:" placeholderString="Framerate:" id="WA2-1V-066">
                                                         <font key="font" metaFont="system"/>
@@ -839,6 +839,53 @@
                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                     </textFieldCell>
                                                 </textField>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="CYQ-8H-chZ">
+                                                    <rect key="frame" x="31" y="237" width="107" height="18"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="check" title="Multithreaded" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="p4z-fu-1fF">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="multithreadedSwitch:" target="XfG-lQ-9wD" id="cLy-w5-3nV"/>
+                                                    </connections>
+                                                </button>
+                                                <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FZL-SJ-iB1">
+                                                    <rect key="frame" x="77" y="84" width="24" height="88"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <sliderCell key="cell" continuous="YES" alignment="left" maxValue="10" doubleValue="2.2222222222222223" tickMarkPosition="right" numberOfTickMarks="10" allowsTickMarkValuesOnly="YES" sliderType="linear" id="jsy-yU-Q12"/>
+                                                    <connections>
+                                                        <action selector="postProcessingSamplesSlier:" target="XfG-lQ-9wD" id="nXY-P0-aZh"/>
+                                                    </connections>
+                                                </slider>
+                                                <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="b6D-sh-3H2">
+                                                    <rect key="frame" x="107" y="84" width="24" height="88"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <sliderCell key="cell" alignment="left" maxValue="10" doubleValue="1.1111111111111112" tickMarkPosition="right" numberOfTickMarks="10" allowsTickMarkValuesOnly="YES" sliderType="linear" id="j54-WZ-lpw">
+                                                        <connections>
+                                                            <action selector="particleUpdateSamples:" target="XfG-lQ-9wD" id="7lN-QC-Zc8"/>
+                                                        </connections>
+                                                    </sliderCell>
+                                                </slider>
+                                                <colorWell fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NNs-jS-UB8">
+                                                    <rect key="frame" x="117" y="395" width="44" height="23"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <color key="color" red="1" green="0.98678456977105544" blue="0.97705122932088251" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                    <connections>
+                                                        <action selector="particleColorWell:" target="XfG-lQ-9wD" id="f1S-9v-wyd"/>
+                                                    </connections>
+                                                </colorWell>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="U56-SW-hQw">
+                                                    <rect key="frame" x="167" y="398" width="22" height="18"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="W7J-d8-ISu">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="cycleColorSwitch:" target="XfG-lQ-9wD" id="Jhp-pi-oFe"/>
+                                                    </connections>
+                                                </button>
                                             </subviews>
                                             <animations>
                                                 <caTransition key="subviews">
@@ -863,6 +910,8 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                     <connections>
                         <outlet property="framerateLabel" destination="s28-Sn-G3G" id="ndr-Bk-7U0"/>
                         <outlet property="frametimeLabel" destination="mjz-Ac-MgR" id="yrN-bx-PtF"/>
+                        <outlet property="particleColorWell" destination="NNs-jS-UB8" id="Pgj-QM-764"/>
+                        <outlet property="particleColorWellOutlet" destination="NNs-jS-UB8" id="yPm-Qn-RRJ"/>
                         <outlet property="particleCountLabel" destination="Sfs-tS-ELt" id="Fao-t6-PAX"/>
                     </connections>
                 </viewController>

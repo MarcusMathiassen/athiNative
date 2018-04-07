@@ -30,13 +30,11 @@ struct Rect {
     }
 }
 
-
-
 class Quadtree {
     
     static var maxCapacityPerNode: Int = 50
     static var maxDepth: Int = 5
-    static var data: [Particle] = []
+    static private var data: [Particle]? = []
     
     var bounds: Rect
     var depth: Int = 0
@@ -89,9 +87,9 @@ class Quadtree {
     /**
         Inserts all elements into the quadtree
      */
-    func input(data: [Particle]) {
+    func input(data: [Particle]?) {
         Quadtree.data = data
-        for obj in data {
+        for obj in data! {
             insert(obj.id)
         }
     }
@@ -100,7 +98,7 @@ class Quadtree {
         Returns true if this node contains the index
     */
     func contains(_ id: Int) -> Bool {
-        return self.bounds.containsPoint(position: Quadtree.data[id].pos, radius: Quadtree.data[id].radius)
+        return self.bounds.containsPoint(position: Quadtree.data![id].pos, radius: Quadtree.data![id].radius)
     }
 
     /**

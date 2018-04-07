@@ -15,10 +15,10 @@ struct Vertex {
 };
 
 vertex Vertex particleVert(constant float2 *position    [[buffer(0)]],
-                          constant float4 *color       [[buffer(1)]],
-                          constant float4x4 *mvp       [[buffer(2)]],
-                          uint vid                     [[vertex_id]],
-                          uint iid                     [[instance_id]])
+                           constant float4 *color       [[buffer(1)]],
+                           constant float4x4 *mvp       [[buffer(2)]],
+                           uint vid                     [[vertex_id]],
+                           uint iid                     [[instance_id]])
 {
     Vertex vert;
     vert.color = color[iid];

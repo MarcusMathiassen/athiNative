@@ -50,11 +50,24 @@ vertex Vertex quadVert(    constant BasicVertex *basic_vertex    [[buffer(0)]],
     return vert;
 }
 
-
-fragment float4 quadFrag(Vertex              vert           [[stage_in]],
-                         constant float2   *viewportSize    [[buffer(0)]],
-                         constant float2   *direction        [[buffer(1)]],
-                         texture2d<float>     colorTexture   [[texture(0)]])
+fragment float4 gaussianBlurFrag(    Vertex              vert            [[stage_in]],
+                                    constant float2*    resolution      [[buffer(0)]],
+                                    constant float2*    direction       [[buffer(1)]],
+                                    texture2d<float>     colorTexture    [[texture(0)]])
 {
-    return blur13(colorTexture, vert.uv, *viewportSize, *direction);
+    return blur13(colorTexture, vert.uv, *resolution, *direction);
+}
+
+
+fragment half4 quadFrag(Vertex              vert           [[stage_in]],
+                        texture2d<half>     colorTexture   [[texture(0)]])
+{
+    constexpr sampler textureSampler (mag_filter::linear,
+                                      min_filter::linear);
+    
+    // Sample the texture to obtain a color
+    const half4 colorSample = colorTexture.sample(textureSampler, vert.uv);
+    
+    // We return the color of the texture
+    return colorSample;
 }

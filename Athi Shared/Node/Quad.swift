@@ -19,9 +19,7 @@ class Quad {
     
     weak var device: MTLDevice?
     var pipelineState: MTLRenderPipelineState?
-    
-    var texture: MTLTexture?
-    
+    var gaussianBlurPipelineState: MTLRenderPipelineState?
     
     init(device: MTLDevice?) {
         self.device = device
@@ -46,36 +44,75 @@ class Quad {
         pipelineDesc.label = "Quad"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.sampleCount = 4
-        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
-        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
-        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-        
-        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm_srgb
+        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm
         
         do {
             try pipelineState = device?.makeRenderPipelineState(descriptor: pipelineDesc)
         }
         catch {
-            print("ParticleSystem Pipeline: Creating pipeline state failed")
+            print("Pipeline: Creating pipeline state failed")
+        }
+        
+        
+        let blurfragFunc = library?.makeFunction(name: "gaussianBlurFrag")
+        
+        let blurPipelineDesc = MTLRenderPipelineDescriptor()
+        blurPipelineDesc.label = "GaussianBlur"
+        blurPipelineDesc.vertexFunction = vertexFunc
+        blurPipelineDesc.fragmentFunction = blurfragFunc
+        blurPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm
+        
+        do {
+            try gaussianBlurPipelineState = device?.makeRenderPipelineState(descriptor: blurPipelineDesc)
+        }
+        catch {
+            print("Pipeline: Creating pipeline state failed")
         }
     }
     
-    func draw(renderEncoder: MTLRenderCommandEncoder?, texture: MTLTexture?, direction: float2) {
+    func gaussianBlur(renderEncoder: MTLRenderCommandEncoder?, texture: MTLTexture?, sigma: Float) {
+                
+        var dir: float2
+        
+        renderEncoder?.pushDebugGroup("Gauassian Blur")
+        renderEncoder?.setTriangleFillMode(.fill)
+        renderEncoder?.setRenderPipelineState(gaussianBlurPipelineState!)
+
+        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder?.setFragmentBytes(&viewportSize, length: MemoryLayout<float2>.stride, index: 0)
+        renderEncoder?.setFragmentTexture(texture!, index: 0)
+
+        dir = float2(sigma, 0)
+        renderEncoder?.pushDebugGroup("Horizontal")
+        renderEncoder?.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
+        renderEncoder?.drawPrimitives(
+            type: .triangle,
+            vertexStart: 0,
+            vertexCount: 6
+        )
+        renderEncoder?.popDebugGroup()
+
+        renderEncoder?.pushDebugGroup("Vertical")
+
+        dir = float2(0, sigma)
+        renderEncoder?.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
+        renderEncoder?.drawPrimitives(
+            type: .triangle,
+            vertexStart: 0,
+            vertexCount: 6
+        )
+        renderEncoder?.popDebugGroup()
+
+        renderEncoder?.popDebugGroup()
+    }
+    
+    func draw(renderEncoder: MTLRenderCommandEncoder?, texture: MTLTexture?) {
         
         renderEncoder?.pushDebugGroup("Draw Fullscreen Quad")
         renderEncoder?.setRenderPipelineState(pipelineState!)
         renderEncoder?.setTriangleFillMode(.fill)
-
-        var dir = direction
-        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder?.setFragmentBytes(&viewportSize, length: MemoryLayout<float2>.stride, index: 0)
-        renderEncoder?.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
         
+        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder?.setFragmentTexture(texture!, index: 0)
         
         renderEncoder?.drawPrimitives(

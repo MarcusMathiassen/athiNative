@@ -23,33 +23,6 @@ var framebufferWidth: Float = 0
 
 var viewport = float2(512,512)
 
-struct Vertex {
-    var position: float2
-    var color: float4
-    var uv: float2
-}
-
-struct Uniform {
-    var modelMatrix: float4x4
-}
-
-/**
- Stores all vertices sent to the GPU. Cleared each frame.
- */
-var gVertices: [Vertex] = []
-
-/**
- Stores all uniforms sent to the GPU. Cleared each frame.
- */
-var gUniforms: [Uniform] = []
-
-func addTransform(_ transform: Transform) {
-    let ortho = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
-
-    let model = ortho * transform.getModel()
-    gUniforms.append(Uniform(modelMatrix: model))
-}
-
 class Renderer: NSObject, MTKViewDelegate {
     
     
@@ -57,12 +30,15 @@ class Renderer: NSObject, MTKViewDelegate {
     var fillMode: MTLTriangleFillMode = .fill
 
     
+    var primitiveRenderer: PrimitiveRenderer?
+    
     var framerate: Int = 0
     var frametime: Float = 0
     var deltaTime: Float = 0
     
-    var enablePostProcessing: Bool = false
-    var blurStrength: Float = 2
+    var enablePostProcessing: Bool = true
+    var postProcessingSamples: Int = 2
+    var blurStrength: Float = 4
     
     var particleSystem: ParticleSystem
     
@@ -73,40 +49,28 @@ class Renderer: NSObject, MTKViewDelegate {
     var quad: Quad?
     
     var texture: MTLTexture?
-    var textureResolve: MTLTexture?
     
     init?(view: MTKView) {
     
         view.autoResizeDrawable = true // auto updates the views resolution on resizing
         view.preferredFramesPerSecond = 60
-        view.sampleCount = 4
+        view.sampleCount = 1
         view.clearColor = MTLClearColorMake(1.0, 0.0, 0.0, 1.0)
-        view.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
+        view.colorPixelFormat = MTLPixelFormat.bgra8Unorm
         view.framebufferOnly = false
     
         device = view.device!
+        primitiveRenderer = PrimitiveRenderer(device: device)
         
         let textureDesc = MTLTextureDescriptor()
         textureDesc.height = Int(framebufferHeight)
         textureDesc.width = Int(framebufferWidth)
-        textureDesc.depth = 1
-        textureDesc.sampleCount = 4
-        textureDesc.textureType = .type2DMultisample
+        textureDesc.sampleCount = 1
+        textureDesc.textureType = .type2D
         textureDesc.pixelFormat = view.colorPixelFormat
         textureDesc.resourceOptions = .storageModePrivate
-        textureDesc.usage = .renderTarget
+        textureDesc.usage = [.shaderRead, .shaderWrite]
         texture = device?.makeTexture(descriptor: textureDesc)
-
-        
-        let textureResolveDesc = MTLTextureDescriptor()
-        textureResolveDesc.height = Int(framebufferHeight)
-        textureResolveDesc.width = Int(framebufferWidth)
-        textureResolveDesc.depth = 1
-        textureResolveDesc.textureType = .type2D
-        textureResolveDesc.pixelFormat = view.colorPixelFormat
-        textureResolveDesc.resourceOptions = .storageModePrivate
-        textureResolveDesc.usage = .shaderRead
-        textureResolve = device?.makeTexture(descriptor: textureResolveDesc)
         
         quad = Quad(device: device)
 
@@ -121,6 +85,11 @@ class Renderer: NSObject, MTKViewDelegate {
     }
 
     func draw(in view: MTKView) {
+        
+        if particleColorCycle {
+            particleSystem.particleColor = colorOverTime(getTime() * 0.5)
+        }
+
         let startTime = getTime()
         
         updateInput()
@@ -139,77 +108,58 @@ class Renderer: NSObject, MTKViewDelegate {
         let clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         #endif
         
-        view.clearColor = clearColor
-        
         let renderPassDesc = view.currentRenderPassDescriptor
-    
         if renderPassDesc != nil {
-
-            if (!enablePostProcessing) {
-                let renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
-                
-                renderEncoder?.label = "Main pass"
-                renderEncoder?.setTriangleFillMode(fillMode)
-                
-                let vp = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
-                
-                // Go through all scenes and render
-                particleSystem.update()
-                particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
-                
-                renderEncoder?.endEncoding()
-                commandBuffer?.present(view.currentDrawable!)
-                commandBuffer?.commit()
-                frametime = Float((getTime() - startTime) * 1000.0)
-                framerate = Int(1000 / frametime)
-                return
-            }
             
             renderPassDesc?.colorAttachments[0].clearColor = clearColor
-            renderPassDesc?.colorAttachments[0].loadAction = .clear
             renderPassDesc?.colorAttachments[0].texture = texture
-            renderPassDesc?.colorAttachments[0].resolveTexture = textureResolve
-            renderPassDesc?.colorAttachments[0].storeAction = .storeAndMultisampleResolve
+            renderPassDesc?.colorAttachments[0].loadAction = .clear
+            renderPassDesc?.colorAttachments[0].storeAction = .store
 
             
             var renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
             
-            renderEncoder?.label = "Main pass"
+            renderEncoder?.label = "Draw to texture"
             renderEncoder?.setTriangleFillMode(fillMode)
             
             let vp = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
             
-            // Go through all scenes and render
             particleSystem.update()
+            
+            
+            
+            // Draw particles
             particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
+            
+            if enablePostProcessing {
+                // Blur
+                for _ in 0 ..< postProcessingSamples {
+                    quad?.gaussianBlur(renderEncoder: renderEncoder, texture: texture!, sigma: blurStrength)
+                }
+                // Draw particles
+                particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
+            }
+            
+
+            // Draw to view
             renderEncoder?.endEncoding()
-            
-            
-            // Second pass
             
             renderPassDesc?.colorAttachments[0].clearColor = clearColor
+            renderPassDesc?.colorAttachments[0].texture = view.currentDrawable?.texture
             renderPassDesc?.colorAttachments[0].loadAction = .clear
-            renderPassDesc?.colorAttachments[0].texture = texture
-            renderPassDesc?.colorAttachments[0].resolveTexture = view.currentDrawable?.texture
-            renderPassDesc?.colorAttachments[0].storeAction = .storeAndMultisampleResolve
+            renderPassDesc?.colorAttachments[0].storeAction = .store
             
             renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
+            renderEncoder?.label = "Draw texture to view"
             
-            renderEncoder?.label = "Main pass 2"
-            renderEncoder?.setTriangleFillMode(fillMode)
-            
-            // Go through all scenes and render
-            particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
-            
-            quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(0,1 * blurStrength))
-            quad?.draw(renderEncoder: renderEncoder, texture: textureResolve, direction: float2(1 * blurStrength,0))
-            
+            quad?.draw(renderEncoder: renderEncoder, texture: texture!)
+
             renderEncoder?.endEncoding()
             commandBuffer?.present(view.currentDrawable!)
+            commandBuffer?.commit()
+            frametime = Float((getTime() - startTime) * 1000.0)
+            framerate = Int(1000 / frametime)
         }
-        commandBuffer?.commit()
-        frametime = Float((getTime() - startTime) * 1000.0)
-        framerate = Int(1000 / frametime)
     }
     
     func updateVariables() {
@@ -226,15 +176,16 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         
         if (isMouseDown) {
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
-            
-            //            scene.addTriangle(mousePos, 10)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
         }
         
     }
@@ -257,24 +208,12 @@ class Renderer: NSObject, MTKViewDelegate {
         let textureDesc = MTLTextureDescriptor()
         textureDesc.height = Int(framebufferHeight)
         textureDesc.width = Int(framebufferWidth)
-        textureDesc.depth = 1
-        textureDesc.sampleCount = 4
-        textureDesc.textureType = .type2DMultisample
+        textureDesc.sampleCount = 1
+        textureDesc.textureType = .type2D
         textureDesc.pixelFormat = view.colorPixelFormat
         textureDesc.resourceOptions = .storageModePrivate
-        textureDesc.usage = .renderTarget
+        textureDesc.usage = [.shaderRead, .shaderWrite]
         texture = device?.makeTexture(descriptor: textureDesc)
-        
-        
-        let textureResolveDesc = MTLTextureDescriptor()
-        textureResolveDesc.height = Int(framebufferHeight)
-        textureResolveDesc.width = Int(framebufferWidth)
-        textureResolveDesc.depth = 1
-        textureResolveDesc.textureType = .type2D
-        textureResolveDesc.pixelFormat = view.colorPixelFormat
-        textureResolveDesc.resourceOptions = .storageModePrivate
-        textureResolveDesc.usage = .shaderRead
-        textureResolve = device?.makeTexture(descriptor: textureResolveDesc)
         
         let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)
         view.addTrackingArea(area)

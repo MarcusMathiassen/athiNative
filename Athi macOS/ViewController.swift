@@ -44,11 +44,24 @@ class MACOSViewController: NSViewController {
         isMouseDown = false
     }
 
+    @IBAction func particleUpdateSamples(_ sender: NSSliderCell) {
+        renderer.particleSystem.samples = Int(sender.intValue)
+    }
     @IBAction func particleCollisionButton(_ sender: NSButton) {
         renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
     }
+    @IBOutlet weak var particleColorWellOutlet: NSColorWell!
+    @IBAction func particleColorWell(_ sender: NSColorWell) {
+        
+        let color = sender.color.usingColorSpace(colorSpace!)!
+        
+        renderer.particleSystem.particleColor = float4(Float(color.redComponent), Float(color.greenComponent), Float(color.blueComponent), Float(color.alphaComponent))
+    }
     @IBAction func backgroundColorWell(_ sender: NSColorWell) {
-        backgroundColor =  sender.color.usingColorSpace(NSColorSpace.adobeRGB1998)!
+        backgroundColor =  sender.color.usingColorSpace(colorSpace!)!
+    }
+    @IBAction func postProcessingSamplesSlier(_ sender: NSSlider) {
+        renderer.postProcessingSamples = Int(sender.intValue)
     }
     @IBAction func postprocessingButton(_ sender: NSButton) {
         renderer.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
@@ -58,6 +71,12 @@ class MACOSViewController: NSViewController {
     }
     @IBAction func wireframeSwitch(_ sender: NSButton) {
         renderer.fillMode = (sender.state.rawValue == 0) ? .fill : .lines
+    }
+    @IBAction func multithreadedSwitch(_ sender: NSButton) {
+        renderer.particleSystem.enableMultithreading = (sender.state.rawValue == 0) ? false : true
+    }
+    @IBAction func cycleColorSwitch(_ sender: NSButton) {
+        particleColorCycle = (sender.state.rawValue == 0) ? false : true
     }
     @IBOutlet weak var framerateLabel: NSTextField!
     @IBOutlet weak var frametimeLabel: NSTextField!
@@ -90,6 +109,17 @@ class MACOSViewController: NSViewController {
                             
                                                         self.framerateLabel?.stringValue = "Framerate: " + String(self.renderer.framerate)
                             
+                            
+                            let pc = NSColor(
+                                red: CGFloat(self.renderer.particleSystem.particleColor.x),
+                                green: CGFloat(self.renderer.particleSystem.particleColor.y),
+                                blue: CGFloat(self.renderer.particleSystem.particleColor.z),
+                                alpha: CGFloat(self.renderer.particleSystem.particleColor.w)
+                                )
+
+                                
+                            self.particleColorWellOutlet.color = pc
+                            
         })
         
         // Add the timer to the current run loop.
@@ -102,6 +132,8 @@ class MACOSViewController: NSViewController {
         
         startVariableUpdater()
         
+        
+        colorSpace = NSScreen.screens[0].colorSpace!
         pixelScale = Float(NSScreen.screens[0].backingScaleFactor)
     
         screenWidth = Float(view.frame.width)
