@@ -10,10 +10,9 @@ import MetalKit
 import simd // float4x4
 
 class Scene {
-
     var entities: [Entity] = []
     var device: MTLDevice?
-    
+
     init(device: MTLDevice?) {
         self.device = device
     }
@@ -23,7 +22,7 @@ class Scene {
             entity.update()
         }
     }
-    
+
     func render(renderEncoder: MTLRenderCommandEncoder?, vp: float4x4) {
         for entity in entities {
             entity.draw(renderEncoder: renderEncoder, vp: vp)

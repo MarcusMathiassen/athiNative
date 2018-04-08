@@ -6,7 +6,6 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
-
 enum MouseOption: Int {
     case Spawn = 0
     case Drag = 1
@@ -28,7 +27,7 @@ enum KEY_CODES: Int {
     case Key_2 = 19
     case Key_3 = 20
     case Key_4 = 21
-    
+
     case Key_Arrow_Up = 126
     case Key_Arrow_Down = 125
     case Key_Arrow_Left = 123
@@ -36,13 +35,13 @@ enum KEY_CODES: Int {
 }
 
 private var KEY_COUNT = 256
-    
+
 private var keyList = [Bool].init(repeating: false, count: KEY_COUNT)
-    
+
 func setKeyPressed(key: UInt16, isOn: Bool) {
     keyList[Int(key)] = isOn
 }
 
-func isKeyPressed(key: KEY_CODES)->Bool {
+func isKeyPressed(key: KEY_CODES) -> Bool {
     return keyList[Int(key.rawValue)] == true
 }

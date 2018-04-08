@@ -6,11 +6,10 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
-
 import MetalKit
 import simd
 
 class Node {
-    func update() { }
-    func draw(renderEncoder: MTLRenderCommandEncoder?, vp: float4x4) { }
+    func update() {}
+    func draw(renderEncoder _: MTLRenderCommandEncoder?, vp _: float4x4) {}
 }

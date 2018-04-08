@@ -6,9 +6,7 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
-
 let kGravitationalConstant = 6.67408e-6
-
 
 var pixelScale: Float = 0
 
@@ -16,17 +14,17 @@ var particleSize: Float = 5
 
 var particleColorCycle: Bool = true
 
-var gyroRotation = float3(0,0,0)
-var accelerometer = float3(0,0,0)
+var gyroRotation = float3(0, 0, 0)
+var accelerometer = float3(0, 0, 0)
 
-var viewportSize = float2(0,0)
+var viewportSize = float2(0, 0)
 
 #if os(macOS)
-import AppKit
-var backgroundColor = NSColor(calibratedRed: 0, green: 0, blue: 0, alpha: 1)
+    import AppKit
+    var backgroundColor = NSColor(calibratedRed: 0, green: 0, blue: 0, alpha: 1)
 
-var colorSpace: NSColorSpace?
+    var colorSpace: NSColorSpace?
 #else
-import UIKit
-var backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    import UIKit
+    var backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
 #endif

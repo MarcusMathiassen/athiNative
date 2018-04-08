@@ -10,6 +10,6 @@ import MetalKit
 import simd
 
 class Entity {
-    func update() { }
-    func draw(renderEncoder: MTLRenderCommandEncoder?, vp: float4x4) { }
+    func update() {}
+    func draw(renderEncoder _: MTLRenderCommandEncoder?, vp _: float4x4) {}
 }
