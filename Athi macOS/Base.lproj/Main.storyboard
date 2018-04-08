@@ -956,8 +956,9 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                             <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" blendingMode="withinWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="wgn-Et-S2t" userLabel="ShowMenuButton">
                                 <rect key="frame" x="617" y="20" width="21" height="21"/>
                                 <subviews>
-                                    <button wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" alphaValue="0.40000000000000002" translatesAutoresizingMaskIntoConstraints="NO" id="cn9-BC-QY3">
+                                    <button wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" alphaValue="0.40000000000000002" translatesAutoresizingMaskIntoConstraints="NO" id="cn9-BC-QY3">
                                         <rect key="frame" x="-4" y="-3" width="29" height="26"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <buttonCell key="cell" type="disclosure" bezelStyle="roundedDisclosure" image="buttonCell:am2-rn-pyU:image" imagePosition="leading" alignment="center" state="on" borderStyle="border" inset="2" id="am2-rn-pyU">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -967,11 +968,6 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                                         </connections>
                                     </button>
                                 </subviews>
-                                <constraints>
-                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="cn9-BC-QY3" secondAttribute="trailing" id="NYx-Jn-cTC"/>
-                                    <constraint firstItem="cn9-BC-QY3" firstAttribute="top" secondItem="wgn-Et-S2t" secondAttribute="top" id="lyJ-uU-2U8"/>
-                                    <constraint firstItem="cn9-BC-QY3" firstAttribute="leading" secondItem="wgn-Et-S2t" secondAttribute="leading" id="xeX-Uv-61J"/>
-                                </constraints>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="boolean" keyPath="wantsLayer" value="YES"/>
                                     <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">

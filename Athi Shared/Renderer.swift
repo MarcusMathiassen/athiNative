@@ -138,11 +138,11 @@ class Renderer: NSObject, MTKViewDelegate {
             
 //          Draw to view
             renderEncoder?.endEncoding()
-            
-            let kernel = MPSImageGaussianBlur(device: device!, sigma: blurStrength)
-            kernel.encode(commandBuffer: commandBuffer!, inPlaceTexture: &texture!, fallbackCopyAllocator: nil)
-
-            
+//            
+//            let kernel = MPSImageGaussianBlur(device: device!, sigma: blurStrength)
+//            kernel.encode(commandBuffer: commandBuffer!, inPlaceTexture: &texture!, fallbackCopyAllocator: nil)
+//
+//            
             renderPassDesc?.colorAttachments[0].clearColor = clearColor
             renderPassDesc?.colorAttachments[0].texture = view.currentDrawable?.texture
             renderPassDesc?.colorAttachments[0].loadAction = .clear
