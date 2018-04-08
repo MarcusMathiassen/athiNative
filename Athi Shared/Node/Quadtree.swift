@@ -30,7 +30,7 @@ struct Rect {
     }
 }
 
-class Quadtree {
+final class Quadtree {
     
     static var maxCapacityPerNode: Int = 50
     static var maxDepth: Int = 5

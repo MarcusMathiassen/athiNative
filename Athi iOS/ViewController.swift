@@ -32,7 +32,7 @@ class IOSViewController: UIViewController {
         renderer.particleSystem.enableMultithreading = sender.isOn
 
     }
-    
+
     @IBAction func clearAllButton(_ sender: UIButton) {
         renderer.particleSystem.eraseParticles()
     }
@@ -61,6 +61,9 @@ class IOSViewController: UIViewController {
         }
     }
     
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        print("TOUCHED")
+    }
     
     func startAccelerometers() {
         // Make sure the accelerometer hardware is available.
@@ -120,13 +123,9 @@ class IOSViewController: UIViewController {
         }
     }
     
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        print("TOUCHED")
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+    
         pixelScale = 2
         
         screenWidth = Float(view.frame.width)

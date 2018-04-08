@@ -8,6 +8,7 @@
 
 import MetalKit
 
+
 class Quad {
     
     struct Vertex {

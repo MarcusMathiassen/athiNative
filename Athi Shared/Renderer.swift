@@ -36,6 +36,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var frametime: Float = 0
     var deltaTime: Float = 0
     
+    var enableMPSPostProcessing: Bool = true
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 2
     var blurStrength: Float = 4
@@ -125,33 +126,33 @@ class Renderer: NSObject, MTKViewDelegate {
             let vp = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
             
             particleSystem.update()
-            
-            
-            
             // Draw particles
             particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
-            
+
             if enablePostProcessing {
-                // Blur
-                for _ in 0 ..< postProcessingSamples {
-                    quad?.gaussianBlur(renderEncoder: renderEncoder, texture: texture!, sigma: blurStrength)
-                }
-                // Draw particles
-                particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
+                    // Blur
+                    for _ in 0 ..< postProcessingSamples {
+                        quad?.gaussianBlur(renderEncoder: renderEncoder, texture: texture!, sigma: blurStrength)
+                    }
+                    // Draw particles
+                    particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
             }
             
 
-            // Draw to view
+//          Draw to view
             renderEncoder?.endEncoding()
+            
+            let kernel = MPSImageGaussianBlur(device: device!, sigma: blurStrength)
+            kernel.encode(commandBuffer: commandBuffer!, inPlaceTexture: &texture!, fallbackCopyAllocator: nil)
             
             renderPassDesc?.colorAttachments[0].clearColor = clearColor
             renderPassDesc?.colorAttachments[0].texture = view.currentDrawable?.texture
             renderPassDesc?.colorAttachments[0].loadAction = .clear
             renderPassDesc?.colorAttachments[0].storeAction = .store
+
             
             renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDesc!)
             renderEncoder?.label = "Draw texture to view"
-            
             quad?.draw(renderEncoder: renderEncoder, texture: texture!)
 
             renderEncoder?.endEncoding()
