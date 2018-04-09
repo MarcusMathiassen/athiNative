@@ -116,6 +116,15 @@ class MACOSViewController: NSViewController {
         renderer.particleSystem.eraseParticles()
     }
 
+    @IBAction func pauseButton(_ sender: NSButton) {
+        let buttonState = (sender.state.rawValue == 0) ? false : true
+        renderer.particleSystem.isPaused = buttonState
+        if buttonState {
+            sender.title = "Resume"
+        } else {
+            sender.title = "Pause"
+        }
+    }
     @IBAction func blurStrengthSlider(_ sender: NSSlider) {
         renderer.blurStrength = sender.floatValue
     }

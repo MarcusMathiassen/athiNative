@@ -70,7 +70,9 @@ class ParticleSystem {
     var preAllocatedParticles = 10000
 
     var samples: Int = 1
-
+    
+    var isPaused: Bool = false
+    
     var particleColor = float4(1)
     var particles: [Particle] = []
     
@@ -151,6 +153,8 @@ class ParticleSystem {
 
     public func update()
     {
+        if isPaused { return }
+        
         if shouldUpdate {
             buildVertices(numVertices: numVerticesPerParticle)
             shouldUpdate = false
