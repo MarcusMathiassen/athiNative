@@ -953,34 +953,21 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </customView>
-                            <visualEffectView wantsLayer="YES" appearanceType="vibrantDark" blendingMode="withinWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="wgn-Et-S2t" userLabel="ShowMenuButton">
-                                <rect key="frame" x="617" y="20" width="21" height="21"/>
-                                <subviews>
-                                    <button wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" alphaValue="0.40000000000000002" translatesAutoresizingMaskIntoConstraints="NO" id="cn9-BC-QY3">
-                                        <rect key="frame" x="-4" y="-3" width="29" height="26"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        <buttonCell key="cell" type="disclosure" bezelStyle="roundedDisclosure" image="buttonCell:am2-rn-pyU:image" imagePosition="leading" alignment="center" state="on" borderStyle="border" inset="2" id="am2-rn-pyU">
-                                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
-                                        <connections>
-                                            <action selector="showMenuView:" target="XfG-lQ-9wD" id="krw-Ph-n4G"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="boolean" keyPath="wantsLayer" value="YES"/>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <integer key="value" value="10"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                            </visualEffectView>
+                            <button wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" alphaValue="0.20000000000000001" translatesAutoresizingMaskIntoConstraints="NO" id="cn9-BC-QY3">
+                                <rect key="frame" x="613" y="17" width="29" height="26"/>
+                                <buttonCell key="cell" type="disclosure" bezelStyle="roundedDisclosure" image="buttonCell:am2-rn-pyU:image" imagePosition="leading" alignment="center" state="on" borderStyle="border" inset="2" id="am2-rn-pyU">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="showMenuView:" target="XfG-lQ-9wD" id="krw-Ph-n4G"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="wgn-Et-S2t" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="617" id="3xE-rU-gZa"/>
-                            <constraint firstItem="wgn-Et-S2t" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" constant="581" id="BLI-b8-Y1g"/>
-                            <constraint firstAttribute="bottom" secondItem="wgn-Et-S2t" secondAttribute="bottom" constant="20" symbolic="YES" id="TeH-Kc-M0J"/>
-                            <constraint firstAttribute="trailing" secondItem="wgn-Et-S2t" secondAttribute="trailing" constant="20" symbolic="YES" id="ftY-9t-asg"/>
+                            <constraint firstAttribute="bottom" secondItem="cn9-BC-QY3" secondAttribute="bottom" constant="20" symbolic="YES" id="8yK-sG-kf1"/>
+                            <constraint firstItem="cn9-BC-QY3" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="20" symbolic="YES" id="92b-Uo-gM7"/>
+                            <constraint firstAttribute="trailing" secondItem="cn9-BC-QY3" secondAttribute="trailing" constant="20" symbolic="YES" id="haq-V9-K6c"/>
                         </constraints>
                     </view>
                     <connections>

@@ -55,6 +55,9 @@
 		900CAD4720729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4820729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4920729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
+		901D699E207BB0E40009DC17 /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901D699D207BB0E40009DC17 /* Emitter.swift */; };
+		901D699F207BB0E40009DC17 /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901D699D207BB0E40009DC17 /* Emitter.swift */; };
+		901D69A0207BB0E40009DC17 /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901D699D207BB0E40009DC17 /* Emitter.swift */; };
 		90238DF22073912100D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF32073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF42073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
@@ -98,6 +101,7 @@
 		900CAD3620729D6500AE60E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		900CAD3B20729D6500AE60E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		900CAD3D20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		901D699D207BB0E40009DC17 /* Emitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emitter.swift; sourceTree = "<group>"; };
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
@@ -135,6 +139,7 @@
 				90027F8720780CF900FC6980 /* PrimitiveShapes.swift */,
 				90027F8B207811BC00FC6980 /* primitive.metal */,
 				900B3B1C2075490900569776 /* ParticleSystem .swift */,
+				901D699D207BB0E40009DC17 /* Emitter.swift */,
 				9051D9662076CDCE00E2DB51 /* Quad.swift */,
 				9051D96A2076D17200E2DB51 /* Quad.metal */,
 				9051D9622076905200E2DB51 /* Quadtree.swift */,
@@ -357,6 +362,7 @@
 				9001438D2072AD5C009FB201 /* Utility.swift in Sources */,
 				900B3B252075512800569776 /* Node.swift in Sources */,
 				900AE7EB2076566600465EAD /* ViewController.swift in Sources */,
+				901D699E207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B2120754C9100569776 /* Input.swift in Sources */,
 				90027F8820780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8C207811BC00FC6980 /* primitive.metal in Sources */,
@@ -381,6 +387,7 @@
 			files = (
 				9051D9642076905200E2DB51 /* Quadtree.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
+				901D699F207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B262075512800569776 /* Node.swift in Sources */,
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
@@ -406,6 +413,7 @@
 				9001438F2072AD5C009FB201 /* Utility.swift in Sources */,
 				9001438B2072ABBC009FB201 /* ViewController.swift in Sources */,
 				900B3B272075512800569776 /* Node.swift in Sources */,
+				901D69A0207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B2320754C9100569776 /* Input.swift in Sources */,
 				90027F8A20780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8E207811BC00FC6980 /* primitive.metal in Sources */,
