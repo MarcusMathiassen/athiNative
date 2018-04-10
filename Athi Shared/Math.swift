@@ -48,7 +48,7 @@ func makeOrtho(left: Float, right: Float, bottom: Float, top: Float, near: Float
 /**
  Return the rotation matrix
  */
-func makeRotation(angle: Float, x: Float, y: Float, z: Float) -> float4x4 {
+func makeRotate(angle: Float, x: Float, y: Float, z: Float) -> float4x4 {
     let c = cos(angle)
     let s = sin(angle)
 
@@ -99,20 +99,72 @@ func makeTranslate(_ v: float3) -> float4x4 {
     return float4x4(x, y, z, w)
 }
 
-struct Transform {
-    var pos = float3(0, 0, 0)
-    var rot = float3(0, 0, 0)
-    var scale = float3(1, 1, 1)
+/**
+ Return the translation matrix
+ */
+func makeTranslate(_ v: float2) -> float3x3
+{
+    let X = float3(1, 0, 0)
+    let Y = float3(0, 1, 0)
+    let Z = float3(v.x, v.y,   1)
 
-    func getModel() -> float4x4 {
+    return float3x3(X,Y,Z)
+}
+
+/**
+ Return the rotation matrix
+ */
+func makeRotate(theta: Float) -> float3x3
+{
+    let X = float3(cos(theta), sin(theta), 0)
+    let Y = float3(-sin(theta),  cos(theta), 0)
+    let Z = float3(0, 0, 1)
+
+    return float3x3(X,Y,Z)
+}
+
+/**
+ Return the scale matrix
+ */
+func makeScale(_ v: float2) -> float3x3
+{
+    let X = float3(v.x, 0,    0)
+    let Y = float3(0,   v.y,  0)
+    let Z = float3(0,   0,    1)
+
+    return float3x3(X,Y,Z)
+}
+
+struct Transform
+{
+    var pos     = float2(0)
+    var rot     = Float(0)
+    var scale   = float2(1)
+
+    func getModel() -> float3x3
+    {
         let posMatrix = makeTranslate(pos)
-        let rotXMatrix = makeRotation(angle: rot.x, x: 1, y: 0, z: 0)
-        let rotYMatrix = makeRotation(angle: rot.y, x: 0, y: 1, z: 0)
-        let rotZMatrix = makeRotation(angle: rot.z, x: 0, y: 0, z: 1)
+        let rotMatrix = makeRotate(theta: rot)
         let scaleMatrix = makeScale(scale)
-
-        let rotMatrix = rotZMatrix * rotYMatrix * rotXMatrix
 
         return posMatrix * rotMatrix * scaleMatrix
     }
 }
+
+// struct Transform {
+//     var pos = float3(0, 0, 0)
+//     var rot = float3(0, 0, 0)
+//     var scale = float3(1, 1, 1)
+
+//     func getModel() -> float4x4 {
+//         let posMatrix = makeTranslate(pos)
+//         let rotXMatrix = makeRotate(angle: rot.x, x: 1, y: 0, z: 0)
+//         let rotYMatrix = makeRotate(angle: rot.y, x: 0, y: 1, z: 0)
+//         let rotZMatrix = makeRotate(angle: rot.z, x: 0, y: 0, z: 1)
+//         let scaleMatrix = makeScale(scale)
+
+//         let rotMatrix = rotZMatrix * rotYMatrix * rotXMatrix
+
+//         return posMatrix * rotMatrix * scaleMatrix
+//     }
+// }

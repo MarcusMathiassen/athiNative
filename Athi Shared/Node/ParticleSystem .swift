@@ -9,7 +9,8 @@
 import MetalKit
 import simd
 
-struct Particle {
+struct Particle
+{
     var id: Int = 0
     var pos = float2(0)
     var vel = float2(0)
@@ -51,7 +52,24 @@ struct Particle {
     }
 }
 
-class ParticleSystem {
+final class ParticleSystem
+{
+    struct ParticleData
+    {
+        var position: float2
+        var color:    float4
+        var size:     Float
+    };
+    
+    /**
+        Particle data for the CPU
+     */
+    var particles: [Particle] = []
+    
+    /**
+        Particle data for the GPU
+     */
+    private var particleData: [ParticleData] = []
     
     // Options
     private var shouldUpdate: Bool = false
@@ -69,15 +87,14 @@ class ParticleSystem {
     var useTreeOptimalSize: Bool = true
     
     
-    var preAllocatedParticles = 100000
+    var preAllocatedParticles = 1000
+    private var allocatedMemoryForParticles: Int
 
     var samples: Int = 1
     
     var isPaused: Bool = false
     
     var particleColor = float4(1)
-    var particles: [Particle] = []
-    
     
     
     var numVerticesPerParticle = 120
@@ -86,19 +103,13 @@ class ParticleSystem {
     /**
         Static data uploaded once, and updated when numVerticesPerParticle is changed
      */
-    private var positions: [float2] = []
-    
+    private var vertices: [float2] = []
+
     /**
         Dynamic data updated each frame. Each element represents the color of a single particle
      */
     private var colors: [float4] = []
     
-    /**
-        Dynamic data updated each frame. Each element represents the mvp of a single particle
-     */
-    private var models: [float4x4] = []
-    
-    private var vp = float4x4(0)
     private var tempGravityForce = float2(0)
 
     private var listOfNodesOfIDs: [[Int]] = []
@@ -107,9 +118,9 @@ class ParticleSystem {
     // Metal stuff
     private var device: MTLDevice
 
-    private var positionBuffer: MTLBuffer
-    private var colorBuffer: MTLBuffer
-    private var modelBuffer: MTLBuffer
+    private var particleDataBuffer: MTLBuffer
+    private var vertexBuffer: MTLBuffer
+
     private var pipelineState: MTLRenderPipelineState?
 
     init(device: MTLDevice)
@@ -134,35 +145,46 @@ class ParticleSystem {
             print("ParticleSystem Pipeline: Creating pipeline state failed")
         }
         
-        self.positionBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: .cpuCacheModeWriteCombined)!
-        self.colorBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * preAllocatedParticles, options: .cpuCacheModeWriteCombined)!
-        self.modelBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.stride * preAllocatedParticles, options: .cpuCacheModeWriteCombined)!
         
+        allocatedMemoryForParticles = preAllocatedParticles
+        particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
+        vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: .storageModePrivate)!
+
         buildVertices(numVertices: numVerticesPerParticle)
     }
 
-    public func draw(renderEncoder: MTLRenderCommandEncoder?, vp: float4x4)
+    public func draw(renderEncoder: MTLRenderCommandEncoder)
     {
         if particles.count == 0 { return }
 
-        self.vp = vp
-
-        renderEncoder?.label = "ParticleSystem"
-        renderEncoder?.setRenderPipelineState(pipelineState!)
+        renderEncoder.label = "ParticleSystem"
+        renderEncoder.setRenderPipelineState(pipelineState!)
         
-        colorBuffer.contents().copyMemory(from: colors, byteCount: colors.count * MemoryLayout<float4>.stride)
-        modelBuffer.contents().copyMemory(from: models, byteCount: models.count * MemoryLayout<float4x4>.stride)
+        updateGPUBuffers()
         
-        renderEncoder?.setVertexBuffer(positionBuffer, offset: 0, index: 0)
-        renderEncoder?.setVertexBuffer(colorBuffer, offset: 0, index: 1)
-        renderEncoder?.setVertexBuffer(modelBuffer, offset: 0, index: 2)
+        renderEncoder.setVertexBuffer(vertexBuffer,           offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(particleDataBuffer,     offset: 0, index: 1)
+        renderEncoder.setVertexBytes(&viewportSize,    length: MemoryLayout<float2>.stride, index: 2)
 
-        renderEncoder?.drawPrimitives(
+        renderEncoder.drawPrimitives(
             type: .triangle,
             vertexStart: 0,
-            vertexCount: positions.count,
+            vertexCount: vertices.count,
             instanceCount: particles.count
         )
+    }
+    
+    private func updateGPUBuffers()
+    {
+        // Reallocate more if needed
+        if particleData.count > allocatedMemoryForParticles {
+            allocatedMemoryForParticles += 1000
+            particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
+            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
+
+        } else {
+            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
+        }
     }
 
     public func update()
@@ -265,13 +287,8 @@ class ParticleSystem {
                     // Update the particle with the new data
                     particles[i] = p
 
-                    // Update models
-                    var transform = Transform()
-                    transform.pos = float3(p.pos.x, p.pos.y, 0)
-                    transform.scale = float3(p.radius, p.radius, 0)
-                    transform.rot.z = p.rotation
-                    let model = vp * transform.getModel()
-                    models[i] = model
+                    // Update particleData
+                    particleData[i] = ParticleData(position: p.pos, color: colors[p.id], size: p.radius)
                 }
             }
         }
@@ -283,7 +300,7 @@ class ParticleSystem {
     }
 
     private func buildVertices(numVertices: Int) {
-        positions.removeAll()
+        vertices.removeAll()
 
         // Setup the particle vertices
         var k: Float = 0
@@ -293,24 +310,24 @@ class ParticleSystem {
             {
             case 0:
                 k += 1
-                positions.append(lastVert)
+                vertices.append(lastVert)
             case 1:
                 k += 1
                 let cont = Float(i) * Float.pi * 2 / Float(numVertices)
                 let x = cos(cont)
                 let y = sin(cont)
                 lastVert = float2(x, y)
-                positions.append(lastVert)
+                vertices.append(lastVert)
             case 2:
                 k += 1
                 k = 0
-                positions.append(float2(0, 0))
+                vertices.append(float2(0, 0))
             default:
                 k = 0
             }
         }
 
-        positionBuffer = device.makeBuffer(bytes: positions, length: MemoryLayout<float2>.stride * positions.count, options: .cpuCacheModeWriteCombined)!
+        vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<float2>.stride * vertices.count, options: .cpuCacheModeWriteCombined)!
     }
 
     private func collisionCheck(_ a: Particle, _ b: Particle) -> Bool {
@@ -365,33 +382,33 @@ class ParticleSystem {
         // w is the torque, r is the vector to the collision point from the center, v is the velocity vector
         // ω = (cross(cp, v1) / r1 * friction + w2 * 0.1; r.x*v.y−r.y*v.x) / (r2x+r2y)
         //
-        let ar = a.radius
-        let br = b.radius
+//        let ar = a.radius
+//        let br = b.radius
+//
+//        let collision_depth = distance(b.pos, a.pos)
+//
+//        // contact angle
+//
+//        dx = b.pos.x - a.pos.x
+//        dy = b.pos.y - a.pos.y
 
-        let collision_depth = distance(b.pos, a.pos)
+//        let collision_angle = atan2(dy, dx)
+//        let cos_angle = cos(collision_angle)
+//        let sin_angle = sin(collision_angle)
 
-        // contact angle
+//        let r1 = float2( collision_depth * 0.5 * cos_angle,  collision_depth * 0.5 * sin_angle)
+//        let r2 = float2(-collision_depth * 0.5 * cos_angle, -collision_depth * 0.5 * sin_angle)
+//        let v1 = a.vel
+//        let v2 = b.vel
+//
+//        func cross(_ v1: float2, _ v2: float2) -> Float {
+//            return (v1.x * v2.y) - (v1.y * v2.x)
+//        }
 
-        dx = b.pos.x - a.pos.x
-        dy = b.pos.y - a.pos.y
+//        let friction: Float = 0.1
 
-        let collision_angle = atan2(dy, dx)
-        let cos_angle = cos(collision_angle)
-        let sin_angle = sin(collision_angle)
-
-        let r1 = float2( collision_depth * 0.5 * cos_angle,  collision_depth * 0.5 * sin_angle)
-        let r2 = float2(-collision_depth * 0.5 * cos_angle, -collision_depth * 0.5 * sin_angle)
-        let v1 = a.vel
-        let v2 = b.vel
-
-        func cross(_ v1: float2, _ v2: float2) -> Float {
-            return (v1.x * v2.y) - (v1.y * v2.x)
-        }
-
-        let friction: Float = 0.1
-
-        a.torque = (cross(normalize(r2), v1) / ar) * friction + b.torque * 0.5
-        b.torque = (cross(normalize(r1), v2) / br) * friction + a.torque * 0.5
+//        a.torque = (cross(normalize(r2), v1) / ar) * friction + b.torque * 0.5
+//        b.torque = (cross(normalize(r1), v2) / br) * friction + a.torque * 0.5
 
         // And we don't resolve collisions between circles moving away from eachother
         if d < 1e-11 {
@@ -486,25 +503,20 @@ class ParticleSystem {
 
             particles[i] = p
 
-            // Update models
-            var transform = Transform()
-            transform.pos = float3(p.pos.x, p.pos.y, 0)
-            transform.scale = float3(p.radius, p.radius, 0)
-            transform.rot.z = p.rotation
-            let model = vp * transform.getModel()
-            models[i] = model
+            // Update particleData
+            particleData[i] = ParticleData(position: p.pos, color: colors[p.id], size: p.radius)
         }
     }
     
     public func removeFirst(_ i: Int) {
         particles.removeFirst(i)
-        models.removeFirst(i)
+        particleData.removeFirst(i)
         colors.removeFirst(i)
     }
 
     public func eraseParticles() {
         particles.removeAll()
-        models.removeAll()
+        particleData.removeAll()
         colors.removeAll()
     }
     
@@ -522,14 +534,16 @@ class ParticleSystem {
         // Add new particle
         particles.append(pa)
         
+        // Add it to be drawn
+        let pD = ParticleData(position: p.pos, color: color, size: p.radius)
+        particleData.append(pD)
+        
         // Add new color
         colors.append(color)
-        
-        // Add new transform
-        models.append(float4x4())
     }
     
     public func addParticle(position: float2, color: float4, radius: Float) {
+        
         var p = Particle()
         p.id = particles.count
         p.pos = position
@@ -539,12 +553,12 @@ class ParticleSystem {
 
         // Add new particle
         particles.append(p)
-
-        // Add new color
+        
+        // Add it to be drawn
+        let pD = ParticleData(position: position, color: color, size: radius)
+        particleData.append(pD)
+        
         colors.append(color)
-
-        // Add new transform
-        models.append(float4x4())
     }
 
     private func collisionQuadtree(containerOfNodes: [[Int]], begin: Int, end: Int) {

@@ -30,8 +30,6 @@ class Renderer: NSObject, MTKViewDelegate
     
     static var pixelFormat = MTLPixelFormat.bgra8Unorm
 
-    var primitiveRenderer: PrimitiveRenderer
-
     var framerate: Int = 0
     var frametime: Float = 0
     var deltaTime: Float = 0
@@ -89,10 +87,6 @@ class Renderer: NSObject, MTKViewDelegate
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
         view.colorPixelFormat = Renderer.pixelFormat
         view.framebufferOnly = false
-
-        
-        
-        primitiveRenderer = PrimitiveRenderer(device: device)
         
         
         print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
@@ -151,8 +145,6 @@ class Renderer: NSObject, MTKViewDelegate
             let clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         #endif
 
-        
-        let vp = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
         //        emitter.update()
         particleSystem.update()
         
@@ -174,7 +166,7 @@ class Renderer: NSObject, MTKViewDelegate
 //        emitter.draw(renderEncoder: renderEncoder, vp: vp)
         
         // Draw particles
-        particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
+        particleSystem.draw(renderEncoder: renderEncoder)
 
         
         if enablePostProcessing {

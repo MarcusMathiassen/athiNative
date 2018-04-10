@@ -929,7 +929,7 @@
                                                             </popUpButtonCell>
                                                         </popUpButton>
                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KRH-4N-5QA">
-                                                            <rect key="frame" x="36" y="54" width="128" height="32"/>
+                                                            <rect key="frame" x="14" y="39" width="63" height="32"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <buttonCell key="cell" type="push" title="Pause" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="0MW-sD-7EH">
                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
@@ -952,6 +952,17 @@
                                                             <rect key="frame" x="34" y="478" width="131" height="5"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         </box>
+                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oCI-vg-bxf">
+                                                            <rect key="frame" x="82" y="39" width="111" height="32"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <buttonCell key="cell" type="push" title="Add Particles" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="dki-WN-KZB">
+                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                <font key="font" metaFont="system"/>
+                                                            </buttonCell>
+                                                            <connections>
+                                                                <action selector="addParticlesButton:" target="XfG-lQ-9wD" id="YOa-pO-mEX"/>
+                                                            </connections>
+                                                        </button>
                                                     </subviews>
                                                     <animations>
                                                         <caTransition key="subviews">

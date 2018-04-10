@@ -173,6 +173,19 @@ class MACOSViewController: NSViewController {
         RunLoop.current.add(timer!, forMode: .defaultRunLoopMode)
     }
 
+    @IBAction func addParticlesButton(_ sender: NSButton)
+    {
+        for j in stride(from: 0, to: framebufferWidth, by: 50)
+        {
+            for k in stride(from: 0, to: framebufferHeight, by: 50)
+            {
+                let col = renderer.particleSystem.particleColor
+                let pos = float2(j,k)
+                renderer.particleSystem.addParticle(position: pos, color: col, radius: 1.0)
+            }
+        }
+
+    }
     @IBAction func showMenuView(_ sender: NSButton) {
         let showMenu = (sender.intValue == 0) ? false : true
         if showMenu { menuView.animator().isHidden = false }
