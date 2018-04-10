@@ -54,17 +54,18 @@ struct Particle
 
 final class ParticleSystem
 {
+    /**
+        Particle data for the CPU
+     */
+    var particles: [Particle] = []
+    
+    
     struct ParticleData
     {
         var position: float2
         var color:    float4
         var size:     Float
-    };
-    
-    /**
-        Particle data for the CPU
-     */
-    var particles: [Particle] = []
+    }
     
     /**
         Particle data for the GPU
@@ -104,7 +105,7 @@ final class ParticleSystem
         Static data uploaded once, and updated when numVerticesPerParticle is changed
      */
     private var vertices: [float2] = []
-
+    private var indices: [UInt16] = []
     /**
         Dynamic data updated each frame. Each element represents the color of a single particle
      */
@@ -117,10 +118,9 @@ final class ParticleSystem
 
     // Metal stuff
     private var device: MTLDevice
-
     private var particleDataBuffer: MTLBuffer
     private var vertexBuffer: MTLBuffer
-
+    private var indexBuffer: MTLBuffer
     private var pipelineState: MTLRenderPipelineState?
 
     init(device: MTLDevice)
@@ -149,6 +149,7 @@ final class ParticleSystem
         allocatedMemoryForParticles = preAllocatedParticles
         particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
         vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: .storageModePrivate)!
+        indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle, options: .storageModePrivate)!
 
         buildVertices(numVertices: numVerticesPerParticle)
     }
@@ -166,12 +167,14 @@ final class ParticleSystem
         renderEncoder.setVertexBuffer(particleDataBuffer,     offset: 0, index: 1)
         renderEncoder.setVertexBytes(&viewportSize,    length: MemoryLayout<float2>.stride, index: 2)
 
-        renderEncoder.drawPrimitives(
+        renderEncoder.drawIndexedPrimitives(
             type: .triangle,
-            vertexStart: 0,
-            vertexCount: vertices.count,
-            instanceCount: particles.count
-        )
+            indexCount: indices.count,
+            indexType: .uint16,
+            indexBuffer: indexBuffer,
+            indexBufferOffset: 0,
+            instanceCount: particles.count)
+        
     }
     
     private func updateGPUBuffers()
@@ -294,23 +297,28 @@ final class ParticleSystem
         }
     }
 
-    public func setVerticesPerParticle(num: Int) {
+    public func setVerticesPerParticle(num: Int)
+    {
         numVerticesPerParticle = num
         shouldUpdate = true
     }
 
-    private func buildVertices(numVertices: Int) {
+    private func buildVertices(numVertices: Int)
+    {
         vertices.removeAll()
+        indices.removeAll()
 
         // Setup the particle vertices
-        var k: Float = 0
+        var k: Float = 1
         var lastVert = float2(0)
-        for i in 0 ..< numVertices + 3 {
+        
+        indices.append(UInt16(0))
+        for i in 0 ..< numVertices+3 {
             switch k
             {
             case 0:
                 k += 1
-                vertices.append(lastVert)
+                indices.append(UInt16(i-2))
             case 1:
                 k += 1
                 let cont = Float(i) * Float.pi * 2 / Float(numVertices)
@@ -318,19 +326,23 @@ final class ParticleSystem
                 let y = sin(cont)
                 lastVert = float2(x, y)
                 vertices.append(lastVert)
+                indices.append(UInt16(i))
             case 2:
-                k += 1
                 k = 0
-                vertices.append(float2(0, 0))
+                indices.append(UInt16(0)) // middle
+
             default:
                 k = 0
             }
         }
-
+        
         vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<float2>.stride * vertices.count, options: .cpuCacheModeWriteCombined)!
+        indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.stride * indices.count, options: .cpuCacheModeWriteCombined)!
+
     }
 
-    private func collisionCheck(_ a: Particle, _ b: Particle) -> Bool {
+    private func collisionCheck(_ a: Particle, _ b: Particle) -> Bool
+    {
         // Local variables
         let ax = a.pos.x
         let ay = a.pos.y
@@ -362,8 +374,8 @@ final class ParticleSystem
     // Collisions response between two circles with varying radius and mass.
     private func collisionResolve(_ a: inout Particle, _ b: inout Particle) {
         // Local variables
-        var dx = b.pos.x - a.pos.x
-        var dy = b.pos.y - a.pos.y
+        let dx = b.pos.x - a.pos.x
+        let dy = b.pos.y - a.pos.y
         let vdx = b.vel.x - a.vel.x
         let vdy = b.vel.y - a.vel.y
         let a_vel = a.vel
