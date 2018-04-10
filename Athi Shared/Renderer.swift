@@ -22,9 +22,13 @@ var framebufferWidth: Float = 0
 
 var viewport = float2(512, 512)
 
-class Renderer: NSObject, MTKViewDelegate {
+class Renderer: NSObject, MTKViewDelegate
+{
     var wireframeMode: Bool = false
     var fillMode: MTLTriangleFillMode = .fill
+    
+    
+    static var pixelFormat = MTLPixelFormat.bgra8Unorm
 
     var primitiveRenderer: PrimitiveRenderer
 
@@ -47,19 +51,53 @@ class Renderer: NSObject, MTKViewDelegate {
     
     var emitter: Emitter
 
-    var texture: MTLTexture
+    var texture0: MTLTexture
+    var texture1: MTLTexture
 
     init?(view: MTKView)
     {
+        device = view.device!
+        
+        // CrossPlatform stuff
+        #if os(macOS)
+        print("macOS_GPUFamily1_v1: ",device.supportsFeatureSet(.macOS_GPUFamily1_v1))
+        print("macOS_GPUFamily1_v2: ",device.supportsFeatureSet(.macOS_GPUFamily1_v2))
+        print("macOS_GPUFamily1_v3: ",device.supportsFeatureSet(.macOS_GPUFamily1_v3))
+        print("macOS_ReadWriteTextureTier2: ",device.supportsFeatureSet(.macOS_ReadWriteTextureTier2))
+        print("osx_GPUFamily1_v1: ",device.supportsFeatureSet(.osx_GPUFamily1_v1))
+        print("osx_GPUFamily1_v2: ",device.supportsFeatureSet(.osx_GPUFamily1_v2))
+        print("osx_ReadWriteTextureTier2: ",device.supportsFeatureSet(.osx_ReadWriteTextureTier2))
+        #else
+        print("iOS_GPUFamily1_v1: ", device.supportsFeatureSet(.iOS_GPUFamily1_v1))
+        print("iOS_GPUFamily1_v2: ", device.supportsFeatureSet(.iOS_GPUFamily1_v2))
+        print("iOS_GPUFamily1_v3: ", device.supportsFeatureSet(.iOS_GPUFamily1_v3))
+        print("iOS_GPUFamily1_v4: ", device.supportsFeatureSet(.iOS_GPUFamily1_v4))
+        print("iOS_GPUFamily2_v1: ", device.supportsFeatureSet(.iOS_GPUFamily2_v1))
+        print("iOS_GPUFamily2_v2: ", device.supportsFeatureSet(.iOS_GPUFamily2_v2))
+        print("iOS_GPUFamily2_v3: ", device.supportsFeatureSet(.iOS_GPUFamily2_v3))
+        print("iOS_GPUFamily2_v4: ", device.supportsFeatureSet(.iOS_GPUFamily2_v4))
+        print("iOS_GPUFamily3_v1: ", device.supportsFeatureSet(.iOS_GPUFamily3_v1))
+        print("iOS_GPUFamily3_v2: ", device.supportsFeatureSet(.iOS_GPUFamily3_v2))
+        print("iOS_GPUFamily3_v3: ", device.supportsFeatureSet(.iOS_GPUFamily3_v3))
+        print("iOS_GPUFamily4_v1: ", device.supportsFeatureSet(.iOS_GPUFamily4_v1))
+        #endif
+        
+        
         view.autoResizeDrawable = true // auto updates the views resolution on resizing
         view.preferredFramesPerSecond = 60
         view.sampleCount = 1
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
-        view.colorPixelFormat = MTLPixelFormat.bgr10a2Unorm
+        view.colorPixelFormat = Renderer.pixelFormat
         view.framebufferOnly = false
 
-        device = view.device!
+        
+        
         primitiveRenderer = PrimitiveRenderer(device: device)
+        
+        
+        print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
+        print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
+        print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
 
         let textureDesc = MTLTextureDescriptor()
         textureDesc.height = Int(framebufferHeight)
@@ -69,7 +107,8 @@ class Renderer: NSObject, MTKViewDelegate {
         textureDesc.pixelFormat = view.colorPixelFormat
         textureDesc.resourceOptions = .storageModePrivate
         textureDesc.usage = [.shaderRead, .shaderWrite]
-        texture = device.makeTexture(descriptor: textureDesc)!
+        texture0 = device.makeTexture(descriptor: textureDesc)!
+        texture1 = device.makeTexture(descriptor: textureDesc)!
 
         quad = Quad(device: device)
 
@@ -112,56 +151,57 @@ class Renderer: NSObject, MTKViewDelegate {
             let clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         #endif
 
-        let renderPassDesc = view.currentRenderPassDescriptor!
+        
+        let vp = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
+        //        emitter.update()
+        particleSystem.update()
+        
+        
+        var renderPassDesc = MTLRenderPassDescriptor()
         renderPassDesc.colorAttachments[0].clearColor = clearColor
-        renderPassDesc.colorAttachments[0].texture = texture
+        renderPassDesc.colorAttachments[0].texture = texture0
         renderPassDesc.colorAttachments[0].loadAction = .clear
         renderPassDesc.colorAttachments[0].storeAction = .store
-
+        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        renderPassDesc.colorAttachments[1].texture = texture1
+        renderPassDesc.colorAttachments[1].loadAction = .clear
+        renderPassDesc.colorAttachments[1].storeAction = .store
         var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
         renderEncoder.label = "Draw to texture"
         renderEncoder.setTriangleFillMode(fillMode)
-
-        let vp = makeOrtho(left: 0, right: screenWidth, bottom: 0, top: screenHeight, near: -1, far: 1)
-
-        particleSystem.update()
         
-        
-//        emitter.update()
 //        emitter.draw(renderEncoder: renderEncoder, vp: vp)
         
         // Draw particles
         particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
 
+        
         if enablePostProcessing {
-            // Blur
-            for _ in 0 ..< postProcessingSamples {
-                quad.gaussianBlur(renderEncoder: renderEncoder, texture: texture, sigma: blurStrength)
-            }
             
-//            emitter.draw(renderEncoder: renderEncoder, vp: vp)
-
-            // Draw particles
-            particleSystem.draw(renderEncoder: renderEncoder, vp: vp)
+            quad.gaussianBlur(
+                renderEncoder: renderEncoder,
+                texture: texture0,
+                sigma: blurStrength,
+                samples: postProcessingSamples)
+            
+            quad.draw(renderEncoder: renderEncoder, texture: texture1)
         }
+        
         
         // Draw to view
         renderEncoder.endEncoding()
-//
-//         let kernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
-//         kernel.encode(commandBuffer: commandBuffer, inPlaceTexture: &texture, fallbackCopyAllocator: nil)
-//
-//        
-        renderPassDesc.colorAttachments[0].clearColor = clearColor
-        renderPassDesc.colorAttachments[0].texture = view.currentDrawable?.texture
-        renderPassDesc.colorAttachments[0].loadAction = .clear
-        renderPassDesc.colorAttachments[0].storeAction = .store
-
+        
+        renderPassDesc = view.currentRenderPassDescriptor!
+//        renderPassDesc.colorAttachments[0].clearColor = clearColor
+//        renderPassDesc.colorAttachments[0].texture = view.currentDrawable?.texture
+//        renderPassDesc.colorAttachments[0].loadAction = .clear
+//        renderPassDesc.colorAttachments[0].storeAction = .store
+        
         renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
         renderEncoder.label = "Draw texture to view"
-        quad.draw(renderEncoder: renderEncoder, texture: texture)
-        
+        quad.draw(renderEncoder: renderEncoder, texture: texture0)
+
         renderEncoder.endEncoding()
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
@@ -219,19 +259,19 @@ class Renderer: NSObject, MTKViewDelegate {
 
         viewportSize.x = framebufferWidth
         viewportSize.y = framebufferHeight
-
+        
+        let textureDesc = MTLTextureDescriptor()
+        textureDesc.height = Int(framebufferHeight)
+        textureDesc.width = Int(framebufferWidth)
+        textureDesc.sampleCount = 1
+        textureDesc.textureType = .type2D
+        textureDesc.pixelFormat = Renderer.pixelFormat
+        textureDesc.resourceOptions = .storageModePrivate
+        textureDesc.usage = [.shaderRead, .shaderWrite]
+        texture0 = device.makeTexture(descriptor: textureDesc)!
+        texture1 = device.makeTexture(descriptor: textureDesc)!
+        
         #if os(macOS)
-
-            let textureDesc = MTLTextureDescriptor()
-            textureDesc.height = Int(framebufferHeight)
-            textureDesc.width = Int(framebufferWidth)
-            textureDesc.sampleCount = 1
-            textureDesc.textureType = .type2D
-            textureDesc.pixelFormat = view.colorPixelFormat
-            textureDesc.resourceOptions = .storageModePrivate
-            textureDesc.usage = [.shaderRead, .shaderWrite]
-            texture = device.makeTexture(descriptor: textureDesc)!
-
             let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)
             view.addTrackingArea(area)
         #endif

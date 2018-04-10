@@ -196,9 +196,6 @@ class MACOSViewController: NSViewController {
 
         framebufferWidth = Float(view.frame.width) * pixelScale
         framebufferHeight = Float(view.frame.height) * pixelScale
-
-        
-        
         
         guard let mtkView = self.view as? MTKView else {
             print("View attached to ViewController is not an MTKView")
@@ -210,10 +207,9 @@ class MACOSViewController: NSViewController {
             print("Metal is not supported on this device")
             return
         }
-
-        print(defaultDevice.name)
+        
         mtkView.device = defaultDevice
-
+        
         guard let newRenderer = Renderer(view: mtkView) else {
             print("Renderer cannot be initialized")
             return

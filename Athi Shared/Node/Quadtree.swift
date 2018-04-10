@@ -29,13 +29,16 @@ struct Rect {
     }
 }
 
-final class Quadtree {
+final class Quadtree
+{
     static var maxCapacityPerNode: Int = 50
     static var maxDepth: Int = 5
-    private static var data: [Particle]? = []
+    private static var data: [Particle] = []
 
     var bounds: Rect
     var depth: Int = 0
+    
+    var hasSplit: Bool = false
 
     var indices: [Int] = []
 
@@ -77,14 +80,17 @@ final class Quadtree {
         se = Quadtree(depth: depth + 1, bounds: SE)
         nw = Quadtree(depth: depth + 1, bounds: NW)
         ne = Quadtree(depth: depth + 1, bounds: NE)
+        
+        
+        hasSplit = true
     }
 
     /**
      Inserts all elements into the quadtree
      */
-    func input(data: [Particle]?) {
+    func input(data: [Particle]) {
         Quadtree.data = data
-        for obj in data! {
+        for obj in data {
             insert(obj.id)
         }
     }
@@ -93,7 +99,7 @@ final class Quadtree {
      Returns true if this node contains the index
      */
     func contains(_ id: Int) -> Bool {
-        return bounds.containsPoint(position: Quadtree.data![id].pos, radius: Quadtree.data![id].radius)
+        return bounds.containsPoint(position: Quadtree.data[id].pos, radius: Quadtree.data[id].radius)
     }
 
     /**
@@ -101,7 +107,7 @@ final class Quadtree {
      */
     func insert(_ id: Int) {
         // If this node has split add it to the children instead
-        if sw != nil {
+        if hasSplit {
             if sw?.contains(id) ?? false { sw?.insert(id) }
             if se?.contains(id) ?? false { se?.insert(id) }
             if nw?.contains(id) ?? false { nw?.insert(id) }
@@ -134,7 +140,7 @@ final class Quadtree {
      Returns all nodes that contains objects
      */
     func getNodesOfIndices(containerOfNodes: inout [[Int]]) {
-        if sw != nil {
+        if hasSplit {
             sw?.getNodesOfIndices(containerOfNodes: &containerOfNodes)
             se?.getNodesOfIndices(containerOfNodes: &containerOfNodes)
             nw?.getNodesOfIndices(containerOfNodes: &containerOfNodes)
@@ -151,7 +157,7 @@ final class Quadtree {
      Returns the neighbour nodes to the input object
      */
     func getNeighbours(containerOfNodes: inout [[Int]], p: Particle) {
-        if sw != nil {
+        if hasSplit {
             if (sw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { sw?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
             if (se?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { se?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
             if (nw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { nw?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
@@ -168,7 +174,7 @@ final class Quadtree {
      Colors neighbour nodes to the input object
      */
     func colorNeighbours(p: Particle, color: float4) {
-        if sw != nil {
+        if hasSplit {
             if (sw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { sw?.colorNeighbours(p: p, color: color) }
             if (se?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { se?.colorNeighbours(p: p, color: color) }
             if (nw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { nw?.colorNeighbours(p: p, color: color) }

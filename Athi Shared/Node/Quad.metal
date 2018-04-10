@@ -19,6 +19,18 @@ struct BasicVertex {
     float2 uv;
 };
 
+// Our Quad vertices
+constexpr constant BasicVertex vertices [] =
+{
+    {  float2(-1,  1), float2(0, 1) },
+    {  float2( 1,  1), float2(1, 1) },
+    {  float2( 1, -1), float2(1, 0) },
+    
+    {  float2(-1,  1), float2(0, 1) },
+    {  float2( 1, -1), float2(1, 0) },
+    {  float2(-1, -1), float2(0, 0) },
+};
+
 float4 blur13(texture2d<float>  image,
               float2 uv,
               float2 resolution,
@@ -41,16 +53,15 @@ float4 blur13(texture2d<float>  image,
     return color;
 }
 
-vertex Vertex quadVert(    constant BasicVertex *basic_vertex    [[buffer(0)]],
-                           uint vid                              [[vertex_id]])
+vertex Vertex quadVert(uint vid [[vertex_id]])
 {
     Vertex vert;
-    vert.uv = float2(basic_vertex[vid].uv.x, 1 - basic_vertex[vid].uv.y);
-    vert.position = float4(basic_vertex[vid].position, 0, 1);
+    vert.uv = float2(vertices[vid].uv.x, 1 - vertices[vid].uv.y);
+    vert.position = float4(vertices[vid].position, 0, 1);
     return vert;
 }
 
-fragment float4 gaussianBlurFrag(    Vertex              vert            [[stage_in]],
+fragment float4 gaussianBlurFrag(   Vertex              vert            [[stage_in]],
                                     constant float2*    resolution      [[buffer(0)]],
                                     constant float2*    direction       [[buffer(1)]],
                                     texture2d<float>     colorTexture    [[texture(0)]])
@@ -65,9 +76,6 @@ fragment float4 quadFrag(Vertex              vert           [[stage_in]],
     constexpr sampler textureSampler (mag_filter::linear,
                                       min_filter::linear);
     
-    // Sample the texture to obtain a color
-    const float4 colorSample = colorTexture.sample(textureSampler, vert.uv);
-    
     // We return the color of the texture
-    return colorSample;
+    return colorTexture.sample(textureSampler, vert.uv);
 }

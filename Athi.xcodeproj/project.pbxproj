@@ -138,12 +138,12 @@
 			children = (
 				90027F8720780CF900FC6980 /* PrimitiveShapes.swift */,
 				90027F8B207811BC00FC6980 /* primitive.metal */,
+				900B3B28207553B600569776 /* Particle.metal */,
 				900B3B1C2075490900569776 /* ParticleSystem .swift */,
 				901D699D207BB0E40009DC17 /* Emitter.swift */,
 				9051D9662076CDCE00E2DB51 /* Quad.swift */,
 				9051D96A2076D17200E2DB51 /* Quad.metal */,
 				9051D9622076905200E2DB51 /* Quadtree.swift */,
-				900B3B28207553B600569776 /* Particle.metal */,
 				900B3B18207538A900569776 /* Entity.swift */,
 				900B3B242075512800569776 /* Node.swift */,
 			);

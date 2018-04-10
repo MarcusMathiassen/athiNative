@@ -67,7 +67,9 @@ class ParticleSystem {
     var useQuadtree: Bool = true
     var hasInitialVelocity: Bool = true
     var useTreeOptimalSize: Bool = true
-    var preAllocatedParticles = 10000
+    
+    
+    var preAllocatedParticles = 100000
 
     var samples: Int = 1
     
@@ -80,10 +82,22 @@ class ParticleSystem {
     
     var numVerticesPerParticle = 120
 
+    
+    /**
+        Static data uploaded once, and updated when numVerticesPerParticle is changed
+     */
     private var positions: [float2] = []
+    
+    /**
+        Dynamic data updated each frame. Each element represents the color of a single particle
+     */
     private var colors: [float4] = []
+    
+    /**
+        Dynamic data updated each frame. Each element represents the mvp of a single particle
+     */
     private var models: [float4x4] = []
-
+    
     private var vp = float4x4(0)
     private var tempGravityForce = float2(0)
 
@@ -105,24 +119,24 @@ class ParticleSystem {
         let library = device.makeDefaultLibrary()!
         let vertexFunc = library.makeFunction(name: "particleVert")!
         let fragFunc = library.makeFunction(name: "particleFrag")!
-
+        
+        
         let pipelineDesc = MTLRenderPipelineDescriptor()
         pipelineDesc.label = "pipelineDesc"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
-        // pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-        // pipelineDesc.colorAttachments[0].isBlendingEnabled = true
-        
+        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
+
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
         } catch {
             print("ParticleSystem Pipeline: Creating pipeline state failed")
         }
         
-        self.positionBuffer = device.makeBuffer(length: MemoryLayout<float2>.size * numVerticesPerParticle, options: .cpuCacheModeWriteCombined)!
-        self.colorBuffer = device.makeBuffer(length: MemoryLayout<float4>.size * preAllocatedParticles, options: .cpuCacheModeWriteCombined)!
-        self.modelBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.size * preAllocatedParticles, options: .cpuCacheModeWriteCombined)!
+        self.positionBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: .cpuCacheModeWriteCombined)!
+        self.colorBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * preAllocatedParticles, options: .cpuCacheModeWriteCombined)!
+        self.modelBuffer = device.makeBuffer(length: MemoryLayout<float4x4>.stride * preAllocatedParticles, options: .cpuCacheModeWriteCombined)!
         
         buildVertices(numVertices: numVerticesPerParticle)
     }
@@ -135,10 +149,10 @@ class ParticleSystem {
 
         renderEncoder?.label = "ParticleSystem"
         renderEncoder?.setRenderPipelineState(pipelineState!)
-
-        colorBuffer = device.makeBuffer(bytes: colors, length: MemoryLayout<float4>.size * particles.count, options: .cpuCacheModeWriteCombined)!
-        modelBuffer = device.makeBuffer(bytes: models, length: MemoryLayout<float4x4>.size * particles.count, options: .cpuCacheModeWriteCombined)!
-
+        
+        colorBuffer.contents().copyMemory(from: colors, byteCount: colors.count * MemoryLayout<float4>.stride)
+        modelBuffer.contents().copyMemory(from: models, byteCount: models.count * MemoryLayout<float4x4>.stride)
+        
         renderEncoder?.setVertexBuffer(positionBuffer, offset: 0, index: 0)
         renderEncoder?.setVertexBuffer(colorBuffer, offset: 0, index: 1)
         renderEncoder?.setVertexBuffer(modelBuffer, offset: 0, index: 2)

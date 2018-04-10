@@ -8,112 +8,114 @@
 
 import MetalKit
 
-class Quad {
-    struct Vertex {
-        var position: float2
-        var uv: float2
-    }
-
-    var vertexBuffer: MTLBuffer?
-
-    weak var device: MTLDevice?
+final class Quad
+{
+    var device: MTLDevice
     var pipelineState: MTLRenderPipelineState?
     var gaussianBlurPipelineState: MTLRenderPipelineState?
-
-    init(device: MTLDevice?) {
+    
+    init(device: MTLDevice)
+    {
         self.device = device
 
-        let vertices: [Vertex] = [
-            Vertex(position: float2(-1, 1), uv: float2(0, 1)),
-            Vertex(position: float2(1, 1), uv: float2(1, 1)),
-            Vertex(position: float2(1, -1), uv: float2(1, 0)),
-
-            Vertex(position: float2(-1, 1), uv: float2(0, 1)),
-            Vertex(position: float2(1, -1), uv: float2(1, 0)),
-            Vertex(position: float2(-1, -1), uv: float2(0, 0)),
-        ]
-
-        vertexBuffer = device?.makeBuffer(bytes: vertices, length: MemoryLayout<Vertex>.stride * vertices.count, options: .cpuCacheModeWriteCombined)
-
-        let library = device?.makeDefaultLibrary()!
-        let vertexFunc = library?.makeFunction(name: "quadVert")
-        let fragFunc = library?.makeFunction(name: "quadFrag")
+        let library = device.makeDefaultLibrary()!
+        let vertexFunc = library.makeFunction(name: "quadVert")
+        let fragFunc = library.makeFunction(name: "quadFrag")
 
         let pipelineDesc = MTLRenderPipelineDescriptor()
         pipelineDesc.label = "Quad"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm
+        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
+        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
+        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
         do {
-            try pipelineState = device?.makeRenderPipelineState(descriptor: pipelineDesc)
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
 
-        let blurfragFunc = library?.makeFunction(name: "gaussianBlurFrag")
+        let blurfragFunc = library.makeFunction(name: "gaussianBlurFrag")
 
         let blurPipelineDesc = MTLRenderPipelineDescriptor()
         blurPipelineDesc.label = "GaussianBlur"
         blurPipelineDesc.vertexFunction = vertexFunc
         blurPipelineDesc.fragmentFunction = blurfragFunc
-        blurPipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm
+        blurPipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
 
         do {
-            try gaussianBlurPipelineState = device?.makeRenderPipelineState(descriptor: blurPipelineDesc)
+            try gaussianBlurPipelineState = device.makeRenderPipelineState(descriptor: blurPipelineDesc)
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
     }
-
-    func gaussianBlur(renderEncoder: MTLRenderCommandEncoder?, texture: MTLTexture?, sigma: Float) {
+    
+    func gaussianBlur(
+        renderEncoder: MTLRenderCommandEncoder,
+        texture: MTLTexture,
+        sigma: Float,
+        samples: Int)
+    {
+        
         var dir: float2
+        renderEncoder.pushDebugGroup("Gauassian Blur")
+        renderEncoder.setTriangleFillMode(.fill)
+        renderEncoder.setRenderPipelineState(gaussianBlurPipelineState!)
 
-        renderEncoder?.pushDebugGroup("Gauassian Blur")
-        renderEncoder?.setTriangleFillMode(.fill)
-        renderEncoder?.setRenderPipelineState(gaussianBlurPipelineState!)
+        renderEncoder.setFragmentBytes(&viewportSize, length: MemoryLayout<float2>.stride, index: 0)
+        renderEncoder.setFragmentTexture(texture, index: 0)
 
-        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder?.setFragmentBytes(&viewportSize, length: MemoryLayout<float2>.stride, index: 0)
-        renderEncoder?.setFragmentTexture(texture!, index: 0)
+        
+        for iter in 0 ..< samples {
+            
+            renderEncoder.pushDebugGroup("Sample: " + String(iter))
+            
+            dir = float2(sigma, 0)
+            renderEncoder.pushDebugGroup("Horizontal")
+            renderEncoder.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
+            renderEncoder.drawPrimitives(
+                type: .triangle,
+                vertexStart: 0,
+                vertexCount: 6
+            )
+            renderEncoder.popDebugGroup()
 
-        dir = float2(sigma, 0)
-        renderEncoder?.pushDebugGroup("Horizontal")
-        renderEncoder?.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
-        renderEncoder?.drawPrimitives(
-            type: .triangle,
-            vertexStart: 0,
-            vertexCount: 6
-        )
-        renderEncoder?.popDebugGroup()
+            renderEncoder.pushDebugGroup("Vertical")
 
-        renderEncoder?.pushDebugGroup("Vertical")
+            dir = float2(0, sigma)
+            renderEncoder.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
+            renderEncoder.drawPrimitives(
+                type: .triangle,
+                vertexStart: 0,
+                vertexCount: 6
+            )
+            renderEncoder.popDebugGroup()
+        
+            renderEncoder.popDebugGroup()
+        }
 
-        dir = float2(0, sigma)
-        renderEncoder?.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
-        renderEncoder?.drawPrimitives(
-            type: .triangle,
-            vertexStart: 0,
-            vertexCount: 6
-        )
-        renderEncoder?.popDebugGroup()
-
-        renderEncoder?.popDebugGroup()
+        renderEncoder.popDebugGroup()
     }
 
-    func draw(renderEncoder: MTLRenderCommandEncoder?, texture: MTLTexture?) {
-        renderEncoder?.pushDebugGroup("Draw Fullscreen Quad")
-        renderEncoder?.setRenderPipelineState(pipelineState!)
-        renderEncoder?.setTriangleFillMode(.fill)
+    func draw(renderEncoder: MTLRenderCommandEncoder, texture: MTLTexture)
+    {
+        renderEncoder.pushDebugGroup("Draw Fullscreen Quad")
+        renderEncoder.setRenderPipelineState(pipelineState!)
+        renderEncoder.setTriangleFillMode(.fill)
 
-        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder?.setFragmentTexture(texture!, index: 0)
+        renderEncoder.setFragmentTexture(texture, index: 0)
 
-        renderEncoder?.drawPrimitives(
+        renderEncoder.drawPrimitives(
             type: .triangle,
             vertexStart: 0,
             vertexCount: 6
         )
-        renderEncoder?.popDebugGroup()
+        renderEncoder.popDebugGroup()
     }
 }

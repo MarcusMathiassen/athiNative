@@ -63,7 +63,6 @@ class IOSViewController: UIViewController {
     }
 
     override func touchesBegan(_: Set<UITouch>, with _: UIEvent?) {
-        print("TOUCHED")
     }
 
     func startAccelerometers() {
@@ -137,6 +136,7 @@ class IOSViewController: UIViewController {
 
         startAccelerometers()
         startGyros()
+        
         view.isMultipleTouchEnabled = true
 
         guard let mtkView = self.view as? MTKView else {

@@ -785,7 +785,7 @@
                                                         <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q2u-3e-CaE">
                                                             <rect key="frame" x="31" y="171" width="19" height="88"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <sliderCell key="cell" state="on" alignment="left" maxValue="100" doubleValue="10" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
+                                                            <sliderCell key="cell" state="on" alignment="left" maxValue="50" doubleValue="10" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
                                                             <connections>
                                                                 <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="2jj-R0-Xhg"/>
                                                             </connections>
@@ -970,7 +970,6 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                                             </subviews>
                                         </view>
                                         <color key="borderColor" red="1" green="1" blue="1" alpha="0.41999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
-                                        <font key="titleFont" metaFont="message" size="11"/>
                                     </box>
                                 </subviews>
                                 <userDefinedRuntimeAttributes>
