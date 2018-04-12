@@ -9,17 +9,17 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct ParticleOut
-{
-    float4 position[[position]];
-    float4 color;
-};
-
 struct ParticleIn
 {
     float2  position;
     float4  color;
     float   size;
+};
+
+struct ParticleOut
+{
+    float4 position[[position]];
+    float4 color;
 };
 
 struct FragmentOut
@@ -35,7 +35,7 @@ vertex ParticleOut particleVert(constant float2 *vertices          [[buffer(0)]]
                                 uint iid                           [[instance_id]])
 {
     const float2 fpos = (pIn[iid].size * vertices[vid] + pIn[iid].position) / (*viewportSize / 2.0);
-    
+
     ParticleOut pOut;
     pOut.position = float4(fpos - 1, 0, 1);
     pOut.color = pIn[iid].color;

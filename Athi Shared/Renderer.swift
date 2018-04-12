@@ -93,16 +93,16 @@ class Renderer: NSObject, MTKViewDelegate
         print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
         print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
 
-        let textureDesc = MTLTextureDescriptor()
-        textureDesc.height = Int(framebufferHeight)
-        textureDesc.width = Int(framebufferWidth)
-        textureDesc.sampleCount = 1
-        textureDesc.textureType = .type2D
-        textureDesc.pixelFormat = view.colorPixelFormat
-        textureDesc.resourceOptions = .storageModePrivate
-        textureDesc.usage = [.shaderRead, .shaderWrite]
-        texture0 = device.makeTexture(descriptor: textureDesc)!
-        texture1 = device.makeTexture(descriptor: textureDesc)!
+        let mainTextureDesc = MTLTextureDescriptor()
+        mainTextureDesc.height = Int(framebufferHeight)
+        mainTextureDesc.width = Int(framebufferWidth)
+        mainTextureDesc.sampleCount = 1
+        mainTextureDesc.textureType = .type2D
+        mainTextureDesc.pixelFormat = view.colorPixelFormat
+        mainTextureDesc.resourceOptions = .storageModePrivate
+        mainTextureDesc.usage = [.shaderRead, .shaderWrite]
+        texture0 = device.makeTexture(descriptor: mainTextureDesc)!
+        texture1 = device.makeTexture(descriptor: mainTextureDesc)!
 
         quad = Quad(device: device)
 
@@ -154,29 +154,29 @@ class Renderer: NSObject, MTKViewDelegate
         renderPassDesc.colorAttachments[0].texture = texture0
         renderPassDesc.colorAttachments[0].loadAction = .clear
         renderPassDesc.colorAttachments[0].storeAction = .store
-        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        
         renderPassDesc.colorAttachments[1].texture = texture1
+        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         renderPassDesc.colorAttachments[1].loadAction = .clear
         renderPassDesc.colorAttachments[1].storeAction = .store
+//
         var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
         renderEncoder.label = "Draw to texture"
         renderEncoder.setTriangleFillMode(fillMode)
-        
-//        emitter.draw(renderEncoder: renderEncoder, vp: vp)
         
         // Draw particles
         particleSystem.draw(renderEncoder: renderEncoder)
 
         
         if enablePostProcessing {
-            
+
             quad.gaussianBlur(
                 renderEncoder: renderEncoder,
                 texture: texture0,
                 sigma: blurStrength,
                 samples: postProcessingSamples)
-            
+
             quad.draw(renderEncoder: renderEncoder, texture: texture1)
         }
         
@@ -185,11 +185,6 @@ class Renderer: NSObject, MTKViewDelegate
         renderEncoder.endEncoding()
         
         renderPassDesc = view.currentRenderPassDescriptor!
-//        renderPassDesc.colorAttachments[0].clearColor = clearColor
-//        renderPassDesc.colorAttachments[0].texture = view.currentDrawable?.texture
-//        renderPassDesc.colorAttachments[0].loadAction = .clear
-//        renderPassDesc.colorAttachments[0].storeAction = .store
-        
         renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
         renderEncoder.label = "Draw texture to view"
         quad.draw(renderEncoder: renderEncoder, texture: texture0)
@@ -223,6 +218,9 @@ class Renderer: NSObject, MTKViewDelegate
             particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
             particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
 
+            
+
+
         case MouseOption.Drag:
             let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
             if gmouseAttachedToIDs.isEmpty {
@@ -252,16 +250,16 @@ class Renderer: NSObject, MTKViewDelegate
         viewportSize.x = framebufferWidth
         viewportSize.y = framebufferHeight
         
-        let textureDesc = MTLTextureDescriptor()
-        textureDesc.height = Int(framebufferHeight)
-        textureDesc.width = Int(framebufferWidth)
-        textureDesc.sampleCount = 1
-        textureDesc.textureType = .type2D
-        textureDesc.pixelFormat = Renderer.pixelFormat
-        textureDesc.resourceOptions = .storageModePrivate
-        textureDesc.usage = [.shaderRead, .shaderWrite]
-        texture0 = device.makeTexture(descriptor: textureDesc)!
-        texture1 = device.makeTexture(descriptor: textureDesc)!
+        let mainTextureDesc = MTLTextureDescriptor()
+        mainTextureDesc.height = Int(framebufferHeight)
+        mainTextureDesc.width = Int(framebufferWidth)
+        mainTextureDesc.sampleCount = 1
+        mainTextureDesc.textureType = .type2D
+        mainTextureDesc.pixelFormat = view.colorPixelFormat
+        mainTextureDesc.resourceOptions = .storageModePrivate
+        mainTextureDesc.usage = [.shaderRead, .shaderWrite]
+        texture0 = device.makeTexture(descriptor: mainTextureDesc)!
+        texture1 = device.makeTexture(descriptor: mainTextureDesc)!
         
         #if os(macOS)
             let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)

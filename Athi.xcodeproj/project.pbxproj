@@ -27,9 +27,9 @@
 		900B3B19207538A900569776 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B18207538A900569776 /* Entity.swift */; };
 		900B3B1A207538A900569776 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B18207538A900569776 /* Entity.swift */; };
 		900B3B1B207538A900569776 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B18207538A900569776 /* Entity.swift */; };
-		900B3B1D2075490900569776 /* ParticleSystem .swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem .swift */; };
-		900B3B1E2075490900569776 /* ParticleSystem .swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem .swift */; };
-		900B3B1F2075490900569776 /* ParticleSystem .swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem .swift */; };
+		900B3B1D2075490900569776 /* ParticleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem.swift */; };
+		900B3B1E2075490900569776 /* ParticleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem.swift */; };
+		900B3B1F2075490900569776 /* ParticleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem.swift */; };
 		900B3B2120754C9100569776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B2020754C9000569776 /* Input.swift */; };
 		900B3B2220754C9100569776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B2020754C9000569776 /* Input.swift */; };
 		900B3B2320754C9100569776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B2020754C9000569776 /* Input.swift */; };
@@ -61,6 +61,9 @@
 		90238DF22073912100D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF32073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF42073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
+		9046AACD207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */; };
+		9046AACE207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */; };
+		9046AACF207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */; };
 		9051D9632076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
 		9051D9642076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
 		9051D9652076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
@@ -81,7 +84,7 @@
 		900AE7EA2076566600465EAD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		900AE7EC207657F700465EAD /* Globals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
 		900B3B18207538A900569776 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
-		900B3B1C2075490900569776 /* ParticleSystem .swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ParticleSystem .swift"; sourceTree = "<group>"; };
+		900B3B1C2075490900569776 /* ParticleSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleSystem.swift; sourceTree = "<group>"; };
 		900B3B2020754C9000569776 /* Input.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Input.swift; sourceTree = "<group>"; };
 		900B3B242075512800569776 /* Node.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = "<group>"; };
 		900B3B28207553B600569776 /* Particle.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Particle.metal; sourceTree = "<group>"; };
@@ -103,6 +106,7 @@
 		900CAD3D20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		901D699D207BB0E40009DC17 /* Emitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emitter.swift; sourceTree = "<group>"; };
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
+		9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleSystem_SoA.swift; sourceTree = "<group>"; };
 		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
@@ -138,8 +142,7 @@
 			children = (
 				90027F8720780CF900FC6980 /* PrimitiveShapes.swift */,
 				90027F8B207811BC00FC6980 /* primitive.metal */,
-				900B3B28207553B600569776 /* Particle.metal */,
-				900B3B1C2075490900569776 /* ParticleSystem .swift */,
+				90D2EF2D207CC4DC00D5913C /* ParticleSystem */,
 				901D699D207BB0E40009DC17 /* Emitter.swift */,
 				9051D9662076CDCE00E2DB51 /* Quad.swift */,
 				9051D96A2076D17200E2DB51 /* Quad.metal */,
@@ -226,6 +229,16 @@
 				900CAD3D20729D6500AE60E9 /* Info.plist */,
 			);
 			path = "Athi macOS";
+			sourceTree = "<group>";
+		};
+		90D2EF2D207CC4DC00D5913C /* ParticleSystem */ = {
+			isa = PBXGroup;
+			children = (
+				900B3B28207553B600569776 /* Particle.metal */,
+				900B3B1C2075490900569776 /* ParticleSystem.swift */,
+				9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */,
+			);
+			path = ParticleSystem;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -361,6 +374,7 @@
 			files = (
 				9001438D2072AD5C009FB201 /* Utility.swift in Sources */,
 				900B3B252075512800569776 /* Node.swift in Sources */,
+				9046AACD207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				900AE7EB2076566600465EAD /* ViewController.swift in Sources */,
 				901D699E207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B2120754C9100569776 /* Input.swift in Sources */,
@@ -370,7 +384,7 @@
 				90238DF22073912100D25590 /* Math.swift in Sources */,
 				9051D96B2076D17200E2DB51 /* Quad.metal in Sources */,
 				900CAD3E20729D6500AE60E9 /* Shaders.metal in Sources */,
-				900B3B1D2075490900569776 /* ParticleSystem .swift in Sources */,
+				900B3B1D2075490900569776 /* ParticleSystem.swift in Sources */,
 				900CAD1820729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B29207553B600569776 /* Particle.metal in Sources */,
 				9051D9632076905200E2DB51 /* Quadtree.swift in Sources */,
@@ -385,6 +399,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9046AACE207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				9051D9642076905200E2DB51 /* Quadtree.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
 				901D699F207BB0E40009DC17 /* Emitter.swift in Sources */,
@@ -397,7 +412,7 @@
 				900CAD3F20729D6500AE60E9 /* Shaders.metal in Sources */,
 				90027F8D207811BC00FC6980 /* primitive.metal in Sources */,
 				9051D9682076CDCE00E2DB51 /* Quad.swift in Sources */,
-				900B3B1E2075490900569776 /* ParticleSystem .swift in Sources */,
+				900B3B1E2075490900569776 /* ParticleSystem.swift in Sources */,
 				900CAD2920729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B2A207553B600569776 /* Particle.metal in Sources */,
 				90027F8920780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
@@ -412,6 +427,7 @@
 			files = (
 				9001438F2072AD5C009FB201 /* Utility.swift in Sources */,
 				9001438B2072ABBC009FB201 /* ViewController.swift in Sources */,
+				9046AACF207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				900B3B272075512800569776 /* Node.swift in Sources */,
 				901D69A0207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B2320754C9100569776 /* Input.swift in Sources */,
@@ -421,7 +437,7 @@
 				90238DF42073912700D25590 /* Math.swift in Sources */,
 				9051D96D2076D17200E2DB51 /* Quad.metal in Sources */,
 				900CAD4020729D6500AE60E9 /* Shaders.metal in Sources */,
-				900B3B1F2075490900569776 /* ParticleSystem .swift in Sources */,
+				900B3B1F2075490900569776 /* ParticleSystem.swift in Sources */,
 				900CAD3720729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B2B207553B600569776 /* Particle.metal in Sources */,
 				9051D9652076905200E2DB51 /* Quadtree.swift in Sources */,
@@ -687,7 +703,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
-				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "Athi macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -716,7 +732,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
-				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_OPTIMIZATION_LEVEL = s;
 				INFOPLIST_FILE = "Athi macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

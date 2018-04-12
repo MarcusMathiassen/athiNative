@@ -18,9 +18,6 @@ struct Particle
     var radius: Float = 1
     var mass: Float = 0
 
-    var rotation: Float = 0
-    var torque: Float = 0
-
     mutating func borderCollision() {
         // Border collision
         if pos.x < 0 + radius {
@@ -46,9 +43,6 @@ struct Particle
         vel += acc
         pos += vel
         acc *= 0
-
-        torque *= 0.999
-        rotation += torque
     }
 }
 
@@ -87,8 +81,7 @@ final class ParticleSystem
     var hasInitialVelocity: Bool = true
     var useTreeOptimalSize: Bool = true
     
-    
-    var preAllocatedParticles = 1000
+    var preAllocatedParticles = 100
     private var allocatedMemoryForParticles: Int
 
     var samples: Int = 1
@@ -98,8 +91,7 @@ final class ParticleSystem
     var particleColor = float4(1)
     
     
-    var numVerticesPerParticle = 120
-
+    var numVerticesPerParticle = 36
     
     /**
         Static data uploaded once, and updated when numVerticesPerParticle is changed
@@ -173,16 +165,16 @@ final class ParticleSystem
             indexType: .uint16,
             indexBuffer: indexBuffer,
             indexBufferOffset: 0,
-            instanceCount: particles.count)
+            instanceCount: particleData.count)
         
     }
     
     private func updateGPUBuffers()
     {
         // Reallocate more if needed
-        if particleData.count > allocatedMemoryForParticles {
-            allocatedMemoryForParticles += 1000
-            particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
+        if particleData.count * MemoryLayout<ParticleData>.stride > particleDataBuffer.allocatedSize {
+            
+            particleDataBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
             particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
 
         } else {
@@ -224,10 +216,10 @@ final class ParticleSystem
 
                         quadtree?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
 
-                        //                    DispatchQueue.concurrentPerform(iterations: 8) { (i: Int) in
-                        //                        let (begin, end) = getBeginAndEnd(i: i, containerSize: containerOfNodes.count, segments: 8)
-                        //                        collisionQuadtree(containerOfNodes: containerOfNodes, begin: begin, end: end)
-                        //                    }
+//                        DispatchQueue.concurrentPerform(iterations: 8) { i in
+//                                                let (begin, end) = getBeginAndEnd(i: i, containerSize: listOfNodesOfIDs.count, segments: 8)
+//                                                collisionQuadtree(containerOfNodes: listOfNodesOfIDs, begin: begin, end: end)
+//                                            }
                         collisionQuadtree(containerOfNodes: listOfNodesOfIDs, begin: 0, end: listOfNodesOfIDs.count)
 
                     } else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
@@ -269,30 +261,17 @@ final class ParticleSystem
             tempGravityForce *= 0
         }
 
+        
         if enableMultithreading {
-            for _ in 0 ..< samples {
-                DispatchQueue.concurrentPerform(iterations: 4) { (i: Int) in
-                    let (begin, end) = getBeginAndEnd(i: i, containerSize: particles.count, segments: 4)
+            DispatchQueue.concurrentPerform(iterations: 8) { i in
+                let (begin, end) = getBeginAndEnd(i: i, containerSize: particles.count, segments: 8)
+                for _ in 0 ..< samples {
                     updateParticlesData(begin: begin, end: end)
                 }
             }
         } else {
             for _ in 0 ..< samples {
-                for i in 0 ..< particles.count {
-                    // Get the current particle data
-                    var p = particles[i]
-
-                    // Do transformations on the data
-                    p.acc = tempGravityForce
-                    if enableBorderCollision { p.borderCollision() }
-                    p.update()
-
-                    // Update the particle with the new data
-                    particles[i] = p
-
-                    // Update particleData
-                    particleData[i] = ParticleData(position: p.pos, color: colors[p.id], size: p.radius)
-                }
+                updateParticlesData(begin: 0, end: particles.count)
             }
         }
     }
@@ -303,42 +282,33 @@ final class ParticleSystem
         shouldUpdate = true
     }
 
-    private func buildVertices(numVertices: Int)
-    {
+    private func buildVertices(numVertices: Int) {
+        
+        // We cant draw anything with less than 3 vertices so just return
+        if numVertices < 3 { return }
+        
+        // Clear previous values
         vertices.removeAll()
         indices.removeAll()
-
-        // Setup the particle vertices
-        var k: Float = 1
-        var lastVert = float2(0)
         
-        indices.append(UInt16(0))
-        for i in 0 ..< numVertices+3 {
-            switch k
-            {
-            case 0:
-                k += 1
-                indices.append(UInt16(i-2))
-            case 1:
-                k += 1
+        // Add indices
+        for n in 0 ..< numVertices - 2 {
+            indices.append(UInt16(0))
+            indices.append(UInt16(n + 1))
+            indices.append(UInt16(n + 2))
+        }
+
+        // Add vertices
+        for i in 0 ..< numVertices {
                 let cont = Float(i) * Float.pi * 2 / Float(numVertices)
                 let x = cos(cont)
                 let y = sin(cont)
-                lastVert = float2(x, y)
-                vertices.append(lastVert)
-                indices.append(UInt16(i))
-            case 2:
-                k = 0
-                indices.append(UInt16(0)) // middle
-
-            default:
-                k = 0
-            }
+                vertices.append(float2(x, y))
         }
         
+        // Update the GPU buffers
         vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<float2>.stride * vertices.count, options: .cpuCacheModeWriteCombined)!
         indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.stride * indices.count, options: .cpuCacheModeWriteCombined)!
-
     }
 
     private func collisionCheck(_ a: Particle, _ b: Particle) -> Bool
@@ -389,38 +359,6 @@ final class ParticleSystem
 
         // A negative 'd' means the circles velocities are in opposite directions
         let d = dx * vdx + dy * vdy
-
-        // Rotation response
-        // w is the torque, r is the vector to the collision point from the center, v is the velocity vector
-        // ω = (cross(cp, v1) / r1 * friction + w2 * 0.1; r.x*v.y−r.y*v.x) / (r2x+r2y)
-        //
-//        let ar = a.radius
-//        let br = b.radius
-//
-//        let collision_depth = distance(b.pos, a.pos)
-//
-//        // contact angle
-//
-//        dx = b.pos.x - a.pos.x
-//        dy = b.pos.y - a.pos.y
-
-//        let collision_angle = atan2(dy, dx)
-//        let cos_angle = cos(collision_angle)
-//        let sin_angle = sin(collision_angle)
-
-//        let r1 = float2( collision_depth * 0.5 * cos_angle,  collision_depth * 0.5 * sin_angle)
-//        let r2 = float2(-collision_depth * 0.5 * cos_angle, -collision_depth * 0.5 * sin_angle)
-//        let v1 = a.vel
-//        let v2 = b.vel
-//
-//        func cross(_ v1: float2, _ v2: float2) -> Float {
-//            return (v1.x * v2.y) - (v1.y * v2.x)
-//        }
-
-//        let friction: Float = 0.1
-
-//        a.torque = (cross(normalize(r2), v1) / ar) * friction + b.torque * 0.5
-//        b.torque = (cross(normalize(r1), v2) / br) * friction + a.torque * 0.5
 
         // And we don't resolve collisions between circles moving away from eachother
         if d < 1e-11 {
