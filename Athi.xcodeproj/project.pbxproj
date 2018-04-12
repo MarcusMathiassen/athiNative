@@ -46,9 +46,6 @@
 		900CAD2E20729D6500AE60E9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD2C20729D6500AE60E9 /* Main.storyboard */; };
 		900CAD3720729D6500AE60E9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD3620729D6500AE60E9 /* AppDelegate.swift */; };
 		900CAD3C20729D6500AE60E9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD3A20729D6500AE60E9 /* Main.storyboard */; };
-		900CAD3E20729D6500AE60E9 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD0C20729D6300AE60E9 /* Shaders.metal */; };
-		900CAD3F20729D6500AE60E9 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD0C20729D6300AE60E9 /* Shaders.metal */; };
-		900CAD4020729D6500AE60E9 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD0C20729D6300AE60E9 /* Shaders.metal */; };
 		900CAD4120729D6500AE60E9 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD0D20729D6300AE60E9 /* Renderer.swift */; };
 		900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD0D20729D6300AE60E9 /* Renderer.swift */; };
 		900CAD4320729D6500AE60E9 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900CAD0D20729D6300AE60E9 /* Renderer.swift */; };
@@ -88,7 +85,6 @@
 		900B3B2020754C9000569776 /* Input.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Input.swift; sourceTree = "<group>"; };
 		900B3B242075512800569776 /* Node.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = "<group>"; };
 		900B3B28207553B600569776 /* Particle.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Particle.metal; sourceTree = "<group>"; };
-		900CAD0C20729D6300AE60E9 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		900CAD0D20729D6300AE60E9 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		900CAD0F20729D6500AE60E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		900CAD1420729D6500AE60E9 /* Athi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Athi.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -177,7 +173,6 @@
 			children = (
 				9000A069207531DA00EA056B /* Scene */,
 				9000A0642075315C00EA056B /* Node */,
-				900CAD0C20729D6300AE60E9 /* Shaders.metal */,
 				900CAD0D20729D6300AE60E9 /* Renderer.swift */,
 				900B3B2020754C9000569776 /* Input.swift */,
 				900AE7EC207657F700465EAD /* Globals.swift */,
@@ -383,7 +378,6 @@
 				900CAD4120729D6500AE60E9 /* Renderer.swift in Sources */,
 				90238DF22073912100D25590 /* Math.swift in Sources */,
 				9051D96B2076D17200E2DB51 /* Quad.metal in Sources */,
-				900CAD3E20729D6500AE60E9 /* Shaders.metal in Sources */,
 				900B3B1D2075490900569776 /* ParticleSystem.swift in Sources */,
 				900CAD1820729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B29207553B600569776 /* Particle.metal in Sources */,
@@ -409,7 +403,6 @@
 				90238DF32073912700D25590 /* Math.swift in Sources */,
 				900AE7EE207657F700465EAD /* Globals.swift in Sources */,
 				9051D96C2076D17200E2DB51 /* Quad.metal in Sources */,
-				900CAD3F20729D6500AE60E9 /* Shaders.metal in Sources */,
 				90027F8D207811BC00FC6980 /* primitive.metal in Sources */,
 				9051D9682076CDCE00E2DB51 /* Quad.swift in Sources */,
 				900B3B1E2075490900569776 /* ParticleSystem.swift in Sources */,
@@ -436,7 +429,6 @@
 				900CAD4320729D6500AE60E9 /* Renderer.swift in Sources */,
 				90238DF42073912700D25590 /* Math.swift in Sources */,
 				9051D96D2076D17200E2DB51 /* Quad.metal in Sources */,
-				900CAD4020729D6500AE60E9 /* Shaders.metal in Sources */,
 				900B3B1F2075490900569776 /* ParticleSystem.swift in Sources */,
 				900CAD3720729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B2B207553B600569776 /* Particle.metal in Sources */,
@@ -641,7 +633,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";
 				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;

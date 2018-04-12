@@ -27,30 +27,17 @@ class Renderer: NSObject, MTKViewDelegate
     var wireframeMode: Bool = false
     var fillMode: MTLTriangleFillMode = .fill
     
-    
+    static var clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
     static var pixelFormat = MTLPixelFormat.bgra8Unorm
 
     var framerate: Int = 0
     var frametime: Float = 0
     var deltaTime: Float = 0
 
-    var enableMPSPostProcessing: Bool = true
-    var enablePostProcessing: Bool = true
-    var postProcessingSamples: Int = 2
-    var blurStrength: Float = 4
-
     var particleSystem: ParticleSystem
 
     var device: MTLDevice
     let commandQueue: MTLCommandQueue?
-
-    var scene: Scene
-    var quad: Quad
-    
-    var emitter: Emitter
-
-    var texture0: MTLTexture
-    var texture1: MTLTexture
 
     init?(view: MTKView)
     {
@@ -93,19 +80,6 @@ class Renderer: NSObject, MTKViewDelegate
         print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
         print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
 
-        let mainTextureDesc = MTLTextureDescriptor()
-        mainTextureDesc.height = Int(framebufferHeight)
-        mainTextureDesc.width = Int(framebufferWidth)
-        mainTextureDesc.sampleCount = 1
-        mainTextureDesc.textureType = .type2D
-        mainTextureDesc.pixelFormat = view.colorPixelFormat
-        mainTextureDesc.resourceOptions = .storageModePrivate
-        mainTextureDesc.usage = [.shaderRead, .shaderWrite]
-        texture0 = device.makeTexture(descriptor: mainTextureDesc)!
-        texture1 = device.makeTexture(descriptor: mainTextureDesc)!
-
-        quad = Quad(device: device)
-
         guard let queue = self.device.makeCommandQueue() else
         {
              return nil 
@@ -114,8 +88,6 @@ class Renderer: NSObject, MTKViewDelegate
         commandQueue = queue
 
         particleSystem = ParticleSystem(device: device)
-        emitter = Emitter(device: device)
-        scene = Scene(device: device)
 
         super.init()
     }
@@ -140,56 +112,16 @@ class Renderer: NSObject, MTKViewDelegate
 
         #if os(macOS)
             let bck = backgroundColor.cgColor
-            let clearColor = MTLClearColor(red: Double(bck.components![0]), green: Double(bck.components![1]), blue: Double(bck.components![2]), alpha: Double(bck.components![3]))
+            Renderer.clearColor = MTLClearColor(red: Double(bck.components![0]), green: Double(bck.components![1]), blue: Double(bck.components![2]), alpha: Double(bck.components![3]))
         #else
-            let clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+            Renderer.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         #endif
 
-        //        emitter.update()
         particleSystem.update()
         
-        
-        var renderPassDesc = MTLRenderPassDescriptor()
-        renderPassDesc.colorAttachments[0].clearColor = clearColor
-        renderPassDesc.colorAttachments[0].texture = texture0
-        renderPassDesc.colorAttachments[0].loadAction = .clear
-        renderPassDesc.colorAttachments[0].storeAction = .store
-        
-        renderPassDesc.colorAttachments[1].texture = texture1
-        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        renderPassDesc.colorAttachments[1].loadAction = .clear
-        renderPassDesc.colorAttachments[1].storeAction = .store
-//
-        var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
-
-        renderEncoder.label = "Draw to texture"
-        renderEncoder.setTriangleFillMode(fillMode)
-        
         // Draw particles
-        particleSystem.draw(renderEncoder: renderEncoder)
+        particleSystem.draw(view: view, commandBuffer: commandBuffer)
 
-        
-        if enablePostProcessing {
-
-            quad.gaussianBlur(
-                renderEncoder: renderEncoder,
-                texture: texture0,
-                sigma: blurStrength,
-                samples: postProcessingSamples)
-
-            quad.draw(renderEncoder: renderEncoder, texture: texture1)
-        }
-        
-        
-        // Draw to view
-        renderEncoder.endEncoding()
-        
-        renderPassDesc = view.currentRenderPassDescriptor!
-        renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
-        renderEncoder.label = "Draw texture to view"
-        quad.draw(renderEncoder: renderEncoder, texture: texture0)
-
-        renderEncoder.endEncoding()
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
         frametime = Float((getTime() - startTime) * 1000.0)
@@ -258,8 +190,8 @@ class Renderer: NSObject, MTKViewDelegate
         mainTextureDesc.pixelFormat = view.colorPixelFormat
         mainTextureDesc.resourceOptions = .storageModePrivate
         mainTextureDesc.usage = [.shaderRead, .shaderWrite]
-        texture0 = device.makeTexture(descriptor: mainTextureDesc)!
-        texture1 = device.makeTexture(descriptor: mainTextureDesc)!
+        particleSystem.texture0 = device.makeTexture(descriptor: mainTextureDesc)!
+        particleSystem.texture1 = device.makeTexture(descriptor: mainTextureDesc)!
         
         #if os(macOS)
             let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)

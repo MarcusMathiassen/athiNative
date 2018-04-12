@@ -61,29 +61,28 @@ vertex Vertex quadVert(uint vid [[vertex_id]])
     return vert;
 }
 
-fragment float4 gaussianBlurFrag(   Vertex              vert            [[stage_in]],
+
+struct FragOut
+{
+    float4 color0[[color(0)]];
+};
+
+
+fragment FragOut gaussianBlurFrag(   Vertex              vert            [[stage_in]],
                                     constant float2*    resolution      [[buffer(0)]],
                                     constant float2*    direction       [[buffer(1)]],
                                     texture2d<float>    colorTexture    [[texture(0)]])
 {
-//    constexpr sampler textureSampler (mag_filter::linear,
-//                                      min_filter::linear);
-//
-//    const float4 color = colorTexture.sample(textureSampler, vert.uv);
-//    const float brightness = (color.r * 0.2126) + (color.g * 0.7152) + (color.b * 0.0722);
-//    if (brightness > 0.6) {
-//        return float4(0);
-//    }
-    return blur13(colorTexture, vert.uv, *resolution, *direction);
+    return { blur13(colorTexture, vert.uv, *resolution, *direction)};
 }
 
 
-fragment float4 quadFrag(Vertex              vert           [[stage_in]],
+fragment FragOut quadFrag(Vertex              vert           [[stage_in]],
                         texture2d<float>     colorTexture   [[texture(0)]])
 {
     constexpr sampler textureSampler (mag_filter::linear,
                                       min_filter::linear);
     
     // We return the color of the texture
-    return colorTexture.sample(textureSampler, vert.uv);
+    return { colorTexture.sample(textureSampler, vert.uv) };
 }

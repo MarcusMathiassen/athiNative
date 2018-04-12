@@ -11,9 +11,9 @@ import MetalKit
 
 // Our macOS specific view controller
 class MACOSViewController: NSViewController {
-    var mtkView: MTKView?
     var timer: Timer?
     var renderer: Renderer!
+    var mtkView: MTKView?
 
     // Allow view to receive keypress (remove the purr sound)
     override var acceptsFirstResponder: Bool {
@@ -81,11 +81,11 @@ class MACOSViewController: NSViewController {
     }
 
     @IBAction func postProcessingSamplesSlier(_ sender: NSSlider) {
-        renderer.postProcessingSamples = Int(sender.intValue)
+        renderer.particleSystem.postProcessingSamples = Int(sender.intValue)
     }
 
     @IBAction func postprocessingButton(_ sender: NSButton) {
-        renderer.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
+        renderer.particleSystem.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
     }
 
     @IBAction func useQuadtree(_ sender: NSButton) {
@@ -126,7 +126,7 @@ class MACOSViewController: NSViewController {
         }
     }
     @IBAction func blurStrengthSlider(_ sender: NSSlider) {
-        renderer.blurStrength = sender.floatValue
+        renderer.particleSystem.blurStrength = sender.floatValue
     }
 
     @IBAction func particleVerticesStepper(_ sender: NSStepper) {

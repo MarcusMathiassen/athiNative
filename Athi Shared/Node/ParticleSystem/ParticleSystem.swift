@@ -8,6 +8,7 @@
 
 import MetalKit
 import simd
+import MetalPerformanceShaders
 
 struct Particle
 {
@@ -81,9 +82,23 @@ final class ParticleSystem
     var hasInitialVelocity: Bool = true
     var useTreeOptimalSize: Bool = true
     
+    var enablePostProcessing: Bool = true
+    var postProcessingSamples: Int = 2
+    var blurStrength: Float = 4
+
+    
     var preAllocatedParticles = 100
     private var allocatedMemoryForParticles: Int
-
+    
+    
+    #if os(macOS)
+    private var dynamicBufferResourceOption: MTLResourceOptions = .cpuCacheModeWriteCombined
+    private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
+    #else
+    private var dynamicBufferResourceOption: MTLResourceOptions = .cpuCacheModeWriteCombined
+    private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
+    #endif
+    
     var samples: Int = 1
     
     var isPaused: Bool = false
@@ -107,6 +122,7 @@ final class ParticleSystem
 
     private var listOfNodesOfIDs: [[Int]] = []
     private var quadtree: Quadtree?
+    private var quad: Quad
 
     // Metal stuff
     private var device: MTLDevice
@@ -114,15 +130,17 @@ final class ParticleSystem
     private var vertexBuffer: MTLBuffer
     private var indexBuffer: MTLBuffer
     private var pipelineState: MTLRenderPipelineState?
+    var texture0: MTLTexture
+    var texture1: MTLTexture
 
     init(device: MTLDevice)
     {
         self.device = device
+        quad = Quad(device: device)
 
         let library = device.makeDefaultLibrary()!
         let vertexFunc = library.makeFunction(name: "particleVert")!
         let fragFunc = library.makeFunction(name: "particleFrag")!
-        
         
         let pipelineDesc = MTLRenderPipelineDescriptor()
         pipelineDesc.label = "pipelineDesc"
@@ -139,18 +157,41 @@ final class ParticleSystem
         
         
         allocatedMemoryForParticles = preAllocatedParticles
-        particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
-        vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: .storageModePrivate)!
-        indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle, options: .storageModePrivate)!
+        particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: dynamicBufferResourceOption)!
+        vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: staticBufferResourceOption)!
+        indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle*3, options: staticBufferResourceOption)!
 
+        let mainTextureDesc = MTLTextureDescriptor()
+        mainTextureDesc.height = Int(framebufferHeight)
+        mainTextureDesc.width = Int(framebufferWidth)
+        mainTextureDesc.sampleCount = 1
+        mainTextureDesc.textureType = .type2D
+        mainTextureDesc.pixelFormat = Renderer.pixelFormat
+        mainTextureDesc.resourceOptions = .storageModePrivate
+        mainTextureDesc.usage = [.renderTarget]
+        texture0 = device.makeTexture(descriptor: mainTextureDesc)!
+        texture1 = device.makeTexture(descriptor: mainTextureDesc)!
+        
         buildVertices(numVertices: numVerticesPerParticle)
     }
 
-    public func draw(renderEncoder: MTLRenderCommandEncoder)
-    {
-        if particles.count == 0 { return }
+    public func draw(view: MTKView,
+                     commandBuffer: MTLCommandBuffer)
+    {        
+        var renderPassDesc = MTLRenderPassDescriptor()
+        renderPassDesc.colorAttachments[0].clearColor = Renderer.clearColor
+        renderPassDesc.colorAttachments[0].texture = texture0
+        renderPassDesc.colorAttachments[0].loadAction = .clear
+        renderPassDesc.colorAttachments[0].storeAction = .store
+        
+        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        renderPassDesc.colorAttachments[1].texture = texture1
+        renderPassDesc.colorAttachments[1].loadAction = .clear
+        renderPassDesc.colorAttachments[1].storeAction = .store
+        
+        var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
-        renderEncoder.label = "ParticleSystem"
+        renderEncoder.pushDebugGroup("Draw particles (off-screen)")
         renderEncoder.setRenderPipelineState(pipelineState!)
         
         updateGPUBuffers()
@@ -167,6 +208,32 @@ final class ParticleSystem
             indexBufferOffset: 0,
             instanceCount: particleData.count)
         
+        
+        if enablePostProcessing {
+            
+            renderEncoder.pushDebugGroup("Apply Post Processing")
+            quad.gaussianBlur(renderEncoder: renderEncoder, texture: texture0, sigma: blurStrength, samples: postProcessingSamples)
+            renderEncoder.popDebugGroup()
+            
+            
+            renderEncoder.pushDebugGroup("Overlay the unblurred original")
+            quad.draw(renderEncoder: renderEncoder, texture: texture1)
+            renderEncoder.popDebugGroup()
+
+        }
+        
+        renderEncoder.popDebugGroup()
+        renderEncoder.endEncoding()
+        
+        
+        renderPassDesc = view.currentRenderPassDescriptor!
+        renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
+        
+        renderEncoder.pushDebugGroup("Draw particles (on-screen)")
+        quad.draw(renderEncoder: renderEncoder, texture: texture0)
+        
+        renderEncoder.popDebugGroup()
+        renderEncoder.endEncoding()
     }
     
     private func updateGPUBuffers()
@@ -174,10 +241,15 @@ final class ParticleSystem
         // Reallocate more if needed
         if particleData.count * MemoryLayout<ParticleData>.stride > particleDataBuffer.allocatedSize {
             
-            particleDataBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<ParticleData>.stride, options: .cpuCacheModeWriteCombined)!
+            // Update the buffer size
+            particleDataBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<ParticleData>.stride, options: dynamicBufferResourceOption)!
+            
+            // Upload new content
             particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
 
         } else {
+            
+            // Upload new content
             particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
         }
     }
@@ -265,14 +337,10 @@ final class ParticleSystem
         if enableMultithreading {
             DispatchQueue.concurrentPerform(iterations: 8) { i in
                 let (begin, end) = getBeginAndEnd(i: i, containerSize: particles.count, segments: 8)
-                for _ in 0 ..< samples {
-                    updateParticlesData(begin: begin, end: end)
-                }
+                updateParticlesData(begin: begin, end: end)
             }
         } else {
-            for _ in 0 ..< samples {
-                updateParticlesData(begin: 0, end: particles.count)
-            }
+            updateParticlesData(begin: 0, end: particles.count)
         }
     }
 
@@ -306,9 +374,10 @@ final class ParticleSystem
                 vertices.append(float2(x, y))
         }
         
+        
         // Update the GPU buffers
-        vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<float2>.stride * vertices.count, options: .cpuCacheModeWriteCombined)!
-        indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.stride * indices.count, options: .cpuCacheModeWriteCombined)!
+        vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<float2>.stride * vertices.count, options: staticBufferResourceOption)!
+        indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.stride * indices.count, options: staticBufferResourceOption)!
     }
 
     private func collisionCheck(_ a: Particle, _ b: Particle) -> Bool

@@ -67,7 +67,7 @@ final class Quad
         renderEncoder.pushDebugGroup("Gauassian Blur")
         renderEncoder.setTriangleFillMode(.fill)
         renderEncoder.setRenderPipelineState(gaussianBlurPipelineState!)
-
+        
         renderEncoder.setFragmentBytes(&viewportSize, length: MemoryLayout<float2>.stride, index: 0)
         renderEncoder.setFragmentTexture(texture, index: 0)
 

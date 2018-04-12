@@ -812,7 +812,7 @@
                                                         <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L3d-Bh-hsx">
                                                             <rect key="frame" x="147" y="172" width="19" height="27"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <stepperCell key="cell" continuous="YES" alignment="left" minValue="3" maxValue="3000" doubleValue="120" id="790-gF-bQU"/>
+                                                            <stepperCell key="cell" continuous="YES" alignment="left" minValue="3" maxValue="3000" doubleValue="36" id="790-gF-bQU"/>
                                                             <connections>
                                                                 <action selector="particleVerticesStepper:" target="XfG-lQ-9wD" id="UBT-m2-3bf"/>
                                                             </connections>

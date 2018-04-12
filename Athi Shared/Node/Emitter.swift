@@ -70,6 +70,6 @@ class Emitter
     
     func draw(renderEncoder: MTLRenderCommandEncoder, vp: float4x4)
     {
-        particleSystem.draw(renderEncoder: renderEncoder)
+//        particleSystem.draw(commandBuffer: MTLCommandBuffer: renderEncoder)
     }
 }
