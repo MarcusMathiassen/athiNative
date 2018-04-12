@@ -19,7 +19,7 @@ class IOSViewController: UIViewController {
     var mtkView: MTKView!
 
     @IBAction func enablePostProcessingSwitch(_ sender: UISwitch) {
-        renderer.enablePostProcessing = sender.isOn
+        renderer.particleSystem.enablePostProcessing = sender.isOn
     }
 
     @IBAction func enableParticleCollision(_ sender: UISwitch) {

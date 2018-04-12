@@ -71,7 +71,7 @@ final class ParticleSystem
     private var shouldUpdate: Bool = false
     
     
-    var enableMultithreading: Bool = false
+    var enableMultithreading: Bool = true
     var enableBorderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
     var gravityForce: Float = -0.981
@@ -168,7 +168,7 @@ final class ParticleSystem
         mainTextureDesc.textureType = .type2D
         mainTextureDesc.pixelFormat = Renderer.pixelFormat
         mainTextureDesc.resourceOptions = .storageModePrivate
-        mainTextureDesc.usage = [.renderTarget]
+        mainTextureDesc.usage = .renderTarget
         texture0 = device.makeTexture(descriptor: mainTextureDesc)!
         texture1 = device.makeTexture(descriptor: mainTextureDesc)!
         
@@ -177,7 +177,10 @@ final class ParticleSystem
 
     public func draw(view: MTKView,
                      commandBuffer: MTLCommandBuffer)
-    {        
+    {
+        
+        commandBuffer.pushDebugGroup("ParticleSystem Draw")
+        
         var renderPassDesc = MTLRenderPassDescriptor()
         renderPassDesc.colorAttachments[0].clearColor = Renderer.clearColor
         renderPassDesc.colorAttachments[0].texture = texture0
@@ -227,6 +230,9 @@ final class ParticleSystem
         
         
         renderPassDesc = view.currentRenderPassDescriptor!
+        renderPassDesc.colorAttachments[0].clearColor = Renderer.clearColor
+        renderPassDesc.colorAttachments[0].loadAction = .clear
+        renderPassDesc.colorAttachments[0].storeAction = .store
         renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
         
         renderEncoder.pushDebugGroup("Draw particles (on-screen)")
@@ -234,6 +240,8 @@ final class ParticleSystem
         
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
+        
+        commandBuffer.popDebugGroup()
     }
     
     private func updateGPUBuffers()

@@ -187,9 +187,9 @@ class Renderer: NSObject, MTKViewDelegate
         mainTextureDesc.width = Int(framebufferWidth)
         mainTextureDesc.sampleCount = 1
         mainTextureDesc.textureType = .type2D
-        mainTextureDesc.pixelFormat = view.colorPixelFormat
+        mainTextureDesc.pixelFormat = Renderer.pixelFormat
         mainTextureDesc.resourceOptions = .storageModePrivate
-        mainTextureDesc.usage = [.shaderRead, .shaderWrite]
+        mainTextureDesc.usage = [.renderTarget]
         particleSystem.texture0 = device.makeTexture(descriptor: mainTextureDesc)!
         particleSystem.texture1 = device.makeTexture(descriptor: mainTextureDesc)!
         
