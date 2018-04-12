@@ -15,7 +15,6 @@ struct Particle
     var id: Int = 0
     var pos = float2(0)
     var vel = float2(0)
-    var acc = float2(0)
     var radius: Float = 1
     var mass: Float = 0
 
@@ -40,10 +39,8 @@ struct Particle
     }
 
     mutating func update() {
-        // Update pos/vel/acc
-        vel += acc
+        // Update pos/vel
         pos += vel
-        acc *= 0
     }
 }
 
@@ -524,7 +521,7 @@ final class ParticleSystem
         for i in begin ..< end {
             var p = particles[i]
 
-            p.acc = tempGravityForce
+            p.vel += tempGravityForce
             p.borderCollision()
             p.update()
 

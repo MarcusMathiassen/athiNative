@@ -24,6 +24,9 @@ class ParticleSystemSoA {
     
     private func updateParticles() {
         
+        
+        particles.ad
+        
         for i in 0 ..< particleCount {
             position[i] += velocity[i]
         }

@@ -20,6 +20,9 @@
 		90027F8C207811BC00FC6980 /* primitive.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90027F8B207811BC00FC6980 /* primitive.metal */; };
 		90027F8D207811BC00FC6980 /* primitive.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90027F8B207811BC00FC6980 /* primitive.metal */; };
 		90027F8E207811BC00FC6980 /* primitive.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90027F8B207811BC00FC6980 /* primitive.metal */; };
+		90033FE4207FBBD90019B057 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90033FE3207FBBD90019B057 /* CollisionDetection.swift */; };
+		90033FE5207FBBD90019B057 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90033FE3207FBBD90019B057 /* CollisionDetection.swift */; };
+		90033FE6207FBBD90019B057 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90033FE3207FBBD90019B057 /* CollisionDetection.swift */; };
 		900AE7EB2076566600465EAD /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EA2076566600465EAD /* ViewController.swift */; };
 		900AE7ED207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
 		900AE7EE207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
@@ -78,6 +81,7 @@
 		9001438C2072AD5C009FB201 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		90027F8720780CF900FC6980 /* PrimitiveShapes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PrimitiveShapes.swift; path = "Athi Shared/PrimitiveShapes.swift"; sourceTree = SOURCE_ROOT; };
 		90027F8B207811BC00FC6980 /* primitive.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = primitive.metal; sourceTree = "<group>"; };
+		90033FE3207FBBD90019B057 /* CollisionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollisionDetection.swift; sourceTree = "<group>"; };
 		900AE7EA2076566600465EAD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		900AE7EC207657F700465EAD /* Globals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
 		900B3B18207538A900569776 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
@@ -231,6 +235,7 @@
 			children = (
 				900B3B28207553B600569776 /* Particle.metal */,
 				900B3B1C2075490900569776 /* ParticleSystem.swift */,
+				90033FE3207FBBD90019B057 /* CollisionDetection.swift */,
 				9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */,
 			);
 			path = ParticleSystem;
@@ -369,6 +374,7 @@
 			files = (
 				9001438D2072AD5C009FB201 /* Utility.swift in Sources */,
 				900B3B252075512800569776 /* Node.swift in Sources */,
+				90033FE4207FBBD90019B057 /* CollisionDetection.swift in Sources */,
 				9046AACD207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				900AE7EB2076566600465EAD /* ViewController.swift in Sources */,
 				901D699E207BB0E40009DC17 /* Emitter.swift in Sources */,
@@ -397,6 +403,7 @@
 				9051D9642076905200E2DB51 /* Quadtree.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
 				901D699F207BB0E40009DC17 /* Emitter.swift in Sources */,
+				90033FE5207FBBD90019B057 /* CollisionDetection.swift in Sources */,
 				900B3B262075512800569776 /* Node.swift in Sources */,
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
@@ -420,6 +427,7 @@
 			files = (
 				9001438F2072AD5C009FB201 /* Utility.swift in Sources */,
 				9001438B2072ABBC009FB201 /* ViewController.swift in Sources */,
+				90033FE6207FBBD90019B057 /* CollisionDetection.swift in Sources */,
 				9046AACF207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				900B3B272075512800569776 /* Node.swift in Sources */,
 				901D69A0207BB0E40009DC17 /* Emitter.swift in Sources */,
