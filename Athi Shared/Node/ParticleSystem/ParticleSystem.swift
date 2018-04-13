@@ -44,40 +44,24 @@ struct Particle
     }
 }
 
-// @GPU: Data needed to draw the particles
-struct ParticleGPU
-{
-    var position: float2
-    var color:    float4
-    var radius:     Float
-}
-
 final class ParticleSystem
 {
-    /**
-        Particle data for the CPU
-     */
-    var particles: [Particle] = []
+    ///////////////////
+    // Simulation
+    ///////////////////
     
+    public var particleCount: Int = 0 // Amount of particles
     
-    // @CPU: Data needed to simulate the particles
-    struct Particle_CPU
-    {
-        var position:   float2
-        var velocity:   float2
-        var radius:     Float
-        var mass:       Float
-    }
-    
-    /**
-        Particle data for the GPU
-     */
-    var particleData: [ParticleGPU] = []
+    //      Particle data
+    var id:         [Int] = []
+    var position:   [float2] = []
+    var velocity:   [float2] = []
+    var radius:     [Float] = []
+    var mass:       [Float] = []
+    var color:      [float4] = []
+    //
     
     // Options
-    private var shouldUpdate: Bool = false
-    
-    
     var enableMultithreading: Bool = true
     var enableBorderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
@@ -89,15 +73,46 @@ final class ParticleSystem
     var hasInitialVelocity: Bool = true
     var useTreeOptimalSize: Bool = true
     
+    var samples: Int = 1
+    var isPaused: Bool = false
+    
+    private var tempGravityForce = float2(0)
+    private var shouldUpdate: Bool = false
+    private var listOfNodesOfIDs: [[Int]] = []
+    private var quadtree: Quadtree?
+
+    
+    ///////////////////
+    // Rendering
+    ///////////////////
+    
+    // @GPU: Data needed to draw the particles
+    struct ParticleGPU
+    {
+        var position: float2
+        var color:    float4
+        var radius:   Float
+    }
+
+    /**
+        Particle data for the GPU
+     */
+    var particleData: [ParticleGPU] = []
+    
+    /**
+        Static data uploaded once, and updated when numVerticesPerParticle is changed
+     */
+    private var vertices: [float2] = []
+    private var indices: [UInt16] = []
+
+    // Metal stuff
+    // Rendering stuff
+    
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 2
     var blurStrength: Float = 4
-
-    
     var preAllocatedParticles = 100
     private var allocatedMemoryForParticles: Int
-    
-    
     #if os(macOS)
     private var dynamicBufferResourceOption: MTLResourceOptions = .cpuCacheModeWriteCombined
     private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
@@ -105,33 +120,9 @@ final class ParticleSystem
     private var dynamicBufferResourceOption: MTLResourceOptions = .cpuCacheModeWriteCombined
     private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
     #endif
-    
-    var samples: Int = 1
-    
-    var isPaused: Bool = false
-    
     var particleColor = float4(1)
-    
-    
     var numVerticesPerParticle = 36
-    
-    /**
-        Static data uploaded once, and updated when numVerticesPerParticle is changed
-     */
-    private var vertices: [float2] = []
-    private var indices: [UInt16] = []
-    /**
-        Dynamic data updated each frame. Each element represents the color of a single particle
-     */
-    private var colors: [float4] = []
-    
-    private var tempGravityForce = float2(0)
-
-    private var listOfNodesOfIDs: [[Int]] = []
-    private var quadtree: Quadtree?
     private var quad: Quad
-
-    // Metal stuff
     private var device: MTLDevice
     private var particleDataBuffer: MTLBuffer
     private var vertexBuffer: MTLBuffer
@@ -185,6 +176,7 @@ final class ParticleSystem
     public func draw(view: MTKView,
                      commandBuffer: MTLCommandBuffer)
     {
+        if particleCount == 0 { return }
         
         commandBuffer.pushDebugGroup("ParticleSystem Draw")
         
@@ -204,6 +196,7 @@ final class ParticleSystem
         renderEncoder.pushDebugGroup("Draw particles (off-screen)")
         renderEncoder.setRenderPipelineState(pipelineState!)
         
+
         updateGPUBuffers()
         
         renderEncoder.setVertexBuffer(vertexBuffer,           offset: 0, index: 0)
@@ -299,8 +292,9 @@ final class ParticleSystem
                             quadtree = Quadtree(min: float2(0, 0), max: float2(framebufferWidth, framebufferHeight))
                         }
 
-                        quadtree?.input(data: particles)
-
+                        quadtree?.setInputData(positions: position, radii: radius)
+                        quadtree?.inputRange(range: 0 ... particleCount)
+                        
                         quadtree?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
 
 //                        DispatchQueue.concurrentPerform(iterations: 8) { i in
@@ -309,7 +303,7 @@ final class ParticleSystem
 //                                            }
                         collisionQuadtree(containerOfNodes: listOfNodesOfIDs, begin: 0, end: listOfNodesOfIDs.count)
 
-                    } else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
+                    } else { collisionLogNxN(total: particleCount, begin: 0, end: particleCount) }
                     
                 } else {
                     if useQuadtree {
@@ -327,13 +321,16 @@ final class ParticleSystem
                             quadtree = Quadtree(min: float2(0, 0), max: float2(framebufferWidth, framebufferHeight))
                         }
 
-                        quadtree?.input(data: particles)
+                        quadtree?.setInputData(positions: position, radii: radius)
+                        quadtree?.inputRange(range: 0 ... particleCount)
 
                         quadtree?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
 
                         collisionQuadtree(containerOfNodes: listOfNodesOfIDs, begin: 0, end: listOfNodesOfIDs.count)
 
-                    } else { collisionLogNxN(total: particles.count, begin: 0, end: particles.count) }
+                    } else {
+                        collisionLogNxN(total: particleCount, begin: 0, end: particleCount)
+                    }
                 }
             }
         }
@@ -350,12 +347,13 @@ final class ParticleSystem
 
         
         if enableMultithreading {
-            DispatchQueue.concurrentPerform(iterations: 8) { i in
-                let (begin, end) = getBeginAndEnd(i: i, containerSize: particles.count, segments: 8)
-                updateParticlesData(begin: begin, end: end)
-            }
+//            DispatchQueue.concurrentPerform(iterations: 8) { i in
+//                let (begin, end) = getBeginAndEnd(i: i, containerSize: particleCount, segments: 8)
+//                print(begin, end)
+//                updateParticlesData(begin: begin, end: end)
+//            }
         } else {
-            updateParticlesData(begin: 0, end: particles.count)
+            updateParticlesData(begin: 0, end: particleCount)
         }
     }
 
@@ -394,305 +392,332 @@ final class ParticleSystem
         vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<float2>.stride * vertices.count, options: staticBufferResourceOption)!
         indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.stride * indices.count, options: staticBufferResourceOption)!
     }
+    
+    
+    //
+    private func updateParticlesData(begin: Int, end: Int)
+    {
+        
+        for i in begin ..< end {
+            
+            var p = self.position[i]
+            var v = self.velocity[i]
+            let r = self.radius[i]
+            
+            // Border collision
+            if p.x < 0 + r {
+                p.x = 0 + r
+                v.x = -v.x
+            }
+            if p.x > framebufferWidth - r {
+                p.x = framebufferWidth - r
+                v.x = -v.x
+            }
+            if p.y < 0 + r {
+                p.y = 0 + r
+                v.y = -v.y
+            }
+            if p.y > framebufferHeight - r {
+                p.y = framebufferHeight - r
+                v.y = -v.y
+            }
+            velocity[i] = v
+            position[i] = p
+            
+            // Update particle positions
+            position[i] += velocity[i]
+            
+            particleData[i] = ParticleGPU(position: position[i], color: color[i], radius: radius[i])
+        }
+    }
+    
+    public func eraseParticles()
+    {
+        position.removeAll()
+        velocity.removeAll()
+        mass.removeAll()
+        radius.removeAll()
+        color.removeAll()
+        
+        
+        // Rendering data
+//        particleData.removeAll()
+        
+        particleCount = 0
+    }
+    
+    public func colorParticles(IDs: [Int], color: float4)
+    {
+        for id in IDs {
+            self.color[id] = color
+        }
+    }
 
-    private func collisionCheck(_ a: Particle, _ b: Particle) -> Bool
+    ////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+    //////////  PHYSICS
+    ////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+    
+    private func collisionCheck(_ a: Int, position: float2, radius: Float) -> Bool
     {
         // Local variables
-        let ax = a.pos.x
-        let ay = a.pos.y
-        let bx = b.pos.x
-        let by = b.pos.y
-        let ar = a.radius
-        let br = b.radius
-
+        let ax = self.position[a].x
+        let ay = self.position[a].y
+        let bx = position.x
+        let by = position.y
+        let ar = self.radius[a]
+        let br = radius
+        
         // square collision check
         if ax - ar < bx + br &&
             ax + ar > bx - br &&
             ay - ar < by + br &&
             ay + ar > by - br {
+            
             // circle collision check
             let dx = bx - ax
             let dy = by - ay
-
+            
             let sum_radius = ar + br
             let sqr_radius = sum_radius * sum_radius
-
+            
             let distance_sqrd = (dx * dx) + (dy * dy)
-
+            
             return distance_sqrd < sqr_radius
         }
-
+        
         return false
     }
-
-    // Collisions response between two circles with varying radius and mass.
-    private func collisionResolve(_ a: inout Particle, _ b: inout Particle) {
+    
+    private func collisionCheck(_ a: Int, _ b: Int) -> Bool
+    {
         // Local variables
-        let dx = b.pos.x - a.pos.x
-        let dy = b.pos.y - a.pos.y
-        let vdx = b.vel.x - a.vel.x
-        let vdy = b.vel.y - a.vel.y
-        let a_vel = a.vel
-        let b_vel = b.vel
-        let m1 = a.mass
-        let m2 = b.mass
-
-        // Should the circles intersect. Seperate them. If not the next
-        // calculated values will be off.
-        separate(&a, &b)
-
+        let ax = position[a].x
+        let ay = position[a].y
+        let bx = position[b].x
+        let by = position[b].y
+        let ar = radius[a]
+        let br = radius[b]
+        
+        // square collision check
+        if ax - ar < bx + br &&
+            ax + ar > bx - br &&
+            ay - ar < by + br &&
+            ay + ar > by - br {
+            
+            // circle collision check
+            let dx = bx - ax
+            let dy = by - ay
+            
+            let sum_radius = ar + br
+            let sqr_radius = sum_radius * sum_radius
+            
+            let distance_sqrd = (dx * dx) + (dy * dy)
+            
+            return distance_sqrd < sqr_radius
+        }
+        
+        return false
+    }
+    
+    private func collisionResolve(_ a: Int, _ b: Int) -> (float2, float2)
+    {
+        // Local variables
+        let dx = position[b].x - position[a].x
+        let dy = position[b].y - position[a].y
+        let vdx = velocity[b].x - velocity[a].x
+        let vdy = velocity[b].y - velocity[a].y
+        let v1 = velocity[a]
+        let v2 = velocity[b]
+        let m1 = mass[a]
+        let m2 = mass[b]
+        
         // A negative 'd' means the circles velocities are in opposite directions
         let d = dx * vdx + dy * vdy
-
+        
         // And we don't resolve collisions between circles moving away from eachother
         if d < 1e-11 {
             let norm = normalize(float2(dx, dy))
             let tang = float2(norm.y * -1.0, norm.x)
-            let scal_norm_1 = dot(norm, a_vel)
-            let scal_norm_2 = dot(norm, b_vel)
-            let scal_tang_1 = dot(tang, a_vel)
-            let scal_tang_2 = dot(tang, b_vel)
-
+            let scal_norm_1 = dot(norm, v1)
+            let scal_norm_2 = dot(norm, v2)
+            let scal_tang_1 = dot(tang, v1)
+            let scal_tang_2 = dot(tang, v2)
+            
             let scal_norm_1_after = (scal_norm_1 * (m1 - m2) + 2.0 * m2 * scal_norm_2) / (m1 + m2)
             let scal_norm_2_after = (scal_norm_2 * (m2 - m1) + 2.0 * m1 * scal_norm_1) / (m1 + m2)
             let scal_norm_1_after_vec = norm * scal_norm_1_after
             let scal_norm_2_after_vec = norm * scal_norm_2_after
             let scal_norm_1_vec = tang * scal_tang_1
             let scal_norm_2_vec = tang * scal_tang_2
-
+            
             // Update velocities
-            a.vel = (scal_norm_1_vec + scal_norm_1_after_vec) * collisionEnergyLoss
-            b.vel = (scal_norm_2_vec + scal_norm_2_after_vec) * collisionEnergyLoss
+            return ((scal_norm_1_vec + scal_norm_1_after_vec) * 0.98, (scal_norm_2_vec + scal_norm_2_after_vec) * 0.98)
         }
+        
+        return (v1, v2)
     }
-
+    
+    
     // Separates two intersecting circles.
-    private func separate(_ a: inout Particle, _ b: inout Particle) {
-        // Local variables
-        let a_pos = a.pos
-        let b_pos = b.pos
-        let ar = a.radius
-        let br = b.radius
-
-        let collision_depth = (ar + br) - distance(b_pos, a_pos)
-
-        if collision_depth < 1e-11 { return }
-
-        let dx = b_pos.x - a_pos.x
-        let dy = b_pos.y - a_pos.y
-
-        // contact angle
-        let collision_angle = atan2(dy, dx)
-        let cos_angle = cos(collision_angle)
-        let sin_angle = sin(collision_angle)
-
-        // @Same as above, just janky not working
-        // const auto midpoint_x = (a_pos.x + b_pos.x) / 2.0f;
-        // const auto midpoint_y = (a_pos.y + b_pos.y) / 2.0f;
-
-        // TODO: could this be done using a normal vector and just inverting it?
-        // amount to move each ball
-
-        var a_move = float2(-collision_depth * 0.5 * cos_angle, -collision_depth * 0.5 * sin_angle)
-        var b_move = float2(collision_depth * 0.5 * cos_angle, collision_depth * 0.5 * sin_angle)
-
-        // @Same as above, just janky not working
-        // const f32 a_move.x = midpoint_x + ar * (a_pos.x - b_pos.x) / collision_depth;
-        // const f32 a_move.y = midpoint_y + ar * (a_pos.y - b_pos.y) / collision_depth;
-        // const f32 b_move.x = midpoint_x + br * (b_pos.x - a_pos.x) / collision_depth;
-        // const f32 b_move.y = midpoint_y + br * (b_pos.y - a_pos.y) / collision_depth;
-
-        // stores the position offsets
-        var a_pos_move = float2(0)
-        var b_pos_move = float2(0)
-
-        // Make sure they dont moved beyond the border
-        // This will become not needed when borders are
-        //  segments instead of hardcoded.
-        if a_pos.x + a_move.x >= 0.0 + ar && a_pos.x + a_move.x <= framebufferWidth - ar {
-            a_pos_move.x += a_move.x
-        }
-        if a_pos.y + a_move.y >= 0.0 + ar && a_pos.y + a_move.y <= framebufferHeight - ar {
-            a_pos_move.y += a_move.y
-        }
-        if b_pos.x + b_move.x >= 0.0 + br && b_pos.x + b_move.x <= framebufferWidth - br {
-            b_pos_move.x += b_move.x
-        }
-        if b_pos.y + b_move.y >= 0.0 + br && b_pos.y + b_move.y <= framebufferHeight - br {
-            b_pos_move.y += b_move.y
-        }
-
-        // Update positions
-        a.pos += a_pos_move
-        b.pos += b_pos_move
-    }
-
-    private func updateParticlesData(begin: Int, end: Int) {
-        for i in begin ..< end {
-            var p = particles[i]
-
-            p.vel += tempGravityForce
-            p.borderCollision()
-            p.update()
-
-            particles[i] = p
-
-            // Update particleData
-//            particleData[i] = ParticleGPU(position: p.pos, color: colors[p.id], radius: p.radius)
-        }
-    }
-    
-    public func removeFirst(_ i: Int) {
-        particles.removeFirst(i)
-        particleData.removeFirst(i)
-        colors.removeFirst(i)
-    }
-
-    public func eraseParticles() {
-        particles.removeAll()
-        particleData.removeAll()
-        colors.removeAll()
-    }
-    
-    public func colorParticles(IDs: [Int], color: float4)
+    private func separate(_ a: Int, _ b: Int) -> (float2, float2)
     {
-        for id in IDs {
-            colors[id] = color
+        // Local variables
+        let ap = position[a]
+        let bp = position[b]
+        let ar = radius[a]
+        let br = radius[b]
+        
+        let collisionDepth = (ar + br) - distance(bp, ap)
+        
+        let dx = bp.x - ap.x
+        let dy = bp.y - bp.y
+        
+        // contact angle
+        let collisionAngle = atan2(dy, dx)
+        let cosAngle = cos(collisionAngle)
+        let sinAngle = sin(collisionAngle)
+        
+        let aMove = float2(-collisionDepth * 0.5 * cosAngle, -collisionDepth * 0.5 * sinAngle)
+        let bMove = float2( collisionDepth * 0.5 * cosAngle,  collisionDepth * 0.5 * sinAngle)
+        
+        // stores the position offsets
+        var apNew = float2(0)
+        var bpNew = float2(0)
+        
+        // Make sure they dont moved beyond the border
+        // This will become not needed when borders are segments instead of hardcoded.
+        if ap.x + aMove.x >= 0.0 + ar && ap.x + aMove.x <= framebufferWidth - ar {
+            apNew.x += aMove.x
         }
-    }
-
-    public func addParticle(_ p: Particle, color: float4) {
-        var pa = p
-        pa.id = particles.count
-
-        // Add new particle
-        particles.append(pa)
+        if ap.y + aMove.y >= 0.0 + ar && ap.y + aMove.y <= framebufferHeight - ar {
+            apNew.y += aMove.y
+        }
+        if bp.x + bMove.x >= 0.0 + br && bp.x + bMove.x <= framebufferWidth - br {
+            bpNew.x += bMove.x
+        }
+        if bp.y + bMove.y >= 0.0 + br && bp.y + bMove.y <= framebufferHeight - br {
+            bpNew.y += bMove.y
+        }
         
-        // Add it to be drawn
-        let pD = ParticleGPU(position: p.pos, color: color, radius: p.radius)
-        particleData.append(pD)
-        
-        // Add new color
-        colors.append(color)
+        return (ap + apNew, bp + bpNew)
     }
     
-    public func addParticle(position: float2, color: float4, radius: Float) {
-        
-        var p = Particle()
-        p.id = particles.count
-        p.pos = position
-        if hasInitialVelocity { p.vel = randFloat2(-5, 5) }
-        p.radius = radius
-        p.mass = Float.pi * radius * radius
-
-        // Add new particle
-        particles.append(p)
-        
-        // Add it to be drawn
-        let pD = ParticleGPU(position: position, color: color, radius: radius)
-        particleData.append(pD)
-        
-        colors.append(color)
-    }
-
-    private func collisionQuadtree(containerOfNodes: [[Int]], begin: Int, end: Int) {
+    private func collisionQuadtree(containerOfNodes: [[Int]], begin: Int, end: Int)
+    {
         for k in begin ..< end {
             for i in 0 ..< containerOfNodes[k].count {
                 for j in 1 + i ..< containerOfNodes[k].count {
-                    if collisionCheck(particles[containerOfNodes[k][i]], particles[containerOfNodes[k][j]]) {
-                        collisionResolve(&particles[containerOfNodes[k][i]], &particles[containerOfNodes[k][j]])
+                    
+                    let ki = containerOfNodes[k][i]
+                    let kj = containerOfNodes[k][j]
+                    
+                    if collisionCheck(ki, kj) {
+                        
+                        // Should the circles intersect. Seperate them. If not the next
+                        // calculated values will be off.
+                        (position[ki], position[kj]) = separate(ki, kj)
+                        
+                        (velocity[ki], velocity[kj]) = collisionResolve(ki, kj)
                     }
                 }
             }
         }
     }
-
-    private func collisionLogNxN(total: Int, begin: Int, end: Int) {
+    
+    private func collisionLogNxN(total: Int, begin: Int, end: Int)
+    {
         for i in begin ..< end {
             for j in 1 + i ..< total {
-                if collisionCheck(particles[i], particles[j]) {
-                    collisionResolve(&particles[i], &particles[j])
+                
+                if collisionCheck(i, j) {
+                    
+                    // Should the circles intersect. Seperate them. If not the next
+                    // calculated values will be off.
+                    (position[i], position[j]) = separate(i, j)
+                    
+                    (velocity[i], velocity[j]) = collisionResolve(i, j)
                 }
             }
         }
     }
-
-    /**
-     Returns an array of ids that fit inside the circle
-     */
-    public func getParticlesInCircle(position: float2, radius: Float) -> [Int] {
-        var ids: [Int] = []
-
-        var p = Particle()
-        p.pos = position
-        p.radius = radius
-
-        // Brute-force
-        for otherParticle in particles {
-            if collisionCheck(p, otherParticle) {
-                ids.append(otherParticle.id)
-            }
-        }
-
-        return ids
+    
+    
+    
+    
+    
+    ////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+    //////////  UTILITY
+    ////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+    
+    
+    
+    public func addParticleWith(position: float2, color: float4, radius: Float)
+    {
+        self.id.append(particleCount)
+        self.position.append(position)
+        self.velocity.append(randFloat2(-5, 5))
+        self.radius.append(radius)
+        self.color.append(color)
+        //        self.density.append(1)
+        self.mass.append(Float.pi * radius * radius)
+        
+        self.particleCount += 1
+        
+        particleData.append(ParticleGPU(position: position, color: color, radius: radius))
     }
-
+    
+    public func getParticleDataForGPU() -> [ParticleGPU]
+    {
+        var result: [ParticleGPU] = []
+        for i in 0 ..< particleCount {
+            let pd = ParticleGPU.init(position: self.position[i], color: self.color[i], radius: self.radius[i])
+            result.append(pd)
+        }
+        return result
+    }
+    
     /**
      Returns the minimum and maximum position found of all particles
      */
-    public func getMinAndMaxPosition() -> (float2, float2) {
+    public func getMinAndMaxPosition() -> (float2, float2)
+    {
         var max = float2(Float((-INT_MAX)), Float(-INT_MAX))
         var min = float2(Float(INT_MAX), Float(INT_MAX))
-
-        for p in particles {
-            max.x = (p.pos.x > max.x) ? p.pos.x : max.x
-            max.y = (p.pos.y > max.y) ? p.pos.y : max.y
-            min.x = (p.pos.x < min.x) ? p.pos.x : min.x
-            min.y = (p.pos.y < min.y) ? p.pos.y : min.y
+        
+        for i in 0 ..< particleCount {
+            
+            let pos = position[i]
+            
+            max.x = (pos.x > max.x) ? pos.x : max.x
+            max.y = (pos.y > max.y) ? pos.y : max.y
+            min.x = (pos.x < min.x) ? pos.x : min.x
+            min.y = (pos.y < min.y) ? pos.y : min.y
         }
-
+        
         return (min, max)
     }
-
-    private func gravityWell(a: inout Particle, point: float2) {
-        let x1 = a.pos.x
-        let y1 = a.pos.y
-        let x2 = point.x
-        let y2 = point.y
-        let m1 = a.mass
-        let m2 = Float(1e6)
-
-        let dx = x2 - x1
-        let dy = y2 - y1
-        let d = sqrt(dx * dx + dy * dy)
-
-        let angle = atan2(dy, dx)
-        let G = Float(kGravitationalConstant)
-        let F = G * m1 * m2 / d * d
-
-        a.vel.x += F * cos(angle)
-        a.vel.y += F * sin(angle)
-    }
     
-    public func goTowardsPoint(_ point: float2, force: Float)
-    {
-        for id in 0 ..< particles.count {
-            attractionForce(p: &particles[id], point: point, force: force)
-        }
-    }
-    public func goTowardsPoint(_ point: float2, particleIDs: inout [Int])
+    
+    public func goTowardsPoint(_ point: float2, particleIDs: [Int])
     {
         for id in particleIDs {
-            attractionForce(p: &particles[id], point: point)
+            velocity[id] = gravityWell(particleID: id, point: point)
         }
     }
-
-    public func attractionForce(p: inout Particle, point: float2, force: Float) {
-        let x1 = p.pos.x
-        let y1 = p.pos.y
+    
+    public func gravityWell(particleID: Int, point: float2) -> float2
+    {
+        
+        let v1 = velocity[particleID]
+        let x1 = position[particleID].x
+        let y1 = position[particleID].y
         let x2 = point.x
         let y2 = point.y
-        let m1 = p.mass
+        let m1 = mass[particleID]
         let m2 = Float(1e11)
         
         let dx = x2 - x1
@@ -703,24 +728,29 @@ final class ParticleSystem
         let G = Float(kGravitationalConstant)
         let F = G * m1 * m2 / d * d
         
-        p.vel.x += F * cos(angle)
-        p.vel.y += F * sin(angle)
+        let nX = F * cos(angle)
+        let nY = F * sin(angle)
+        
+        return float2(v1.x + nX, v1.y + nY)
     }
-    public func attractionForce(p: inout Particle, point: float2) {
-        // Set up variables
-        let x1: Float = p.pos.x
-        let y1: Float = p.pos.y
-        let x2: Float = point.x
-        let y2: Float = point.y
-
-        // Get distance between balls.
-        let dx: Float = x2 - x1
-        let dy: Float = y2 - y1
-        let d: Float = sqrt(dx * dx + dy * dy)
-
-        let angle: Float = atan2(dy, dx)
-        p.vel.x += d * cos(angle)
-        p.vel.y += d * sin(angle)
-        p.vel *= 0.05
+    
+    /**
+     Returns an array of ids that fit inside the circle
+     */
+    public func getParticlesInCircle(position: float2, radius: Float) -> [Int] {
+        var ids: [Int] = []
+        
+        // Brute-force
+        for b in 0 ..< particleCount {
+            
+            let bID = id[b]
+            
+            if collisionCheck(bID, position: position, radius: radius) {
+                ids.append(bID)
+            }
+        }
+        
+        return ids
     }
+    
 }

@@ -20,9 +20,6 @@
 		90027F8C207811BC00FC6980 /* primitive.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90027F8B207811BC00FC6980 /* primitive.metal */; };
 		90027F8D207811BC00FC6980 /* primitive.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90027F8B207811BC00FC6980 /* primitive.metal */; };
 		90027F8E207811BC00FC6980 /* primitive.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90027F8B207811BC00FC6980 /* primitive.metal */; };
-		90033FE4207FBBD90019B057 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90033FE3207FBBD90019B057 /* CollisionDetection.swift */; };
-		90033FE5207FBBD90019B057 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90033FE3207FBBD90019B057 /* CollisionDetection.swift */; };
-		90033FE6207FBBD90019B057 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90033FE3207FBBD90019B057 /* CollisionDetection.swift */; };
 		900AE7EB2076566600465EAD /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EA2076566600465EAD /* ViewController.swift */; };
 		900AE7ED207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
 		900AE7EE207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
@@ -55,15 +52,9 @@
 		900CAD4720729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4820729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4920729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
-		901D699E207BB0E40009DC17 /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901D699D207BB0E40009DC17 /* Emitter.swift */; };
-		901D699F207BB0E40009DC17 /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901D699D207BB0E40009DC17 /* Emitter.swift */; };
-		901D69A0207BB0E40009DC17 /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901D699D207BB0E40009DC17 /* Emitter.swift */; };
 		90238DF22073912100D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF32073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF42073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
-		9046AACD207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */; };
-		9046AACE207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */; };
-		9046AACF207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */; };
 		9051D9632076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
 		9051D9642076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
 		9051D9652076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
@@ -81,7 +72,6 @@
 		9001438C2072AD5C009FB201 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		90027F8720780CF900FC6980 /* PrimitiveShapes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PrimitiveShapes.swift; path = "Athi Shared/PrimitiveShapes.swift"; sourceTree = SOURCE_ROOT; };
 		90027F8B207811BC00FC6980 /* primitive.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = primitive.metal; sourceTree = "<group>"; };
-		90033FE3207FBBD90019B057 /* CollisionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollisionDetection.swift; sourceTree = "<group>"; };
 		900AE7EA2076566600465EAD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		900AE7EC207657F700465EAD /* Globals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
 		900B3B18207538A900569776 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
@@ -104,9 +94,7 @@
 		900CAD3620729D6500AE60E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		900CAD3B20729D6500AE60E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		900CAD3D20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		901D699D207BB0E40009DC17 /* Emitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Emitter.swift; sourceTree = "<group>"; };
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
-		9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleSystem_SoA.swift; sourceTree = "<group>"; };
 		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
@@ -143,7 +131,6 @@
 				90027F8720780CF900FC6980 /* PrimitiveShapes.swift */,
 				90027F8B207811BC00FC6980 /* primitive.metal */,
 				90D2EF2D207CC4DC00D5913C /* ParticleSystem */,
-				901D699D207BB0E40009DC17 /* Emitter.swift */,
 				9051D9662076CDCE00E2DB51 /* Quad.swift */,
 				9051D96A2076D17200E2DB51 /* Quad.metal */,
 				9051D9622076905200E2DB51 /* Quadtree.swift */,
@@ -235,8 +222,6 @@
 			children = (
 				900B3B28207553B600569776 /* Particle.metal */,
 				900B3B1C2075490900569776 /* ParticleSystem.swift */,
-				90033FE3207FBBD90019B057 /* CollisionDetection.swift */,
-				9046AACC207EDEF300AB1D10 /* ParticleSystem_SoA.swift */,
 			);
 			path = ParticleSystem;
 			sourceTree = "<group>";
@@ -374,10 +359,7 @@
 			files = (
 				9001438D2072AD5C009FB201 /* Utility.swift in Sources */,
 				900B3B252075512800569776 /* Node.swift in Sources */,
-				90033FE4207FBBD90019B057 /* CollisionDetection.swift in Sources */,
-				9046AACD207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				900AE7EB2076566600465EAD /* ViewController.swift in Sources */,
-				901D699E207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B2120754C9100569776 /* Input.swift in Sources */,
 				90027F8820780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8C207811BC00FC6980 /* primitive.metal in Sources */,
@@ -399,11 +381,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9046AACE207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				9051D9642076905200E2DB51 /* Quadtree.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
-				901D699F207BB0E40009DC17 /* Emitter.swift in Sources */,
-				90033FE5207FBBD90019B057 /* CollisionDetection.swift in Sources */,
 				900B3B262075512800569776 /* Node.swift in Sources */,
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
@@ -427,10 +406,7 @@
 			files = (
 				9001438F2072AD5C009FB201 /* Utility.swift in Sources */,
 				9001438B2072ABBC009FB201 /* ViewController.swift in Sources */,
-				90033FE6207FBBD90019B057 /* CollisionDetection.swift in Sources */,
-				9046AACF207EDEF300AB1D10 /* ParticleSystem_SoA.swift in Sources */,
 				900B3B272075512800569776 /* Node.swift in Sources */,
-				901D69A0207BB0E40009DC17 /* Emitter.swift in Sources */,
 				900B3B2320754C9100569776 /* Input.swift in Sources */,
 				90027F8A20780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8E207811BC00FC6980 /* primitive.metal in Sources */,
@@ -703,7 +679,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
-				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "Athi macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -48,8 +48,7 @@ class MACOSViewController: NSViewController {
     }
 
     override func rightMouseDown(with _: NSEvent) {
-        renderer.particleSystemSOA.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
     }
 
     override func mouseUp(with _: NSEvent) {
@@ -144,7 +143,7 @@ class MACOSViewController: NSViewController {
         timer = Timer(fire: Date(), interval: (1.0 / 60.0),
                       repeats: true, block: { _ in
 
-                          self.particleCountLabel?.stringValue = "Particles: " + String(self.renderer.particleSystem.particles.count)
+                          self.particleCountLabel?.stringValue = "Particles: " + String(self.renderer.particleSystem.particleCount)
 
                           self.frametimeLabel?.stringValue = "Frametime: " + String(self.renderer.frametime)
 
@@ -182,7 +181,7 @@ class MACOSViewController: NSViewController {
             {
                 let col = renderer.particleSystem.particleColor
                 let pos = float2(j,k)
-                renderer.particleSystem.addParticle(position: pos, color: col, radius: 1.0)
+                renderer.particleSystem.addParticleWith(position: pos, color: col, radius: 1.0)
             }
         }
 

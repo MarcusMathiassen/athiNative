@@ -27,6 +27,7 @@ final class Quad
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
         pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
         pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
         pipelineDesc.colorAttachments[0].alphaBlendOperation = .add

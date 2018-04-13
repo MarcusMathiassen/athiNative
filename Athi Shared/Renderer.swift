@@ -34,7 +34,6 @@ class Renderer: NSObject, MTKViewDelegate
     var frametime: Float = 0
     var deltaTime: Float = 0
     
-    var particleSystemSOA: ParticleSystemSoA
     var particleSystem: ParticleSystem
 
     var device: MTLDevice
@@ -88,7 +87,6 @@ class Renderer: NSObject, MTKViewDelegate
         
         commandQueue = queue
         
-        particleSystemSOA = ParticleSystemSoA()
         particleSystem = ParticleSystem(device: device)
 
         super.init()
@@ -119,13 +117,7 @@ class Renderer: NSObject, MTKViewDelegate
             Renderer.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
         #endif
 
-//        particleSystem.update()
-        particleSystemSOA.runTimeStep(deltaTime: frametime)
-        
-        let pd = particleSystemSOA.getParticleDataForGPU()
-        particleSystem.particleData = pd
-        
-        // Draw particles
+        particleSystem.update()
         particleSystem.draw(view: view, commandBuffer: commandBuffer)
 
         commandBuffer.present(view.currentDrawable!)
@@ -145,29 +137,16 @@ class Renderer: NSObject, MTKViewDelegate
 
         switch gMouseOption {
         case MouseOption.Spawn:
-            #if false
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticle(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            #else
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystemSOA.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            #endif
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
 
         case MouseOption.Drag:
             let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
@@ -176,9 +155,8 @@ class Renderer: NSObject, MTKViewDelegate
                     gmouseAttachedToIDs.append(id)
                 }
             }
-            for id in gmouseAttachedToIDs {
-                particleSystem.attractionForce(p: &particleSystem.particles[id], point: mousePos)
-            }
+            
+            particleSystem.goTowardsPoint(mousePos, particleIDs: gmouseAttachedToIDs)
 
         case MouseOption.Color:
             let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)

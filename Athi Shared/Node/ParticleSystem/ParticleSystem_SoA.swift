@@ -10,20 +10,28 @@ import simd
 
 final class ParticleSystemSoA
 {
-    // Amount of particles
-    public var particleCount: Int = 0
+    ///////////////////
+    // Simulation
+    ///////////////////
     
-    // Particle
+    public var particleCount: Int = 0 // Amount of particles
+    
+    //      Particle data
     var id:         [Int] = []
     var position:   [float2] = []
     var velocity:   [float2] = []
     var radius:     [Float] = []
     var mass:       [Float] = []
     var color:      [float4] = []
+    // 
     
     var containerOfIDs: [[Int]] = []
     
-    public func runTimeStep(deltaTime: Float)
+    ///////////////////
+    // Rendering
+    ///////////////////
+    
+    public func update(deltaTime: Float)
     {
         if (particleCount == 0) { return }
         
@@ -38,8 +46,6 @@ final class ParticleSystemSoA
         quadtree.getNodesOfIndices(containerOfNodes: &containerOfIDs)
         
         collisionQuadtree(containerOfNodes: containerOfIDs, begin: 0, end: containerOfIDs.count)
-        
-//        collisionLogNxN(total: particleCount, begin: 0, end: particleCount)
         
         // Update particle
         for i in 0 ..< particleCount {
@@ -97,6 +103,36 @@ final class ParticleSystemSoA
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
 
+    private func collisionCheck(_ a: Int, position: float2, radius: Float) -> Bool
+    {
+        // Local variables
+        let ax = self.position[a].x
+        let ay = self.position[a].y
+        let bx = position.x
+        let by = position.y
+        let ar = self.radius[a]
+        let br = radius
+        
+        // square collision check
+        if ax - ar < bx + br &&
+            ax + ar > bx - br &&
+            ay - ar < by + br &&
+            ay + ar > by - br {
+            
+            // circle collision check
+            let dx = bx - ax
+            let dy = by - ay
+            
+            let sum_radius = ar + br
+            let sqr_radius = sum_radius * sum_radius
+            
+            let distance_sqrd = (dx * dx) + (dy * dy)
+            
+            return distance_sqrd < sqr_radius
+        }
+        
+        return false
+    }
 
     private func collisionCheck(_ a: Int, _ b: Int) -> Bool
     {
@@ -308,4 +344,55 @@ final class ParticleSystemSoA
     }
     
     
+    public func goTowardsPoint(_ point: float2, particleIDs: [Int])
+    {
+        for id in particleIDs {
+            velocity[id] = gravityWell(particleID: id, point: point)
+        }
+    }
+    
+    public func gravityWell(particleID: Int, point: float2) -> float2
+    {
+        
+        let v1 = velocity[particleID]
+        let x1 = position[particleID].x
+        let y1 = position[particleID].y
+        let x2 = point.x
+        let y2 = point.y
+        let m1 = mass[particleID]
+        let m2 = Float(1e11)
+        
+        let dx = x2 - x1
+        let dy = y2 - y1
+        let d = sqrt(dx * dx + dy * dy)
+        
+        let angle = atan2(dy, dx)
+        let G = Float(kGravitationalConstant)
+        let F = G * m1 * m2 / d * d
+        
+        let nX = F * cos(angle)
+        let nY = F * sin(angle)
+
+        return float2(v1.x + nX, v1.y + nY)
+    }
+
+    /**
+        Returns an array of ids that fit inside the circle
+    */
+    public func getParticlesInCircle(position: float2, radius: Float) -> [Int] {
+        var ids: [Int] = []
+
+        // Brute-force
+        for b in 0 ..< particleCount {
+
+            let bID = id[b]
+
+            if collisionCheck(bID, position: position, radius: radius) {
+                ids.append(bID)
+            }
+        }
+
+        return ids
+    }
+
 }
