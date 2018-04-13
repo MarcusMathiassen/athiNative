@@ -29,7 +29,7 @@ class CollisionDetection<T : Collidable>
     func runTimeStep(deltaTime: Float) -> [float2]
     {
         // Assume we at least two collidables
-        precondition(collidables.count > 1, "We assume more than one collidable")
+//        precondition(collidables.count > 1, "We assume more than one collidable")
         
         // Holds all new positions
         var newPositions = [float2](repeating: float2(0), count: collidables.count)

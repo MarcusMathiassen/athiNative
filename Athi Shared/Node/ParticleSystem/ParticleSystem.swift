@@ -44,6 +44,14 @@ struct Particle
     }
 }
 
+// @GPU: Data needed to draw the particles
+struct ParticleGPU
+{
+    var position: float2
+    var color:    float4
+    var radius:     Float
+}
+
 final class ParticleSystem
 {
     /**
@@ -52,17 +60,19 @@ final class ParticleSystem
     var particles: [Particle] = []
     
     
-    struct ParticleData
+    // @CPU: Data needed to simulate the particles
+    struct Particle_CPU
     {
-        var position: float2
-        var color:    float4
-        var size:     Float
+        var position:   float2
+        var velocity:   float2
+        var radius:     Float
+        var mass:       Float
     }
     
     /**
         Particle data for the GPU
      */
-    private var particleData: [ParticleData] = []
+    var particleData: [ParticleGPU] = []
     
     // Options
     private var shouldUpdate: Bool = false
@@ -134,7 +144,7 @@ final class ParticleSystem
     {
         self.device = device
         quad = Quad(device: device)
-
+        
         let library = device.makeDefaultLibrary()!
         let vertexFunc = library.makeFunction(name: "particleVert")!
         let fragFunc = library.makeFunction(name: "particleFrag")!
@@ -154,7 +164,7 @@ final class ParticleSystem
         
         
         allocatedMemoryForParticles = preAllocatedParticles
-        particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleData>.stride, options: dynamicBufferResourceOption)!
+        particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleGPU>.stride, options: dynamicBufferResourceOption)!
         vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: staticBufferResourceOption)!
         indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle*3, options: staticBufferResourceOption)!
 
@@ -244,18 +254,18 @@ final class ParticleSystem
     private func updateGPUBuffers()
     {
         // Reallocate more if needed
-        if particleData.count * MemoryLayout<ParticleData>.stride > particleDataBuffer.allocatedSize {
+        if particleData.count * MemoryLayout<ParticleGPU>.stride > particleDataBuffer.allocatedSize {
             
             // Update the buffer size
-            particleDataBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<ParticleData>.stride, options: dynamicBufferResourceOption)!
+            particleDataBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<ParticleGPU>.stride, options: dynamicBufferResourceOption)!
             
             // Upload new content
-            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
+            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleGPU>.stride)
 
         } else {
             
             // Upload new content
-            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleData>.stride)
+            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleGPU>.stride)
         }
     }
 
@@ -267,7 +277,7 @@ final class ParticleSystem
             buildVertices(numVertices: numVerticesPerParticle)
             shouldUpdate = false
         }
-
+        
         if enableCollisions {
             for _ in 0 ..< samples
             {
@@ -528,7 +538,7 @@ final class ParticleSystem
             particles[i] = p
 
             // Update particleData
-            particleData[i] = ParticleData(position: p.pos, color: colors[p.id], size: p.radius)
+//            particleData[i] = ParticleGPU(position: p.pos, color: colors[p.id], radius: p.radius)
         }
     }
     
@@ -559,7 +569,7 @@ final class ParticleSystem
         particles.append(pa)
         
         // Add it to be drawn
-        let pD = ParticleData(position: p.pos, color: color, size: p.radius)
+        let pD = ParticleGPU(position: p.pos, color: color, radius: p.radius)
         particleData.append(pD)
         
         // Add new color
@@ -579,7 +589,7 @@ final class ParticleSystem
         particles.append(p)
         
         // Add it to be drawn
-        let pD = ParticleData(position: position, color: color, size: radius)
+        let pD = ParticleGPU(position: position, color: color, radius: radius)
         particleData.append(pD)
         
         colors.append(color)

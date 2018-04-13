@@ -48,7 +48,8 @@ class MACOSViewController: NSViewController {
     }
 
     override func rightMouseDown(with _: NSEvent) {
-        renderer.particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
+        renderer.particleSystemSOA.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticle(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
     }
 
     override func mouseUp(with _: NSEvent) {
