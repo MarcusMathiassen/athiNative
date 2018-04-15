@@ -44,7 +44,7 @@ class IOSViewController: UIViewController {
 
     @IBOutlet var particleCountLabel: UILabel?
     override func touchesMoved(_ touches: Set<UITouch>, with _: UIEvent?) {
-        particleCountLabel?.text = "Particles: " + String(renderer.particleSystem.particles.count)
+        particleCountLabel?.text = "Particles: " + String(renderer.particleSystem.particleCount)
 
         for touch in touches {
             var point: float2 = float2(Float(touch.location(in: view).x), Float(touch.location(in: view).y))
@@ -52,13 +52,13 @@ class IOSViewController: UIViewController {
             point *= 2
             point.y -= screenHeight
             point.y *= -1
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticle(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
         }
     }
 

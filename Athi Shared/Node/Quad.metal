@@ -31,7 +31,7 @@ constexpr constant Quad vertices [] =
     {  float2(-1, -1), float2(0, 0) },
 };
 
-float4 blur13(texture2d<float>  image,
+float4 blur13(texture2d<float, access::sample>  image,
               float2 uv,
               float2 resolution,
               float2 direction)
@@ -68,21 +68,45 @@ struct FragOut
 };
 
 
-fragment FragOut gaussianBlurFrag(   Vertex              vert            [[stage_in]],
-                                    constant float2*    resolution      [[buffer(0)]],
-                                    constant float2*    direction       [[buffer(1)]],
-                                    texture2d<float>    colorTexture    [[texture(0)]])
+fragment FragOut gaussianBlurFrag(  Vertex                              vert            [[stage_in]],
+                                    constant float2*                    resolution      [[buffer(0)]],
+                                    constant float2*                    direction       [[buffer(1)]],
+                                    texture2d<float, access::sample>    texIn           [[texture(0)]])
 {
-    return { blur13(colorTexture, vert.uv, *resolution, *direction)};
+    return { blur13(texIn, vert.uv, *resolution, *direction)};
 }
 
 
-fragment FragOut quadFrag(Vertex              vert           [[stage_in]],
-                        texture2d<float>     colorTexture   [[texture(0)]])
+fragment FragOut quadFrag(  Vertex                              vert           [[stage_in]],
+                            texture2d<float, access::sample>    colorTexture   [[texture(0)]])
 {
     constexpr sampler textureSampler (mag_filter::linear,
                                       min_filter::linear);
     
     // We return the color of the texture
     return { colorTexture.sample(textureSampler, vert.uv) };
+}
+
+kernel void pixelate(texture2d<float, access::sample>    texIn           [[texture(0)]],
+                     texture2d<float, access::write>     texOut          [[texture(1)]],
+                     uint2                               gid             [[thread_position_in_grid]])
+{
+    const uint weight = 10;
+    const uint2 pixellatedGid = uint2((gid.x / weight) * weight, (gid.y / weight) * weight);
+    
+    const float4 colorAtPixel = texIn.read(pixellatedGid);
+    
+    texOut.write(colorAtPixel, gid);
+}
+
+kernel void mix(texture2d<float, access::read>     tex1          [[texture(0)]],
+                texture2d<float, access::read>     tex2          [[texture(1)]],
+                texture2d<float, access::write>    dest          [[texture(2)]],
+                uint2                              gid           [[thread_position_in_grid]])
+{
+    float4 c1 = tex1.read(gid);
+    float4 c2 = tex2.read(gid);
+    float4 rc = c1 + c2;
+    
+    dest.write(rc, gid);
 }

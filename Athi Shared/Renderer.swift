@@ -183,9 +183,12 @@ class Renderer: NSObject, MTKViewDelegate
         mainTextureDesc.textureType = .type2D
         mainTextureDesc.pixelFormat = Renderer.pixelFormat
         mainTextureDesc.resourceOptions = .storageModePrivate
-        mainTextureDesc.usage = [.renderTarget]
-        particleSystem.texture0 = device.makeTexture(descriptor: mainTextureDesc)!
-        particleSystem.texture1 = device.makeTexture(descriptor: mainTextureDesc)!
+        mainTextureDesc.usage = .shaderRead
+        particleSystem.inTexture = device.makeTexture(descriptor: mainTextureDesc)!
+        mainTextureDesc.usage = .shaderWrite
+        particleSystem.outTexture = device.makeTexture(descriptor: mainTextureDesc)!
+        particleSystem.finalTexture = device.makeTexture(descriptor: mainTextureDesc)!
+
         
         #if os(macOS)
             let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)

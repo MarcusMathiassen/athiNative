@@ -47,3 +47,17 @@ fragment FragmentOut particleFrag(ParticleOut particle [[stage_in]])
 {
     return { particle.color, particle.color };
 }
+
+struct Particle
+{
+    float2 position;
+    float2 velocity;
+};
+
+// Compute Kernel
+kernel void particleUpdateKernel(threadgroup Particle *pIn  [[threadgroup(0)]],
+                                 threadgroup Particle *pOut [[threadgroup(1)]],
+                                 uint2           gid  [[thread_position_in_grid]])
+{
+    const uint id = gid.x;
+}

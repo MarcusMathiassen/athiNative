@@ -8,32 +8,32 @@
 
 import simd // float2, float4
 
-struct Rect {
-    var min = float2(0)
-    var max = float2(0)
-    var color = float4(1)
-
-    init(min: float2, max: float2) {
-        self.min = min
-        self.max = max
-    }
-
-    func containsPoint(position: float2, radius: Float) -> Bool {
-        if position.x - radius < max.x &&
-            position.x + radius > min.x &&
-            position.y - radius < max.y &&
-            position.y + radius > min.y {
-            return true
-        }
-        return false
-    }
-}
-
 final class Quadtree
 {
+    
+    struct Rect {
+        var min = float2(0)
+        var max = float2(0)
+        var color = float4(1)
+        
+        init(min: float2, max: float2) {
+            self.min = min
+            self.max = max
+        }
+        
+        func containsPoint(position: float2, radius: Float) -> Bool {
+            if position.x - radius < max.x &&
+                position.x + radius > min.x &&
+                position.y - radius < max.y &&
+                position.y + radius > min.y {
+                return true
+            }
+            return false
+        }
+    }
+    
     static var maxCapacityPerNode: Int = 50
     static var maxDepth: Int = 5
-//    private static var data: [Particle] = []
     private static var positions: [float2] = []
     private static var radii: [Float] = []
 
@@ -52,10 +52,13 @@ final class Quadtree
     init(depth: Int, bounds: Rect) {
         self.depth = depth
         self.bounds = bounds
+        
+        indices.reserveCapacity(Quadtree.maxCapacityPerNode)
     }
 
     init(min: float2, max: float2) {
         bounds = Rect(min: min, max: max)
+        indices.reserveCapacity(Quadtree.maxCapacityPerNode)
     }
 
     /**
@@ -90,12 +93,6 @@ final class Quadtree
     /**
      Inserts all elements into the quadtree
      */
-    func input(data: [Particle]) {
-//        Quadtree.data = data
-        for obj in data {
-            insert(obj.id)
-        }
-    }
     func inputRange(range: ClosedRange<Int>) {
         for id in range.lowerBound ..< range.upperBound {
             insert(id)
@@ -167,12 +164,12 @@ final class Quadtree
     /**
      Returns the neighbour nodes to the input object
      */
-    func getNeighbours(containerOfNodes: inout [[Int]], p: Particle) {
+    func getNeighbours(containerOfNodes: inout [[Int]], position: float2, radius: Float) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { sw?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
-            if (se?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { se?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
-            if (nw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { nw?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
-            if (ne?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { ne?.getNeighbours(containerOfNodes: &containerOfNodes, p: p) }
+            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false { sw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false { se?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false { nw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
             return
         }
 
@@ -184,12 +181,12 @@ final class Quadtree
     /**
      Colors neighbour nodes to the input object
      */
-    func colorNeighbours(p: Particle, color: float4) {
+    func colorNeighbours(position: float2, radius: Float, color: float4) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { sw?.colorNeighbours(p: p, color: color) }
-            if (se?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { se?.colorNeighbours(p: p, color: color) }
-            if (nw?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { nw?.colorNeighbours(p: p, color: color) }
-            if (ne?.bounds.containsPoint(position: p.pos, radius: p.radius)) ?? false { ne?.colorNeighbours(p: p, color: color) }
+            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false { sw?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false { se?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false { nw?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.colorNeighbours(position: position, radius: radius, color: color) }
             return
         }
         bounds.color = color

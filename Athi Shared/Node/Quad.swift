@@ -14,6 +14,10 @@ final class Quad
     var pipelineState: MTLRenderPipelineState?
     var gaussianBlurPipelineState: MTLRenderPipelineState?
     
+    // Compute
+    var pixelateComputePipelineState: MTLComputePipelineState?
+    var mixComputePipelineState: MTLComputePipelineState?
+
     init(device: MTLDevice)
     {
         self.device = device
@@ -55,6 +59,84 @@ final class Quad
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
+        
+        
+        // Load the kernel function from the library
+        let pixelateComputeFunc = library.makeFunction(name: "pixelate")
+
+        // Create a compute pipeline state
+        do {
+            try pixelateComputePipelineState = device.makeComputePipelineState(function: pixelateComputeFunc!)
+        } catch {
+            print("Pipeline: Creating pipeline state failed")
+        }
+        
+        // Load the kernel function from the library
+        let mixComputeFunc = library.makeFunction(name: "mix")
+        
+        // Create a compute pipeline state
+        do {
+            try mixComputePipelineState = device.makeComputePipelineState(function: mixComputeFunc!)
+        } catch {
+            print("Pipeline: Creating pipeline state failed")
+        }
+    }
+    
+    func mix(
+        commandBuffer: MTLCommandBuffer,
+        inputTexture1: MTLTexture,
+        inputTexture2: MTLTexture,
+        outTexture: MTLTexture,
+        sigma: Float)
+    {
+        // Compute kernel threadgroup size
+        let w = (mixComputePipelineState?.threadExecutionWidth)!
+        let h = (mixComputePipelineState?.maxTotalThreadsPerThreadgroup)! / w
+        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadPerGrid = MTLSize(width: inputTexture1.width, height: inputTexture1.height, depth: 1)
+        
+        // Make the encoder
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+        
+        // Set the pipelinestate
+        computeEncoder?.setComputePipelineState(mixComputePipelineState!)
+        
+        // Set the textures
+        computeEncoder?.setTextures([inputTexture1, inputTexture2, outTexture], range: 0 ..< 3)
+        
+        // Set thread groups
+        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
+        
+        // Finish
+        computeEncoder?.endEncoding()
+    }
+    
+    func pixelate(
+        commandBuffer: MTLCommandBuffer,
+        inputTexture: MTLTexture,
+        outputTexture: MTLTexture,
+        sigma: Float)
+    {
+        // Compute kernel threadgroup size
+        let w = (pixelateComputePipelineState?.threadExecutionWidth)!
+        let h = (pixelateComputePipelineState?.maxTotalThreadsPerThreadgroup)! / w
+        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadPerGrid = MTLSize(width: inputTexture.width, height: inputTexture.height, depth: 1)
+        
+        // Make the encoder
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+        
+        // Set the pipelinestate
+        computeEncoder?.setComputePipelineState(pixelateComputePipelineState!)
+        
+        // Set the textures
+        computeEncoder?.setTextures([inputTexture, outputTexture], range: 0 ..< 2)
+        
+        // Set thread groups
+        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
+        
+        // Finish
+        computeEncoder?.endEncoding()
     }
     
     func gaussianBlur(

@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9000A06B207531E400EA056B /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9000A06A207531E400EA056B /* Scene.swift */; };
-		9000A06C207531E400EA056B /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9000A06A207531E400EA056B /* Scene.swift */; };
-		9000A06D207531E400EA056B /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9000A06A207531E400EA056B /* Scene.swift */; };
 		9001438B2072ABBC009FB201 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900143882072ABBB009FB201 /* ViewController.swift */; };
 		9001438D2072AD5C009FB201 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9001438C2072AD5C009FB201 /* Utility.swift */; };
 		9001438E2072AD5C009FB201 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9001438C2072AD5C009FB201 /* Utility.swift */; };
@@ -24,18 +21,12 @@
 		900AE7ED207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
 		900AE7EE207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
 		900AE7EF207657F700465EAD /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900AE7EC207657F700465EAD /* Globals.swift */; };
-		900B3B19207538A900569776 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B18207538A900569776 /* Entity.swift */; };
-		900B3B1A207538A900569776 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B18207538A900569776 /* Entity.swift */; };
-		900B3B1B207538A900569776 /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B18207538A900569776 /* Entity.swift */; };
 		900B3B1D2075490900569776 /* ParticleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem.swift */; };
 		900B3B1E2075490900569776 /* ParticleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem.swift */; };
 		900B3B1F2075490900569776 /* ParticleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B1C2075490900569776 /* ParticleSystem.swift */; };
 		900B3B2120754C9100569776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B2020754C9000569776 /* Input.swift */; };
 		900B3B2220754C9100569776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B2020754C9000569776 /* Input.swift */; };
 		900B3B2320754C9100569776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B2020754C9000569776 /* Input.swift */; };
-		900B3B252075512800569776 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B242075512800569776 /* Node.swift */; };
-		900B3B262075512800569776 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B242075512800569776 /* Node.swift */; };
-		900B3B272075512800569776 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B242075512800569776 /* Node.swift */; };
 		900B3B29207553B600569776 /* Particle.metal in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B28207553B600569776 /* Particle.metal */; };
 		900B3B2A207553B600569776 /* Particle.metal in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B28207553B600569776 /* Particle.metal */; };
 		900B3B2B207553B600569776 /* Particle.metal in Sources */ = {isa = PBXBuildFile; fileRef = 900B3B28207553B600569776 /* Particle.metal */; };
@@ -52,6 +43,9 @@
 		900CAD4720729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4820729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4920729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
+		901DD87C20810A2500856FE4 /* QuadtreeV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901DD87B20810A2500856FE4 /* QuadtreeV2.swift */; };
+		901DD87D20810A2500856FE4 /* QuadtreeV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901DD87B20810A2500856FE4 /* QuadtreeV2.swift */; };
+		901DD87E20810A2500856FE4 /* QuadtreeV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901DD87B20810A2500856FE4 /* QuadtreeV2.swift */; };
 		90238DF22073912100D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF32073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF42073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
@@ -67,17 +61,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		9000A06A207531E400EA056B /* Scene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene.swift; sourceTree = "<group>"; };
 		900143882072ABBB009FB201 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9001438C2072AD5C009FB201 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		90027F8720780CF900FC6980 /* PrimitiveShapes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PrimitiveShapes.swift; path = "Athi Shared/PrimitiveShapes.swift"; sourceTree = SOURCE_ROOT; };
 		90027F8B207811BC00FC6980 /* primitive.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = primitive.metal; sourceTree = "<group>"; };
 		900AE7EA2076566600465EAD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		900AE7EC207657F700465EAD /* Globals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
-		900B3B18207538A900569776 /* Entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entity.swift; sourceTree = "<group>"; };
 		900B3B1C2075490900569776 /* ParticleSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleSystem.swift; sourceTree = "<group>"; };
 		900B3B2020754C9000569776 /* Input.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Input.swift; sourceTree = "<group>"; };
-		900B3B242075512800569776 /* Node.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = "<group>"; };
 		900B3B28207553B600569776 /* Particle.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Particle.metal; sourceTree = "<group>"; };
 		900CAD0D20729D6300AE60E9 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		900CAD0F20729D6500AE60E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -94,6 +85,7 @@
 		900CAD3620729D6500AE60E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		900CAD3B20729D6500AE60E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		900CAD3D20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		901DD87B20810A2500856FE4 /* QuadtreeV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuadtreeV2.swift; sourceTree = "<group>"; };
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
@@ -134,18 +126,9 @@
 				9051D9662076CDCE00E2DB51 /* Quad.swift */,
 				9051D96A2076D17200E2DB51 /* Quad.metal */,
 				9051D9622076905200E2DB51 /* Quadtree.swift */,
-				900B3B18207538A900569776 /* Entity.swift */,
-				900B3B242075512800569776 /* Node.swift */,
+				901DD87B20810A2500856FE4 /* QuadtreeV2.swift */,
 			);
 			path = Node;
-			sourceTree = "<group>";
-		};
-		9000A069207531DA00EA056B /* Scene */ = {
-			isa = PBXGroup;
-			children = (
-				9000A06A207531E400EA056B /* Scene.swift */,
-			);
-			path = Scene;
 			sourceTree = "<group>";
 		};
 		900CAD0620729D6300AE60E9 = {
@@ -162,7 +145,6 @@
 		900CAD0B20729D6300AE60E9 /* Athi Shared */ = {
 			isa = PBXGroup;
 			children = (
-				9000A069207531DA00EA056B /* Scene */,
 				9000A0642075315C00EA056B /* Node */,
 				900CAD0D20729D6300AE60E9 /* Renderer.swift */,
 				900B3B2020754C9000569776 /* Input.swift */,
@@ -358,7 +340,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				9001438D2072AD5C009FB201 /* Utility.swift in Sources */,
-				900B3B252075512800569776 /* Node.swift in Sources */,
 				900AE7EB2076566600465EAD /* ViewController.swift in Sources */,
 				900B3B2120754C9100569776 /* Input.swift in Sources */,
 				90027F8820780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
@@ -370,10 +351,9 @@
 				900CAD1820729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B29207553B600569776 /* Particle.metal in Sources */,
 				9051D9632076905200E2DB51 /* Quadtree.swift in Sources */,
-				900B3B19207538A900569776 /* Entity.swift in Sources */,
 				9051D9672076CDCE00E2DB51 /* Quad.swift in Sources */,
 				900AE7ED207657F700465EAD /* Globals.swift in Sources */,
-				9000A06B207531E400EA056B /* Scene.swift in Sources */,
+				901DD87C20810A2500856FE4 /* QuadtreeV2.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -383,7 +363,7 @@
 			files = (
 				9051D9642076905200E2DB51 /* Quadtree.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
-				900B3B262075512800569776 /* Node.swift in Sources */,
+				901DD87D20810A2500856FE4 /* QuadtreeV2.swift in Sources */,
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
 				90238DF32073912700D25590 /* Math.swift in Sources */,
@@ -395,8 +375,6 @@
 				900CAD2920729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B2A207553B600569776 /* Particle.metal in Sources */,
 				90027F8920780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
-				900B3B1A207538A900569776 /* Entity.swift in Sources */,
-				9000A06C207531E400EA056B /* Scene.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -406,7 +384,6 @@
 			files = (
 				9001438F2072AD5C009FB201 /* Utility.swift in Sources */,
 				9001438B2072ABBC009FB201 /* ViewController.swift in Sources */,
-				900B3B272075512800569776 /* Node.swift in Sources */,
 				900B3B2320754C9100569776 /* Input.swift in Sources */,
 				90027F8A20780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8E207811BC00FC6980 /* primitive.metal in Sources */,
@@ -417,10 +394,9 @@
 				900CAD3720729D6500AE60E9 /* AppDelegate.swift in Sources */,
 				900B3B2B207553B600569776 /* Particle.metal in Sources */,
 				9051D9652076905200E2DB51 /* Quadtree.swift in Sources */,
-				900B3B1B207538A900569776 /* Entity.swift in Sources */,
 				9051D9692076CDCE00E2DB51 /* Quad.swift in Sources */,
 				900AE7EF207657F700465EAD /* Globals.swift in Sources */,
-				9000A06D207531E400EA056B /* Scene.swift in Sources */,
+				901DD87E20810A2500856FE4 /* QuadtreeV2.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -580,19 +556,22 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				INFOPLIST_FILE = "Athi iOS/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MTL_OPTIMIZATION_LEVEL = 3;
 				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
 				PRODUCT_NAME = Athi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";
 				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -605,19 +584,22 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				INFOPLIST_FILE = "Athi iOS/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MTL_OPTIMIZATION_LEVEL = 3;
 				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
 				PRODUCT_NAME = Athi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
+				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";
 				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -687,16 +669,16 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_FAST_MATH = NO;
-				MTL_OPTIMIZATION_LEVEL = 3;
+				MTL_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
 				PRODUCT_NAME = Athi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_DISABLE_SAFETY_CHECKS = YES;
-				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";
+				SWIFT_DISABLE_SAFETY_CHECKS = NO;
+				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = full;
 				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;

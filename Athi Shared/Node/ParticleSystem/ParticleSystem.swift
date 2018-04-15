@@ -6,43 +6,10 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
+import Metal
 import MetalKit
 import simd
 import MetalPerformanceShaders
-
-struct Particle
-{
-    var id: Int = 0
-    var pos = float2(0)
-    var vel = float2(0)
-    var radius: Float = 1
-    var mass: Float = 0
-
-    mutating func borderCollision() {
-        // Border collision
-        if pos.x < 0 + radius {
-            pos.x = 0 + radius
-            vel.x = -vel.x
-        }
-        if pos.x > framebufferWidth - radius {
-            pos.x = framebufferWidth - radius
-            vel.x = -vel.x
-        }
-        if pos.y < 0 + radius {
-            pos.y = 0 + radius
-            vel.y = -vel.y
-        }
-        if pos.y > framebufferHeight - radius {
-            pos.y = framebufferHeight - radius
-            vel.y = -vel.y
-        }
-    }
-
-    mutating func update() {
-        // Update pos/vel
-        pos += vel
-    }
-}
 
 final class ParticleSystem
 {
@@ -80,6 +47,7 @@ final class ParticleSystem
     private var shouldUpdate: Bool = false
     private var listOfNodesOfIDs: [[Int]] = []
     private var quadtree: Quadtree?
+    private var quadtreeV2: QuadtreeV2?
 
     
     ///////////////////
@@ -108,9 +76,12 @@ final class ParticleSystem
     // Metal stuff
     // Rendering stuff
     
+    
+    var computePipelineState: MTLComputePipelineState?
+    
     var enablePostProcessing: Bool = true
-    var postProcessingSamples: Int = 2
-    var blurStrength: Float = 4
+    var postProcessingSamples: Int = 1
+    var blurStrength: Float = 2
     var preAllocatedParticles = 100
     private var allocatedMemoryForParticles: Int
     #if os(macOS)
@@ -128,8 +99,10 @@ final class ParticleSystem
     private var vertexBuffer: MTLBuffer
     private var indexBuffer: MTLBuffer
     private var pipelineState: MTLRenderPipelineState?
-    var texture0: MTLTexture
-    var texture1: MTLTexture
+    
+    var inTexture: MTLTexture
+    var outTexture: MTLTexture
+    var finalTexture: MTLTexture
 
     init(device: MTLDevice)
     {
@@ -146,6 +119,7 @@ final class ParticleSystem
         pipelineDesc.fragmentFunction = fragFunc
         pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
         pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
+        
 
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
@@ -159,16 +133,27 @@ final class ParticleSystem
         vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: staticBufferResourceOption)!
         indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle*3, options: staticBufferResourceOption)!
 
-        let mainTextureDesc = MTLTextureDescriptor()
-        mainTextureDesc.height = Int(framebufferHeight)
-        mainTextureDesc.width = Int(framebufferWidth)
-        mainTextureDesc.sampleCount = 1
-        mainTextureDesc.textureType = .type2D
-        mainTextureDesc.pixelFormat = Renderer.pixelFormat
-        mainTextureDesc.resourceOptions = .storageModePrivate
-        mainTextureDesc.usage = .renderTarget
-        texture0 = device.makeTexture(descriptor: mainTextureDesc)!
-        texture1 = device.makeTexture(descriptor: mainTextureDesc)!
+        let inTextureDesc = MTLTextureDescriptor()
+        inTextureDesc.height = Int(framebufferHeight)
+        inTextureDesc.width = Int(framebufferWidth)
+        inTextureDesc.sampleCount = 1
+        inTextureDesc.textureType = .type2D
+        inTextureDesc.pixelFormat = Renderer.pixelFormat
+        inTextureDesc.resourceOptions = .storageModePrivate
+        inTextureDesc.usage = .shaderRead
+        inTexture = device.makeTexture(descriptor: inTextureDesc)!
+        
+        let outTextureDesc = MTLTextureDescriptor()
+        outTextureDesc.height = Int(framebufferHeight)
+        outTextureDesc.width = Int(framebufferWidth)
+        outTextureDesc.sampleCount = 1
+        outTextureDesc.textureType = .type2D
+        outTextureDesc.pixelFormat = Renderer.pixelFormat
+        outTextureDesc.resourceOptions = .storageModePrivate
+        outTextureDesc.usage = .shaderWrite
+        outTexture = device.makeTexture(descriptor: outTextureDesc)!
+        
+        finalTexture = device.makeTexture(descriptor: outTextureDesc)!
         
         buildVertices(numVertices: numVerticesPerParticle)
     }
@@ -181,13 +166,13 @@ final class ParticleSystem
         commandBuffer.pushDebugGroup("ParticleSystem Draw")
         
         var renderPassDesc = MTLRenderPassDescriptor()
-        renderPassDesc.colorAttachments[0].clearColor = Renderer.clearColor
-        renderPassDesc.colorAttachments[0].texture = texture0
+        renderPassDesc.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        renderPassDesc.colorAttachments[0].texture = inTexture
         renderPassDesc.colorAttachments[0].loadAction = .clear
         renderPassDesc.colorAttachments[0].storeAction = .store
         
-        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        renderPassDesc.colorAttachments[1].texture = texture1
+        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        renderPassDesc.colorAttachments[1].texture = outTexture
         renderPassDesc.colorAttachments[1].loadAction = .clear
         renderPassDesc.colorAttachments[1].storeAction = .store
         
@@ -211,22 +196,32 @@ final class ParticleSystem
             indexBufferOffset: 0,
             instanceCount: particleData.count)
         
+        renderEncoder.popDebugGroup()
+        renderEncoder.endEncoding()
         
         if enablePostProcessing {
             
             renderEncoder.pushDebugGroup("Apply Post Processing")
-            quad.gaussianBlur(renderEncoder: renderEncoder, texture: texture0, sigma: blurStrength, samples: postProcessingSamples)
+
+            
+            let blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
+            blurKernel.encode(commandBuffer: commandBuffer,
+                              sourceTexture: inTexture,
+                              destinationTexture: outTexture)
+
+            
+            
+//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: outTexture, sigma: 5.0)
+
             renderEncoder.popDebugGroup()
             
-            
             renderEncoder.pushDebugGroup("Overlay the unblurred original")
-            quad.draw(renderEncoder: renderEncoder, texture: texture1)
+            
+            quad.mix(commandBuffer: commandBuffer, inputTexture1: inTexture, inputTexture2: outTexture, outTexture: finalTexture, sigma: 5.0)
+            
             renderEncoder.popDebugGroup()
 
         }
-        
-        renderEncoder.popDebugGroup()
-        renderEncoder.endEncoding()
         
         
         renderPassDesc = view.currentRenderPassDescriptor!
@@ -236,7 +231,7 @@ final class ParticleSystem
         renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
         
         renderEncoder.pushDebugGroup("Draw particles (on-screen)")
-        quad.draw(renderEncoder: renderEncoder, texture: texture0)
+        quad.draw(renderEncoder: renderEncoder, texture: finalTexture)
         
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
@@ -288,13 +283,20 @@ final class ParticleSystem
                             min = mi
                             max = ma
                             quadtree = Quadtree(min: min, max: max)
+//                            quadtreeV2 = QuadtreeV2(bounds: Rect(min: min, max: max), maxCapacity: 5, maxDepth: 3)
+
                         } else {
+//                            quadtreeV2 = QuadtreeV2(bounds: Rect(min: float2(0, 0), max: float2(framebufferWidth, framebufferHeight)), maxCapacity: 50, maxDepth: 5)
                             quadtree = Quadtree(min: float2(0, 0), max: float2(framebufferWidth, framebufferHeight))
                         }
-
+//
+//                        quadtreeV2?.setData(positionData: position, radiiData: radius)
+//                        quadtreeV2?.insertRange(0 ... particleCount)
+//                        quadtreeV2?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
+//
                         quadtree?.setInputData(positions: position, radii: radius)
                         quadtree?.inputRange(range: 0 ... particleCount)
-                        
+
                         quadtree?.getNodesOfIndices(containerOfNodes: &listOfNodesOfIDs)
 
 //                        DispatchQueue.concurrentPerform(iterations: 8) { i in
@@ -352,6 +354,8 @@ final class ParticleSystem
 //                print(begin, end)
 //                updateParticlesData(begin: begin, end: end)
 //            }
+            updateParticlesData(begin: 0, end: particleCount)
+
         } else {
             updateParticlesData(begin: 0, end: particleCount)
         }
@@ -441,7 +445,7 @@ final class ParticleSystem
         
         
         // Rendering data
-//        particleData.removeAll()
+        particleData.removeAll()
         
         particleCount = 0
     }
