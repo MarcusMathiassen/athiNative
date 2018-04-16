@@ -22,7 +22,7 @@ var framebufferWidth: Float = 0
 
 var viewport = float2(512, 512)
 
-class Renderer: NSObject, MTKViewDelegate
+final class Renderer: NSObject, MTKViewDelegate
 {
     var wireframeMode: Bool = false
     var fillMode: MTLTriangleFillMode = .fill

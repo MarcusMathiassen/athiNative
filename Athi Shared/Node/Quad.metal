@@ -7,6 +7,7 @@
 //
 
 #include <metal_stdlib>
+#include <metal_compute>
 using namespace metal;
 
 struct Vertex {
@@ -32,9 +33,9 @@ constexpr constant Quad vertices [] =
 };
 
 float4 blur13(texture2d<float, access::sample>  image,
-              float2 uv,
-              float2 resolution,
-              float2 direction)
+              float2                            uv,
+              float2                            resolution,
+              float2                            direction)
 {
     constexpr sampler textureSampler (mag_filter::linear,
                                       min_filter::linear);
@@ -68,17 +69,17 @@ struct FragOut
 };
 
 
-fragment FragOut gaussianBlurFrag(  Vertex                              vert            [[stage_in]],
-                                    constant float2*                    resolution      [[buffer(0)]],
-                                    constant float2*                    direction       [[buffer(1)]],
-                                    texture2d<float, access::sample>    texIn           [[texture(0)]])
+fragment FragOut gaussianBlurFrag(Vertex                              vert            [[stage_in]],
+                                  constant float2*                    resolution      [[buffer(0)]],
+                                  constant float2*                    direction       [[buffer(1)]],
+                                  texture2d<float, access::sample>    texIn           [[texture(0)]])
 {
     return { blur13(texIn, vert.uv, *resolution, *direction)};
 }
 
 
-fragment FragOut quadFrag(  Vertex                              vert           [[stage_in]],
-                            texture2d<float, access::sample>    colorTexture   [[texture(0)]])
+fragment FragOut quadFrag(Vertex                              vert           [[stage_in]],
+                          texture2d<float, access::sample>    colorTexture   [[texture(0)]])
 {
     constexpr sampler textureSampler (mag_filter::linear,
                                       min_filter::linear);
@@ -87,10 +88,10 @@ fragment FragOut quadFrag(  Vertex                              vert           [
     return { colorTexture.sample(textureSampler, vert.uv) };
 }
 
-kernel void pixelate(texture2d<float, access::read>    texIn           [[texture(0)]],
-                     texture2d<float, access::write>     texOut          [[texture(1)]],
-                     constant float *sigma [[buffer(0)]],
-                     uint2                               gid             [[thread_position_in_grid]])
+kernel void pixelate(texture2d<float, access::read>     texIn           [[texture(0)]],
+                     texture2d<float, access::write>    texOut          [[texture(1)]],
+                     constant float*                    sigma           [[buffer(0)]],
+                     uint2                              gid             [[thread_position_in_grid]])
 {
     const uint weight = *sigma;
     const uint2 pixellatedGid = uint2((gid.x / weight) * weight, (gid.y / weight) * weight);

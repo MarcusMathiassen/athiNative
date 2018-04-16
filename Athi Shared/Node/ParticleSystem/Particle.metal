@@ -55,9 +55,9 @@ struct Particle
 };
 
 // Compute Kernel
-kernel void particleUpdateKernel(threadgroup Particle *pIn  [[threadgroup(0)]],
-                                 threadgroup Particle *pOut [[threadgroup(1)]],
-                                 uint2           gid  [[thread_position_in_grid]])
+kernel void particle_update(threadgroup Particle *pIn  [[threadgroup(0)]],
+                            threadgroup Particle *pOut [[threadgroup(1)]],
+                            uint2                 gid  [[thread_position_in_grid]])
 {
-    const uint id = gid.x;
+    pOut[gid.x+gid.y].position += pIn[gid.x+gid.y].position + pIn[gid.x+gid.y].velocity;
 }

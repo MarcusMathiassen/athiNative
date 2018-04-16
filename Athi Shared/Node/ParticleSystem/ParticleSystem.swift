@@ -61,11 +61,18 @@ final class ParticleSystem
         var color:    float4
         var radius:   Float
     }
+    
+    struct Particle
+    {
+        var position: float2
+        var velocity: float2
+    }
 
     /**
         Particle data for the GPU
      */
     var particleData: [ParticleGPU] = []
+    var pdata: [Particle]
     
     /**
         Static data uploaded once, and updated when numVerticesPerParticle is changed
@@ -103,6 +110,8 @@ final class ParticleSystem
     var inTexture: MTLTexture
     var outTexture: MTLTexture
     var finalTexture: MTLTexture
+    
+    private var pInBuffer: MTLBuffer, pOutBuffer: MTLBuffer
 
     init(device: MTLDevice)
     {
@@ -127,12 +136,26 @@ final class ParticleSystem
             print("ParticleSystem Pipeline: Creating pipeline state failed")
         }
         
+        // Load the kernel function from the library
+        let computeFunc = library.makeFunction(name: "particle_update")
+        
+        // Create a compute pipeline state
+        do {
+            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
+        } catch {
+            print("Pipeline: Creating pipeline state failed")
+        }
+        
         
         allocatedMemoryForParticles = preAllocatedParticles
         particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleGPU>.stride, options: dynamicBufferResourceOption)!
         vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: staticBufferResourceOption)!
         indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle*3, options: staticBufferResourceOption)!
 
+        pInBuffer = device.makeBuffer(length: MemoryLayout<Particle>.stride * allocatedMemoryForParticles, options: dynamicBufferResourceOption)!
+        pOutBuffer = device.makeBuffer(length: MemoryLayout<Particle>.stride * allocatedMemoryForParticles, options: dynamicBufferResourceOption)!
+
+        
         let inTextureDesc = MTLTextureDescriptor()
         inTextureDesc.height = Int(framebufferHeight)
         inTextureDesc.width = Int(framebufferWidth)
@@ -162,6 +185,38 @@ final class ParticleSystem
                      commandBuffer: MTLCommandBuffer)
     {
         if particleCount == 0 { return }
+        
+        commandBuffer.pushDebugGroup("Particle Update")
+        // Compute kernel threadgroup size
+        let w = (computePipelineState?.threadExecutionWidth)!
+        let h = (computePipelineState?.maxTotalThreadsPerThreadgroup)! / w
+        
+        // Make the encoder
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+        
+        // Set the pipelinestate
+        computeEncoder?.setComputePipelineState(computePipelineState!)
+        
+        // Set the buffers
+        computeEncoder?.setBuffers([pInBuffer, pOutBuffer], offsets: [0,0], range: 0 ..< 2)
+        
+        // Set thread groups
+        #if os(macOS)
+        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadPerGrid = MTLSize(width: particleCount/2, height: particleCount/2, depth: 1)
+        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
+        #else
+        let tSize = MTLSize(width: 16, height: 16, depth: 1)
+        let tCount = MTLSize(
+            width: (particleCount/2 + tSize.width - 1) / tSize.width,
+            height: (particleCount/2 + tSize.height - 1) / tSize.height,
+            depth: 1)
+        computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
+        #endif
+        
+        // Finish
+        computeEncoder?.endEncoding()
+        commandBuffer.popDebugGroup()
         
         commandBuffer.pushDebugGroup("ParticleSystem Draw")
         
@@ -205,11 +260,9 @@ final class ParticleSystem
 
             
             let blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
-            blurKernel.encode(commandBuffer: commandBuffer,
-                              sourceTexture: inTexture,
-                              destinationTexture: outTexture)
+            blurKernel.encode(commandBuffer: commandBuffer, sourceTexture: inTexture, destinationTexture: outTexture)
 
-//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: outTexture, outputTexture: inTexture, sigma: blurStrength)
+//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: finalTexture, sigma: blurStrength)
 
             
             quad.mix(commandBuffer: commandBuffer, inputTexture1: inTexture, inputTexture2: outTexture, outTexture: finalTexture, sigma: 5.0)
@@ -245,11 +298,34 @@ final class ParticleSystem
             
             // Upload new content
             particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleGPU>.stride)
-
+            
+            
+            pdata.removeAll()
+            for i in 0 ..< particleCount {
+                pdata.append(Particle(position: float2(0), velocity: float2(0)))
+                pdata[i].position = position[i]
+                pdata[i].velocity = velocity[i]
+            }
+            
+            
+            pInBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<Particle>.stride, options: dynamicBufferResourceOption)!
+            
+            pOutBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<Particle>.stride, options: dynamicBufferResourceOption)!
+            // Update buffers
+            pInBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
+            // Update buffers
+            pOutBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
+            
+            
         } else {
             
             // Upload new content
             particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleGPU>.stride)
+            
+            // Update buffers
+            pInBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
+            // Update buffers
+            pOutBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
         }
     }
 
