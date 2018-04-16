@@ -209,11 +209,12 @@ final class ParticleSystem
                               sourceTexture: inTexture,
                               destinationTexture: outTexture)
 
+//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: outTexture, outputTexture: inTexture, sigma: blurStrength)
+
+            
             quad.mix(commandBuffer: commandBuffer, inputTexture1: inTexture, inputTexture2: outTexture, outTexture: finalTexture, sigma: 5.0)
             
 //
-//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: finalTexture, sigma: blurStrength)
-
             renderEncoder.popDebugGroup()
         }
         

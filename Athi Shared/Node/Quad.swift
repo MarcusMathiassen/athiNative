@@ -106,7 +106,7 @@ final class Quad
         // Set thread groups
         #if os(macOS)
         let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
-        let threadPerGrid = MTLSize(width: inputTexture.width, height: inputTexture.height, depth: 1)
+        let threadPerGrid = MTLSize(width: inputTexture1.width, height: inputTexture1.height, depth: 1)
         computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
         #else
         let tSize = MTLSize(width: 16, height: 16, depth: 1)
