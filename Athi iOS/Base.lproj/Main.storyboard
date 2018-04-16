@@ -19,10 +19,10 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <visualEffectView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eno-aR-BbH">
-                                <rect key="frame" x="16" y="581" width="343" height="41"/>
+                                <rect key="frame" x="16" y="581" width="343" height="86"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" ambiguous="YES" insetsLayoutMarginsFromSafeArea="NO" id="pfu-A7-rgW">
-                                    <rect key="frame" x="0.0" y="0.0" width="343" height="41"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="343" height="86"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="50" minValue="0.0" maxValue="100" translatesAutoresizingMaskIntoConstraints="NO" id="P2S-nL-Ksk">
@@ -39,6 +39,14 @@
                                             <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                             <nil key="highlightedColor"/>
                                         </label>
+                                        <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="50" minValue="0.0" maxValue="100" translatesAutoresizingMaskIntoConstraints="NO" id="lSG-2P-ckg">
+                                            <rect key="frame" x="181" y="43" width="156" height="30"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <connections>
+                                                <action selector="blurStrengthSlider:" destination="BV1-FR-VrT" eventType="valueChanged" id="G7q-7C-TsV"/>
+                                                <action selector="particleSizeSlider:" destination="BV1-FR-VrT" eventType="valueChanged" id="zrp-et-Js9"/>
+                                            </connections>
+                                        </slider>
                                     </subviews>
                                 </view>
                                 <blurEffect style="dark"/>

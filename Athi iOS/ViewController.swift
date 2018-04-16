@@ -38,6 +38,9 @@ class IOSViewController: UIViewController {
         renderer.particleSystem.eraseParticles()
     }
 
+    @IBAction func blurStrengthSlider(_ sender: UISlider) {
+        renderer.particleSystem.blurStrength = sender.value
+    }
     @IBAction func particleSizeSlider(_ sender: UISlider) {
         particleSize = sender.value
     }

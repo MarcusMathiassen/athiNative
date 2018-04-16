@@ -89,23 +89,33 @@ final class Quad
         outTexture: MTLTexture,
         sigma: Float)
     {
+        
         // Compute kernel threadgroup size
         let w = (mixComputePipelineState?.threadExecutionWidth)!
         let h = (mixComputePipelineState?.maxTotalThreadsPerThreadgroup)! / w
-        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
-        let threadPerGrid = MTLSize(width: inputTexture1.width, height: inputTexture1.height, depth: 1)
-        
+
         // Make the encoder
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
         
         // Set the pipelinestate
         computeEncoder?.setComputePipelineState(mixComputePipelineState!)
         
-        // Set the textures
+//         Set the textures
         computeEncoder?.setTextures([inputTexture1, inputTexture2, outTexture], range: 0 ..< 3)
         
         // Set thread groups
+        #if os(macOS)
+        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadPerGrid = MTLSize(width: inputTexture.width, height: inputTexture.height, depth: 1)
         computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
+        #else
+        let tSize = MTLSize(width: 16, height: 16, depth: 1)
+        let tCount = MTLSize(
+            width: (inputTexture1.width + tSize.width - 1) / tSize.width,
+            height: (inputTexture1.height + tSize.height - 1) / tSize.height,
+            depth: 1)
+        computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
+        #endif
         
         // Finish
         computeEncoder?.endEncoding()
@@ -120,9 +130,7 @@ final class Quad
         // Compute kernel threadgroup size
         let w = (pixelateComputePipelineState?.threadExecutionWidth)!
         let h = (pixelateComputePipelineState?.maxTotalThreadsPerThreadgroup)! / w
-        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
-        let threadPerGrid = MTLSize(width: inputTexture.width, height: inputTexture.height, depth: 1)
-        
+
         // Make the encoder
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
         
@@ -132,9 +140,22 @@ final class Quad
         // Set the textures
         computeEncoder?.setTextures([inputTexture, outputTexture], range: 0 ..< 2)
         
-        // Set thread groups
-        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
+        var s = sigma
+        computeEncoder?.setBytes(&s, length: MemoryLayout<Float>.stride, index: 0)
         
+        // Set thread groups
+        #if os(macOS)
+        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadPerGrid = MTLSize(width: inputTexture.width, height: inputTexture.height, depth: 1)
+        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
+        #else
+        let tSize = MTLSize(width: 16, height: 16, depth: 1)
+        let tCount = MTLSize(
+            width: (inputTexture.width + tSize.width - 1) / tSize.width,
+            height: (inputTexture.height + tSize.height - 1) / tSize.height,
+            depth: 1)
+        computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
+        #endif
         // Finish
         computeEncoder?.endEncoding()
     }

@@ -87,11 +87,12 @@ fragment FragOut quadFrag(  Vertex                              vert           [
     return { colorTexture.sample(textureSampler, vert.uv) };
 }
 
-kernel void pixelate(texture2d<float, access::sample>    texIn           [[texture(0)]],
+kernel void pixelate(texture2d<float, access::read>    texIn           [[texture(0)]],
                      texture2d<float, access::write>     texOut          [[texture(1)]],
+                     constant float *sigma [[buffer(0)]],
                      uint2                               gid             [[thread_position_in_grid]])
 {
-    const uint weight = 10;
+    const uint weight = *sigma;
     const uint2 pixellatedGid = uint2((gid.x / weight) * weight, (gid.y / weight) * weight);
     
     const float4 colorAtPixel = texIn.read(pixellatedGid);

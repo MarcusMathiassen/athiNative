@@ -172,7 +172,7 @@ final class ParticleSystem
         renderPassDesc.colorAttachments[0].storeAction = .store
         
         renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
-        renderPassDesc.colorAttachments[1].texture = outTexture
+        renderPassDesc.colorAttachments[1].texture = finalTexture
         renderPassDesc.colorAttachments[1].loadAction = .clear
         renderPassDesc.colorAttachments[1].storeAction = .store
         
@@ -209,18 +209,12 @@ final class ParticleSystem
                               sourceTexture: inTexture,
                               destinationTexture: outTexture)
 
-            
-            
-//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: outTexture, sigma: 5.0)
-
-            renderEncoder.popDebugGroup()
-            
-            renderEncoder.pushDebugGroup("Overlay the unblurred original")
-            
             quad.mix(commandBuffer: commandBuffer, inputTexture1: inTexture, inputTexture2: outTexture, outTexture: finalTexture, sigma: 5.0)
             
-            renderEncoder.popDebugGroup()
+//
+//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: finalTexture, sigma: blurStrength)
 
+            renderEncoder.popDebugGroup()
         }
         
         
@@ -231,6 +225,7 @@ final class ParticleSystem
         renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
         
         renderEncoder.pushDebugGroup("Draw particles (on-screen)")
+        
         quad.draw(renderEncoder: renderEncoder, texture: finalTexture)
         
         renderEncoder.popDebugGroup()
