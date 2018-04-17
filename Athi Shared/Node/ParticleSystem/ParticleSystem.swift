@@ -17,6 +17,17 @@ final class ParticleSystem
     // Simulation
     ///////////////////
     
+    struct BufferIndex
+    {
+        static let PositionIndex = 0
+        static let VelocityIndex = 1
+        static let RadiusIndex = 2
+        static let MassIndex = 3
+        static let ColorIndex = 4
+        static let VertexIndex = 5
+        static let ViewportIndex = 6
+    }
+
     public var particleCount: Int = 0 // Amount of particles
     
     //      Particle data
@@ -47,32 +58,10 @@ final class ParticleSystem
     private var shouldUpdate: Bool = false
     private var listOfNodesOfIDs: [[Int]] = []
     private var quadtree: Quadtree?
-    private var quadtreeV2: QuadtreeV2?
-
     
     ///////////////////
     // Rendering
     ///////////////////
-    
-    // @GPU: Data needed to draw the particles
-    struct ParticleGPU
-    {
-        var position: float2
-        var color:    float4
-        var radius:   Float
-    }
-    
-    struct Particle
-    {
-        var position: float2
-        var velocity: float2
-    }
-
-    /**
-        Particle data for the GPU
-     */
-    var particleData: [ParticleGPU] = []
-    var pdata: [Particle]
     
     /**
         Static data uploaded once, and updated when numVerticesPerParticle is changed
@@ -90,7 +79,7 @@ final class ParticleSystem
     var postProcessingSamples: Int = 1
     var blurStrength: Float = 2
     var preAllocatedParticles = 100
-    private var allocatedMemoryForParticles: Int
+    private var particlesAllocatedCount: Int
     #if os(macOS)
     private var dynamicBufferResourceOption: MTLResourceOptions = .cpuCacheModeWriteCombined
     private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
@@ -102,7 +91,6 @@ final class ParticleSystem
     var numVerticesPerParticle = 36
     private var quad: Quad
     private var device: MTLDevice
-    private var particleDataBuffer: MTLBuffer
     private var vertexBuffer: MTLBuffer
     private var indexBuffer: MTLBuffer
     private var pipelineState: MTLRenderPipelineState?
@@ -111,7 +99,11 @@ final class ParticleSystem
     var outTexture: MTLTexture
     var finalTexture: MTLTexture
     
-    private var pInBuffer: MTLBuffer, pOutBuffer: MTLBuffer
+    private var positionBuffer: MTLBuffer
+    private var velocityBuffer: MTLBuffer
+    private var radiusBuffer: MTLBuffer
+    private var massBuffer: MTLBuffer
+    private var colorBuffer: MTLBuffer
 
     init(device: MTLDevice)
     {
@@ -126,8 +118,8 @@ final class ParticleSystem
         pipelineDesc.label = "pipelineDesc"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
-        pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[1].pixelFormat = .bgra8Unorm
         
 
         do {
@@ -147,21 +139,23 @@ final class ParticleSystem
         }
         
         
-        allocatedMemoryForParticles = preAllocatedParticles
-        particleDataBuffer = device.makeBuffer(length: allocatedMemoryForParticles * MemoryLayout<ParticleGPU>.stride, options: dynamicBufferResourceOption)!
+        particlesAllocatedCount = preAllocatedParticles
         vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: staticBufferResourceOption)!
-        indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle*3, options: staticBufferResourceOption)!
+        indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle * 3, options: staticBufferResourceOption)!
 
-        pInBuffer = device.makeBuffer(length: MemoryLayout<Particle>.stride * allocatedMemoryForParticles, options: dynamicBufferResourceOption)!
-        pOutBuffer = device.makeBuffer(length: MemoryLayout<Particle>.stride * allocatedMemoryForParticles, options: dynamicBufferResourceOption)!
-
+        positionBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * preAllocatedParticles, options: dynamicBufferResourceOption)!
+        velocityBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * preAllocatedParticles, options: dynamicBufferResourceOption)!
+        radiusBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * preAllocatedParticles, options: dynamicBufferResourceOption)!
+        massBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * preAllocatedParticles, options: dynamicBufferResourceOption)!
+        colorBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * preAllocatedParticles, options: dynamicBufferResourceOption)!
+        
         
         let inTextureDesc = MTLTextureDescriptor()
         inTextureDesc.height = Int(framebufferHeight)
         inTextureDesc.width = Int(framebufferWidth)
         inTextureDesc.sampleCount = 1
         inTextureDesc.textureType = .type2D
-        inTextureDesc.pixelFormat = Renderer.pixelFormat
+        inTextureDesc.pixelFormat = .bgra8Unorm
         inTextureDesc.resourceOptions = .storageModePrivate
         inTextureDesc.usage = .shaderRead
         inTexture = device.makeTexture(descriptor: inTextureDesc)!
@@ -171,7 +165,7 @@ final class ParticleSystem
         outTextureDesc.width = Int(framebufferWidth)
         outTextureDesc.sampleCount = 1
         outTextureDesc.textureType = .type2D
-        outTextureDesc.pixelFormat = Renderer.pixelFormat
+        outTextureDesc.pixelFormat = .bgra8Unorm
         outTextureDesc.resourceOptions = .storageModePrivate
         outTextureDesc.usage = .shaderWrite
         outTexture = device.makeTexture(descriptor: outTextureDesc)!
@@ -180,13 +174,11 @@ final class ParticleSystem
         
         buildVertices(numVertices: numVerticesPerParticle)
     }
-
-    public func draw(view: MTKView,
-                     commandBuffer: MTLCommandBuffer)
+    
+    public func updateParticlesGPU(commandBuffer: MTLCommandBuffer)
     {
-        if particleCount == 0 { return }
+        commandBuffer.pushDebugGroup("Particle GPU Update")
         
-        commandBuffer.pushDebugGroup("Particle Update")
         // Compute kernel threadgroup size
         let w = (computePipelineState?.threadExecutionWidth)!
         let h = (computePipelineState?.maxTotalThreadsPerThreadgroup)! / w
@@ -198,50 +190,68 @@ final class ParticleSystem
         computeEncoder?.setComputePipelineState(computePipelineState!)
         
         // Set the buffers
-        computeEncoder?.setBuffers([pInBuffer, pOutBuffer], offsets: [0,0], range: 0 ..< 2)
+        computeEncoder?.setBuffers([
+            positionBuffer,
+            velocityBuffer,
+            radiusBuffer,
+            massBuffer,
+            colorBuffer
+            ], offsets: [0,0,0,0,0], range: 0 ..< 5)
         
         // Set thread groups
         #if os(macOS)
         let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
-        let threadPerGrid = MTLSize(width: particleCount/2, height: particleCount/2, depth: 1)
+        let threadPerGrid = MTLSize(width: particleCount, height: 1, depth: 1)
+        
         computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
         #else
         let tSize = MTLSize(width: 16, height: 16, depth: 1)
-        let tCount = MTLSize(
-            width: (particleCount/2 + tSize.width - 1) / tSize.width,
-            height: (particleCount/2 + tSize.height - 1) / tSize.height,
-            depth: 1)
+        let tCount = MTLSize(width: (particleCount + tSize.width - 1) / tSize.width, height: (1 + tSize.height - 1) / tSize.height, depth: 1)
+        
         computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
         #endif
         
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
+    }
+
+    public func draw(
+        view: MTKView,
+        frameDescriptor: FrameDescriptor,
+        commandBuffer: MTLCommandBuffer
+        )
+    {
+        if particleCount == 0 { return }
         
         commandBuffer.pushDebugGroup("ParticleSystem Draw")
         
         var renderPassDesc = MTLRenderPassDescriptor()
-        renderPassDesc.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        renderPassDesc.colorAttachments[0].clearColor = frameDescriptor.clearColor
         renderPassDesc.colorAttachments[0].texture = inTexture
         renderPassDesc.colorAttachments[0].loadAction = .clear
         renderPassDesc.colorAttachments[0].storeAction = .store
         
-        renderPassDesc.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        renderPassDesc.colorAttachments[1].clearColor = frameDescriptor.clearColor
         renderPassDesc.colorAttachments[1].texture = finalTexture
         renderPassDesc.colorAttachments[1].loadAction = .clear
         renderPassDesc.colorAttachments[1].storeAction = .store
         
-        var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
+        var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor:   renderPassDesc)!
 
         renderEncoder.pushDebugGroup("Draw particles (off-screen)")
         renderEncoder.setRenderPipelineState(pipelineState!)
+        renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
         
-
         updateGPUBuffers()
         
-        renderEncoder.setVertexBuffer(vertexBuffer,           offset: 0, index: 0)
-        renderEncoder.setVertexBuffer(particleDataBuffer,     offset: 0, index: 1)
-        renderEncoder.setVertexBytes(&viewportSize,    length: MemoryLayout<float2>.stride, index: 2)
+        renderEncoder.setVertexBuffer(vertexBuffer,     offset: 0, index: BufferIndex.VertexIndex)
+        renderEncoder.setVertexBytes(&viewportSize,     length: MemoryLayout<float2>.stride, index: BufferIndex.ViewportIndex)
+        
+        renderEncoder.setVertexBuffer(positionBuffer,   offset: 0, index: BufferIndex.PositionIndex)
+        renderEncoder.setVertexBuffer(radiusBuffer,     offset: 0, index: BufferIndex.RadiusIndex)
+        renderEncoder.setVertexBuffer(colorBuffer,      offset: 0, index: BufferIndex.ColorIndex)
+        
 
         renderEncoder.drawIndexedPrimitives(
             type: .triangle,
@@ -249,7 +259,7 @@ final class ParticleSystem
             indexType: .uint16,
             indexBuffer: indexBuffer,
             indexBufferOffset: 0,
-            instanceCount: particleData.count)
+            instanceCount: particleCount)
         
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
@@ -273,9 +283,6 @@ final class ParticleSystem
         
         
         renderPassDesc = view.currentRenderPassDescriptor!
-        renderPassDesc.colorAttachments[0].clearColor = Renderer.clearColor
-        renderPassDesc.colorAttachments[0].loadAction = .clear
-        renderPassDesc.colorAttachments[0].storeAction = .store
         renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
         
         renderEncoder.pushDebugGroup("Draw particles (on-screen)")
@@ -291,41 +298,29 @@ final class ParticleSystem
     private func updateGPUBuffers()
     {
         // Reallocate more if needed
-        if particleData.count * MemoryLayout<ParticleGPU>.stride > particleDataBuffer.allocatedSize {
+        if particleCount > particlesAllocatedCount {
             
-            // Update the buffer size
-            particleDataBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<ParticleGPU>.stride, options: dynamicBufferResourceOption)!
+            particlesAllocatedCount += preAllocatedParticles
             
-            // Upload new content
-            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleGPU>.stride)
+            positionBuffer = device.makeBuffer( length: particlesAllocatedCount * MemoryLayout<float2>.stride,    options: dynamicBufferResourceOption)!
+            velocityBuffer = device.makeBuffer( length: particlesAllocatedCount * MemoryLayout<float2>.stride,    options: dynamicBufferResourceOption)!
+            radiusBuffer = device.makeBuffer(   length: particlesAllocatedCount * MemoryLayout<Float>.stride,     options: dynamicBufferResourceOption)!
+            massBuffer = device.makeBuffer(     length: particlesAllocatedCount * MemoryLayout<Float>.stride,     options: dynamicBufferResourceOption)!
+            colorBuffer = device.makeBuffer(    length: particlesAllocatedCount * MemoryLayout<float4>.stride,    options: dynamicBufferResourceOption)!
             
-            
-            pdata.removeAll()
-            for i in 0 ..< particleCount {
-                pdata.append(Particle(position: float2(0), velocity: float2(0)))
-                pdata[i].position = position[i]
-                pdata[i].velocity = velocity[i]
-            }
-            
-            
-            pInBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<Particle>.stride, options: dynamicBufferResourceOption)!
-            
-            pOutBuffer = device.makeBuffer(length: particleData.count * MemoryLayout<Particle>.stride, options: dynamicBufferResourceOption)!
-            // Update buffers
-            pInBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
-            // Update buffers
-            pOutBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
-            
+            positionBuffer.contents().copyMemory(   from: &position,    byteCount: particlesAllocatedCount * MemoryLayout<float2>.stride)
+            velocityBuffer.contents().copyMemory(   from: &velocity,    byteCount: particlesAllocatedCount * MemoryLayout<float2>.stride)
+            radiusBuffer.contents().copyMemory(     from: &radius,      byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
+            massBuffer.contents().copyMemory(       from: &mass,        byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
+            colorBuffer.contents().copyMemory(      from: &color,       byteCount: particlesAllocatedCount * MemoryLayout<float4>.stride)
             
         } else {
-            
-            // Upload new content
-            particleDataBuffer.contents().copyMemory(from: particleData, byteCount: particleData.count * MemoryLayout<ParticleGPU>.stride)
-            
-            // Update buffers
-            pInBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
-            // Update buffers
-            pOutBuffer.contents().copyMemory(from: &pdata, byteCount: particleData.count * MemoryLayout<Particle>.stride)
+
+            positionBuffer.contents().copyMemory(   from: &position,    byteCount: particlesAllocatedCount * MemoryLayout<float2>.stride)
+            velocityBuffer.contents().copyMemory(   from: &velocity,    byteCount: particlesAllocatedCount * MemoryLayout<float2>.stride)
+            radiusBuffer.contents().copyMemory(     from: &radius,      byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
+            massBuffer.contents().copyMemory(       from: &mass,        byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
+            colorBuffer.contents().copyMemory(      from: &color,       byteCount: particlesAllocatedCount * MemoryLayout<float4>.stride)
         }
     }
 
@@ -502,8 +497,6 @@ final class ParticleSystem
             
             // Update particle positions
             position[i] += velocity[i]
-            
-            particleData[i] = ParticleGPU(position: position[i], color: color[i], radius: radius[i])
         }
     }
     
@@ -514,10 +507,6 @@ final class ParticleSystem
         mass.removeAll()
         radius.removeAll()
         color.removeAll()
-        
-        
-        // Rendering data
-        particleData.removeAll()
         
         particleCount = 0
     }
@@ -742,20 +731,8 @@ final class ParticleSystem
         self.mass.append(Float.pi * radius * radius)
         
         self.particleCount += 1
-        
-        particleData.append(ParticleGPU(position: position, color: color, radius: radius))
     }
-    
-    public func getParticleDataForGPU() -> [ParticleGPU]
-    {
-        var result: [ParticleGPU] = []
-        for i in 0 ..< particleCount {
-            let pd = ParticleGPU.init(position: self.position[i], color: self.color[i], radius: self.radius[i])
-            result.append(pd)
-        }
-        return result
-    }
-    
+
     /**
      Returns the minimum and maximum position found of all particles
      */

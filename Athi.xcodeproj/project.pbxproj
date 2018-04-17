@@ -90,6 +90,7 @@
 		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
+		9051F107208678EF007F50EE /* particleShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = particleShaderTypes.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +204,7 @@
 			isa = PBXGroup;
 			children = (
 				900B3B28207553B600569776 /* Particle.metal */,
+				9051F107208678EF007F50EE /* particleShaderTypes.h */,
 				900B3B1C2075490900569776 /* ParticleSystem.swift */,
 			);
 			path = ParticleSystem;

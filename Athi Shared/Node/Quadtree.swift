@@ -6,11 +6,10 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
-import simd // float2, float4
+import simd.vector_types // float2, float4
 
 final class Quadtree
 {
-    
     struct Rect {
         var min = float2(0)
         var max = float2(0)

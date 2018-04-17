@@ -7,57 +7,55 @@
 //
 
 #include <metal_stdlib>
+#include "particleShaderTypes.h"
 using namespace metal;
 
-struct ParticleIn
+vertex
+ParticleOut particleVert(constant float2*   position            [[buffer(PositionIndex)]],
+                         constant float*    radius              [[buffer(RadiusIndex)]],
+                         constant float4*   color               [[buffer(ColorIndex)]],
+                         constant float2*   vertices            [[buffer(VertexIndex)]],
+                         constant float2*   viewportSize        [[buffer(ViewportIndex)]],
+                         uint vid                               [[vertex_id]],
+                         uint iid                               [[instance_id]]
+                         )
 {
-    float2  position;
-    float4  color;
-    float   size;
-};
-
-struct ParticleOut
-{
-    float4 position[[position]];
-    float4 color;
-};
-
-struct FragmentOut
-{
-    float4 color0[[color(0)]];
-    float4 color1[[color(1)]];
-};
-
-vertex ParticleOut particleVert(constant float2 *vertices          [[buffer(0)]],
-                                constant ParticleIn* pIn           [[buffer(1)]],
-                                constant float2 *viewportSize      [[buffer(2)]],
-                                uint vid                           [[vertex_id]],
-                                uint iid                           [[instance_id]])
-{
-    const float2 fpos = (pIn[iid].size * vertices[vid] + pIn[iid].position) / (*viewportSize / 2.0);
+    const float2 fpos = (radius[iid] * vertices[vid] + position[iid]) / (*viewportSize / 2.0);
 
     ParticleOut pOut;
     pOut.position = float4(fpos - 1, 0, 1);
-    pOut.color = pIn[iid].color;
+    pOut.color = color[iid];
     
     return pOut;
 }
 
-fragment FragmentOut particleFrag(ParticleOut particle [[stage_in]])
+fragment
+FragmentOut particleFrag(ParticleOut particle [[stage_in]])
 {
     return { particle.color, particle.color };
 }
 
-struct Particle
-{
-    float2 position;
-    float2 velocity;
-};
 
-// Compute Kernel
-kernel void particle_update(threadgroup Particle *pIn  [[threadgroup(0)]],
-                            threadgroup Particle *pOut [[threadgroup(1)]],
-                            uint2                 gid  [[thread_position_in_grid]])
+
+kernel
+void particle_update(device float2* position        [[buffer(PositionIndex)]],
+                     device float2* velocity        [[buffer(VelocityIndex)]],
+                     device float*  radius          [[buffer(RadiusIndex)]],
+                     device float2* viewportSize    [[buffer(ViewportIndex)]],
+                     uint2          gid             [[thread_position_in_grid]]
+                    )
 {
-    pOut[gid.x+gid.y].position += pIn[gid.x+gid.y].position + pIn[gid.x+gid.y].velocity;
+    float2 pos  = position[gid.x];
+    float2 vel  = velocity[gid.x];
+//    float r     = radius[gid.x];
+    
+//    // Border collision
+//    if pos.x < 0 + r { p.position.x = 0 + r; vel.x = -vel.x; }
+//    if pos.x > viewportSize.x - r { p.position.x = viewportSize.x - r; vel.x = -vel.x; }
+//    if pos.y < 0 + r { p.position.y = 0 + r; vel.y = -vel.y; }
+//    if pos.y > viewportSize.y - r { p.position.y = viewportSize.y - r; vel.y = -vel.y; }
+
+    // Update the particles value
+    velocity[gid.x] = vel;
+    position[gid.x] = pos + vel;
 }

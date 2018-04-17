@@ -22,6 +22,19 @@ var framebufferWidth: Float = 0
 
 var viewport = float2(512, 512)
 
+struct FrameDescriptor
+{
+    var fillMode: MTLTriangleFillMode = .fill
+    
+    var framebufferSize: float2 = float2(0)
+    var viewportSize: float2 = float2(0)
+    
+    var clearColor: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+    var pixelFormat: MTLPixelFormat = .bgra8Unorm
+    
+    var deltaTime: Float = 0.0
+}
+
 final class Renderer: NSObject, MTKViewDelegate
 {
     var wireframeMode: Bool = false
@@ -93,6 +106,21 @@ final class Renderer: NSObject, MTKViewDelegate
     }
 
     func draw(in view: MTKView) {
+        
+        var frameDescriptor = FrameDescriptor()
+        frameDescriptor.fillMode = fillMode
+        frameDescriptor.framebufferSize = float2(framebufferWidth, framebufferHeight)
+        frameDescriptor.viewportSize = frameDescriptor.framebufferSize
+        frameDescriptor.deltaTime = deltaTime
+        frameDescriptor.pixelFormat = .bgra8Unorm
+        
+        #if os(macOS)
+        let bck = backgroundColor.cgColor
+        frameDescriptor.clearColor = MTLClearColor(red: Double(bck.components![0]), green: Double(bck.components![1]), blue: Double(bck.components![2]), alpha: Double(bck.components![3]))
+        #else
+        frameDescriptor.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        #endif
+        
         if particleColorCycle {
             particleSystem.particleColor = colorOverTime(getTime() * 0.5)
         }
@@ -110,15 +138,13 @@ final class Renderer: NSObject, MTKViewDelegate
         }
         commandBuffer.label = "MyCommandBuffer"
 
-        #if os(macOS)
-            let bck = backgroundColor.cgColor
-            Renderer.clearColor = MTLClearColor(red: Double(bck.components![0]), green: Double(bck.components![1]), blue: Double(bck.components![2]), alpha: Double(bck.components![3]))
-        #else
-            Renderer.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
-        #endif
-
+//        particleSystem.updateParticlesGPU(commandBuffer: commandBuffer)
         particleSystem.update()
-        particleSystem.draw(view: view, commandBuffer: commandBuffer)
+        particleSystem.draw(
+            view: view,
+            frameDescriptor: frameDescriptor,
+            commandBuffer: commandBuffer
+        )
 
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
