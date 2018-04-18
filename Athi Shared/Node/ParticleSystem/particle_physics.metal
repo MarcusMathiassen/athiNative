@@ -94,33 +94,33 @@ void particle_collision(constant int*      particle_count  [[buffer(ParticleCoun
     // Total number of particles
     const int total_particles = *particle_count;
     
-    const int segments = lid.x;
-    const int i = lsize.x;
+    const int segments = lsize.x;;
+    const int i = lid.x;
     const int parts = total_particles / segments;
     const int leftovers = total_particles % segments;
     const int begin = parts * i;
-    auto end = parts * (i + 1);
+    int end = parts * (i + 1);
     if (i == segments - 1) { end += leftovers; }
     
-//    for (int i = begin; i < end; ++i) {
-//
-//        float2 iv = velocity[i];
-//        const float2 ip = position[i];
-//        const float ir = radius[i];
-//        const float im = mass[i];
-//
-//        for (int j = begin; j < end; ++j) {
-//
-//            if (i == j) continue;
-//
-//            if (collision_check(ip, position[j], ir, radius[j])) {
-//
-//                iv += collision_resolve(ip, position[j], iv, velocity[j], im, mass[j]);
-//            }
-//        }
-//
-//        velocity[i] = iv;
-//    }
+    for (int i = begin; i < end; ++i) {
+
+        float2 iv = velocity[i];
+        const float2 ip = position[i];
+        const float ir = radius[i];
+        const float im = mass[i];
+
+        for (int j = 0; j < total_particles; ++j) {
+
+            if (i == j) continue;
+
+            if (collision_check(ip, position[j], ir, radius[j])) {
+
+                velocity[i] += collision_resolve(ip, position[j], iv, velocity[j], im, mass[j]);
+            }
+        }
+
+        //velocity[i] = iv;
+    }
 }
 
 kernel

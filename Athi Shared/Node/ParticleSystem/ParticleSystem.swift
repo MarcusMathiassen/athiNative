@@ -86,7 +86,7 @@ final class ParticleSystem
     private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
     #endif
     var particleColor = float4(1)
-    var numVerticesPerParticle = 36
+    var numVerticesPerParticle = 12
     private var quad: Quad
     private var device: MTLDevice
     private var vertexBuffer: MTLBuffer
@@ -191,13 +191,9 @@ final class ParticleSystem
     }
     public func updateParticlesCollisionsGPU(commandBuffer: MTLCommandBuffer)
     {
-        if particleCount == 0 { return }
+        if particleCount < 2 { return }
         
-        commandBuffer.pushDebugGroup("Particle GPU Update")
-        
-        // Compute kernel threadgroup size
-        let w = (computeParticleCollisionPipelineState?.threadExecutionWidth)!
-        let h = (computeParticleCollisionPipelineState?.maxTotalThreadsPerThreadgroup)! / w
+        commandBuffer.pushDebugGroup("Particle GPU Collision")
         
         // Make the encoder
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
@@ -212,33 +208,27 @@ final class ParticleSystem
         computeEncoder?.setBuffer(radiusBuffer,     offset: 0, index: BufferIndex.RadiusIndex)
         computeEncoder?.setBuffer(massBuffer,       offset: 0, index: BufferIndex.MassIndex)
         
+        // Compute kernel threadgroup size
+        let w = (computeParticleUpdatePipelineState?.threadExecutionWidth)!
         
-        // Set thread groups
-        #if os(macOS)
-        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
-        let threadPerGrid = MTLSize(width: particleCount/w, height: 1, depth: 1)
-        
-        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
-        #else
-        let tSize = MTLSize(width: 16, height: 1, depth: 1)
-        let tCount = MTLSize(width: (particleCount + tSize.width - 1) / tSize.width, height: (1 + tSize.height - 1) / tSize.height, depth: 1)
-        
-        computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
-        #endif
+        // A one dimensional thread group Swift to pass Metal a one dimensional array
+        let threadGroupCount = MTLSize(width:w, height:1, depth:1)
+        let threadGroups = MTLSize(width:(particleCount + threadGroupCount.width - 1) / threadGroupCount.width, height:1, depth:1)
+        computeEncoder?.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
+
+        print("Particle GPU Collision threadGroupsCount", threadGroupCount)
+        print("Particle GPU Collision threadGroups", threadGroups)
         
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
     }
+    
     public func updateParticlesGPU(commandBuffer: MTLCommandBuffer)
     {
         if particleCount == 0 { return }
-    
-        commandBuffer.pushDebugGroup("Particle GPU Update")
         
-        // Compute kernel threadgroup size
-        let w = (computeParticleUpdatePipelineState?.threadExecutionWidth)!
-        let h = (computeParticleUpdatePipelineState?.maxTotalThreadsPerThreadgroup)!
+        commandBuffer.pushDebugGroup("Particle GPU Update")
         
         // Make the encoder
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
@@ -252,21 +242,16 @@ final class ParticleSystem
         computeEncoder?.setBuffer(radiusBuffer,     offset: 0, index: BufferIndex.RadiusIndex)
         computeEncoder?.setBytes(&viewportSize,     length: MemoryLayout<float2>.stride, index: BufferIndex.ViewportIndex)
 
+        // Compute kernel threadgroup size
+        let w = (computeParticleUpdatePipelineState?.threadExecutionWidth)!
         
-        // Set thread groups
-        #if os(macOS)
-        let threadsPerThreadGroup = MTLSize(width: w, height: 1, depth: 1)
-        let threadPerGrid = MTLSize(width: particleCount, height: 1, depth: 1)
-        print(w+h)
+        // A one dimensional thread group Swift to pass Metal a one dimensional array
+        let threadGroupCount = MTLSize(width:w, height:1, depth:1)
+        let threadGroups = MTLSize(width:(particleCount + threadGroupCount.width - 1) / threadGroupCount.width, height:1, depth:1)
+        computeEncoder?.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
         
-        computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
-
-        #else
-        let tSize = MTLSize(width: 16, height: 1, depth: 1)
-        let tCount = MTLSize(width: (particleCount + tSize.width - 1) / tSize.width, height: (1 + tSize.height - 1) / tSize.height, depth: 1)
-        
-        computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
-        #endif
+        print("Particle GPU Update threadGroupsCount", threadGroupCount)
+        print("Particle GPU Update threadGroups", threadGroups)
         
         // Finish
         computeEncoder?.endEncoding()
