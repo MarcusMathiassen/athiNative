@@ -44,7 +44,6 @@
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <connections>
                                                 <action selector="blurStrengthSlider:" destination="BV1-FR-VrT" eventType="valueChanged" id="G7q-7C-TsV"/>
-                                                <action selector="particleSizeSlider:" destination="BV1-FR-VrT" eventType="valueChanged" id="zrp-et-Js9"/>
                                             </connections>
                                         </slider>
                                     </subviews>
@@ -72,7 +71,7 @@
                                     <action selector="enableParticleCollision:" destination="BV1-FR-VrT" eventType="valueChanged" id="TIg-1T-abT"/>
                                 </connections>
                             </switch>
-                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="l7P-QN-Zgg">
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="l7P-QN-Zgg">
                                 <rect key="frame" x="312" y="425" width="49" height="31"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <connections>

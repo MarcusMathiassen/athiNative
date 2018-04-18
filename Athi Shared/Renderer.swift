@@ -150,10 +150,6 @@ final class Renderer: NSObject, MTKViewDelegate
         updateVariables()
 
 
-//        particleSystem.update()
-        if particleSystem.enableCollisions {
-            particleSystem.updateParticlesCollisionsGPU(commandBuffer: commandBuffer)
-        }
         particleSystem.updateParticlesGPU(commandBuffer: commandBuffer)
         particleSystem.draw(
             view: view,

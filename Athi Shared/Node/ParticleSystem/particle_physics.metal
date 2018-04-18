@@ -10,6 +10,38 @@
 using namespace metal;
 #include "particleShaderTypes.h"
 
+float2 separate(float2 ap, float ar, float2 bp, float br)
+{
+    // distance
+    const float distx = pow(bp.x - ap.x, 2);
+    const float disty = pow(bp.y - ap.y, 2);
+    const float dist = sqrt(distx - disty);
+    const float collision_depth = (ar + br) - dist;
+    
+    const float dx = bp.x - ap.x;
+    const float dy = bp.y - ap.y;
+    
+    // contact angle
+    const float collision_angle = atan2(dy, dx);
+    const float cos_angle = cos(collision_angle);
+    const float sin_angle = sin(collision_angle);
+    
+    // move the balls away from eachother so they dont overlap
+    const float a_move_x = collision_depth * 0.5f * cos_angle;
+    const float a_move_y = collision_depth * 0.5f * sin_angle;
+    
+    // store the new move values
+    float2 a_pos_move;
+    
+    // Make sure they dont moved beyond the border
+    if (ap.x + a_move_x >= -1.0f + ar && ap.x + a_move_x <= 1.0f - ar)
+        a_pos_move.x += a_move_x;
+    if (ap.y + a_move_y >= -1.0f + ar && ap.y + a_move_y <= 1.0f - ar)
+        a_pos_move.y += a_move_y;
+    
+    // Update.
+    return ap + a_pos_move;
+}
 
 bool collision_check(
     float2 ap,
@@ -80,68 +112,72 @@ float2 collision_resolve(
     return av;
 }
 
+
 kernel
-void particle_collision(constant int*      particle_count  [[buffer(ParticleCountIndex)]],
-                        device float2*     position        [[buffer(PositionIndex)]],
-                        device float2*     velocity        [[buffer(VelocityIndex)]],
-                        constant float*    radius          [[buffer(RadiusIndex)]],
-                        constant float*    mass            [[buffer(MassIndex)]],
-                        uint2              gid             [[thread_position_in_grid]],
-                        uint2              lid             [[thread_position_in_threadgroup]],
-                        uint2              lsize           [[threads_per_threadgroup]]
-                        )
+void particle_update(constant SimParam&    sim_param        [[buffer(SimParamIndex)]],
+                     device float2*        position         [[buffer(PositionIndex)]],
+                     device float2*        velocity         [[buffer(VelocityIndex)]],
+                     constant float*       radius           [[buffer(RadiusIndex)]],
+                     constant float*       mass             [[buffer(MassIndex)]],
+                     uint                  gid              [[thread_position_in_grid]],
+                     uint                  lid              [[thread_position_in_threadgroup]],
+                     uint                  lsize            [[threads_per_threadgroup]]
+                     )
 {
-    // Total number of particles
-    const int total_particles = *particle_count;
+    //----------------------------------
+    //  Local variables
+    //----------------------------------
     
-    const int segments = lsize.x;;
-    const int i = lid.x;
-    const int parts = total_particles / segments;
-    const int leftovers = total_particles % segments;
-    const int begin = parts * i;
-    int end = parts * (i + 1);
-    if (i == segments - 1) { end += leftovers; }
+    // Particle
+    const int       id      = gid;
     
-    for (int i = begin; i < end; ++i) {
+    float2          n_pos   = position[id];
+    float2          n_vel   = velocity[id];
+    const float     n_radi  = radius[id];
+    const float     n_mass  = mass[id];
+    
+    // Sim params
+    const float2    viewport_size   = sim_param.viewport_size;
+    const int       particle_count  = sim_param.particle_count;
+    
+    //----------------------------------
+    //  Particle Collision
+    //----------------------------------
+    {
+        const int i = gid;
 
-        float2 iv = velocity[i];
-        const float2 ip = position[i];
-        const float ir = radius[i];
-        const float im = mass[i];
-
-        for (int j = 0; j < total_particles; ++j) {
+        for (int j = 0; j < particle_count; ++j) {
 
             if (i == j) continue;
 
-            if (collision_check(ip, position[j], ir, radius[j])) {
+            if (collision_check(n_pos, position[j], n_radi, radius[j])) {
 
-                velocity[i] += collision_resolve(ip, position[j], iv, velocity[j], im, mass[j]);
+                //            n_pos = separate(n_pos, n_radi, position[j], radius[j]);
+                n_vel = collision_resolve(n_pos, position[j], n_vel, velocity[j], n_mass, mass[j]);
             }
         }
-
-        //velocity[i] = iv;
     }
-}
+    
+    //----------------------------------
+    //  GravityWell, Pull, etc.
+    //----------------------------------
+    
+    
+    //----------------------------------
+    //  Particle Update
+    //----------------------------------
+    {
+        // Gravity
+        n_vel += sim_param.gravity_force;
+        
+        // Border collision
+        if (n_pos.x < 0 + n_radi)                  { n_pos.x = 0 + n_radi; n_vel.x = -n_vel.x; }
+        if (n_pos.x > viewport_size.x - n_radi)    { n_pos.x = viewport_size.x - n_radi; n_vel.x = -n_vel.x; }
+        if (n_pos.y < 0 + n_radi)                  { n_pos.y = 0 + n_radi; n_vel.y = -n_vel.y; }
+        if (n_pos.y > viewport_size.y - n_radi)    { n_pos.y = viewport_size.y - n_radi; n_vel.y = -n_vel.y; }
 
-kernel
-void particle_update(device float2*     position        [[buffer(PositionIndex)]],
-                     device float2*     velocity        [[buffer(VelocityIndex)]],
-                     constant float*    radius          [[buffer(RadiusIndex)]],
-                     constant float2*   viewportSize    [[buffer(ViewportIndex)]],
-                     uint2              gid             [[thread_position_in_grid]]
-                     )
-{
-    float2 pos = position[gid.x];
-    float2 vel = velocity[gid.x];
-    const float r = radius[gid.x];
-    
-    // Border collision
-    if (pos.x < 0 + r)                  { pos.x = 0 + r; vel.x = -vel.x; }
-    if (pos.x > viewportSize->x - r)    { pos.x = viewportSize->x - r; vel.x = -vel.x; }
-    if (pos.y < 0 + r)                  { pos.y = 0 + r; vel.y = -vel.y; }
-    if (pos.y > viewportSize->y - r)    { pos.y = viewportSize->y - r; vel.y = -vel.y; }
-    
-    // Update the particles value
-    velocity[gid.x] = vel;
-    position[gid.x] = pos + vel;
+        // Update the particles value
+        velocity[id] = n_vel;
+        position[id] = n_pos + n_vel;
+    }
 }

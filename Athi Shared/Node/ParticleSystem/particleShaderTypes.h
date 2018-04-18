@@ -34,7 +34,15 @@ struct FragmentOut
 };
 
 
-typedef enum BufferIndex
+struct SimParam
+{
+    int             particle_count;   // number of particles
+    vector_float2   gravity_force;    // force of gravity
+    vector_float2   viewport_size;    // size of the current viewport
+    float           delta_time;       // frame delta time
+};
+
+enum BufferIndex
 {
     PositionIndex = 0,
     VelocityIndex = 1,
@@ -42,9 +50,7 @@ typedef enum BufferIndex
     MassIndex = 3,
     ColorIndex = 4,
     VertexIndex = 5,
-    ViewportIndex = 6,
-    ParticleCountIndex = 7,
-    
-} BufferIndex;
+    SimParamIndex = 6,
+};
 
 #endif /* particleShaderTypes_h */

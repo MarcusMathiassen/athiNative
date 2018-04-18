@@ -25,8 +25,15 @@ final class ParticleSystem
         static let MassIndex = 3
         static let ColorIndex = 4
         static let VertexIndex = 5
-        static let ViewportIndex = 6
-        static let ParticleCountIndex = 7
+        static let SimParamIndex = 6
+    }
+    
+    struct SimParam
+    {
+        var particle_count: Int = 0                 // number of particles
+        var gravity_force: float2 = float2(0)       // force of gravity
+        var viewport_size: float2 = float2(0)       // size of the current viewport
+        var delta_time: Float = 0                   // frame delta time
     }
     
     public var particleCount: Int = 0 // Amount of particles
@@ -98,8 +105,6 @@ final class ParticleSystem
     var finalTexture: MTLTexture
     
     private var computeParticleUpdatePipelineState: MTLComputePipelineState?
-    private var computeParticleCollisionPipelineState: MTLComputePipelineState?
-
     
     private var positionBuffer: MTLBuffer
     private var velocityBuffer: MTLBuffer
@@ -142,17 +147,7 @@ final class ParticleSystem
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
-        
-        // Load the kernel function from the library
-        let computeParticleCollisionFunc = library.makeFunction(name: "particle_collision")
-        
-        // Create a compute pipeline state
-        do {
-            try computeParticleCollisionPipelineState = device.makeComputePipelineState(function: computeParticleCollisionFunc!)
-        } catch {
-            print("Pipeline: Creating pipeline state failed")
-        }
-        
+
         particlesAllocatedCount = preAllocatedParticles
         vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle, options: staticBufferResourceOption)!
         indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle * 3, options: staticBufferResourceOption)!
@@ -189,40 +184,6 @@ final class ParticleSystem
         
         buildVertices(numVertices: numVerticesPerParticle)
     }
-    public func updateParticlesCollisionsGPU(commandBuffer: MTLCommandBuffer)
-    {
-        if particleCount < 2 { return }
-        
-        commandBuffer.pushDebugGroup("Particle GPU Collision")
-        
-        // Make the encoder
-        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
-        
-        // Set the pipelinestate
-        computeEncoder?.setComputePipelineState(computeParticleCollisionPipelineState!)
-        
-        // Set the buffers
-        computeEncoder?.setBytes(&particleCount,    length: MemoryLayout<Int>.stride, index: BufferIndex.ParticleCountIndex)
-        computeEncoder?.setBuffer(positionBuffer,   offset: 0, index: BufferIndex.PositionIndex)
-        computeEncoder?.setBuffer(velocityBuffer,   offset: 0, index: BufferIndex.VelocityIndex)
-        computeEncoder?.setBuffer(radiusBuffer,     offset: 0, index: BufferIndex.RadiusIndex)
-        computeEncoder?.setBuffer(massBuffer,       offset: 0, index: BufferIndex.MassIndex)
-        
-        // Compute kernel threadgroup size
-        let w = (computeParticleUpdatePipelineState?.threadExecutionWidth)!
-        
-        // A one dimensional thread group Swift to pass Metal a one dimensional array
-        let threadGroupCount = MTLSize(width:w, height:1, depth:1)
-        let threadGroups = MTLSize(width:(particleCount + threadGroupCount.width - 1) / threadGroupCount.width, height:1, depth:1)
-        computeEncoder?.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
-
-        print("Particle GPU Collision threadGroupsCount", threadGroupCount)
-        print("Particle GPU Collision threadGroups", threadGroups)
-        
-        // Finish
-        computeEncoder?.endEncoding()
-        commandBuffer.popDebugGroup()
-    }
     
     public func updateParticlesGPU(commandBuffer: MTLCommandBuffer)
     {
@@ -236,11 +197,30 @@ final class ParticleSystem
         // Set the pipelinestate
         computeEncoder?.setComputePipelineState(computeParticleUpdatePipelineState!)
         
+        // Update gravity
+        if enableGravity {
+            if useAccelerometerAsGravity {
+                tempGravityForce = float2(accelerometer.x, accelerometer.y)
+            } else {
+                tempGravityForce.y = gravityForce
+            }
+        } else {
+            tempGravityForce *= 0
+        }
+        
         // Set the buffers
+        var simParam = SimParam()
+        simParam.particle_count = particleCount
+        simParam.gravity_force = tempGravityForce
+        simParam.viewport_size = viewportSize
+        simParam.delta_time = 1/60
+        
+        computeEncoder?.setBytes(&simParam, length: MemoryLayout<SimParam>.stride, index: BufferIndex.SimParamIndex)
+
         computeEncoder?.setBuffer(positionBuffer,   offset: 0, index: BufferIndex.PositionIndex)
         computeEncoder?.setBuffer(velocityBuffer,   offset: 0, index: BufferIndex.VelocityIndex)
         computeEncoder?.setBuffer(radiusBuffer,     offset: 0, index: BufferIndex.RadiusIndex)
-        computeEncoder?.setBytes(&viewportSize,     length: MemoryLayout<float2>.stride, index: BufferIndex.ViewportIndex)
+        computeEncoder?.setBuffer(massBuffer,       offset: 0, index: BufferIndex.MassIndex)
 
         // Compute kernel threadgroup size
         let w = (computeParticleUpdatePipelineState?.threadExecutionWidth)!
@@ -287,12 +267,19 @@ final class ParticleSystem
         
         updateGPUBuffers(commandBuffer: commandBuffer)
         
+        var simParam = SimParam()
+        simParam.particle_count = particleCount
+        simParam.gravity_force = tempGravityForce
+        simParam.viewport_size = viewportSize
+        simParam.delta_time = 1/60
+        
+        renderEncoder.setVertexBytes(&simParam, length: MemoryLayout<SimParam>.stride, index: BufferIndex.SimParamIndex)
+        
         renderEncoder.setVertexBuffer(vertexBuffer,     offset: 0, index: BufferIndex.VertexIndex)
-        renderEncoder.setVertexBytes(&viewportSize,     length: MemoryLayout<float2>.stride, index: BufferIndex.ViewportIndex)
+        renderEncoder.setVertexBuffer(colorBuffer,      offset: 0, index: BufferIndex.ColorIndex)
         
         renderEncoder.setVertexBuffer(positionBuffer,   offset: 0, index: BufferIndex.PositionIndex)
         renderEncoder.setVertexBuffer(radiusBuffer,     offset: 0, index: BufferIndex.RadiusIndex)
-        renderEncoder.setVertexBuffer(colorBuffer,      offset: 0, index: BufferIndex.ColorIndex)
         
 
         renderEncoder.drawIndexedPrimitives(
