@@ -10,6 +10,8 @@
 using namespace metal;
 #include "particleShaderTypes.h"
 
+constant float kGravitationalConstant = 6.67408e-6;
+
 float2 separate(float2 ap, float ar, float2 bp, float br)
 {
     // distance
@@ -112,6 +114,30 @@ float2 collision_resolve(
     return av;
 }
 
+float2 pull_force(float2 p1,
+                  float m1,
+                  float2 point,
+                  float force)
+{
+    const float x1 = p1.x;
+    const float y1 = p1.y;
+    const float x2 = point.x;
+    const float y2 = point.y;
+    const float m2 = force;
+    
+    const float dx = x2 - x1;
+    const float dy = y2 - y1;
+    const float d = sqrt(dx * dx + dy * dy);
+    
+    const float angle = atan2(dy, dx);
+    const float G = kGravitationalConstant;
+    const float F = G * m1 * m2 / d * d;
+    
+    const float nX = F * cos(angle);
+    const float nY = F * sin(angle);
+    
+    return float2(nX, nY);
+}
 
 kernel
 void particle_update(constant SimParam&    sim_param        [[buffer(SimParamIndex)]],
@@ -161,7 +187,10 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
     //----------------------------------
     //  GravityWell, Pull, etc.
     //----------------------------------
-    
+    {
+        if (sim_param.gravity_well_force > 0)
+            n_vel += pull_force(n_pos, n_mass, sim_param.gravity_well_point, sim_param.gravity_well_force);
+    }
     
     //----------------------------------
     //  Particle Update

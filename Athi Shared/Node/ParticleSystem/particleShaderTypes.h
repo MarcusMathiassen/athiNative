@@ -40,6 +40,9 @@ struct SimParam
     vector_float2   gravity_force;    // force of gravity
     vector_float2   viewport_size;    // size of the current viewport
     float           delta_time;       // frame delta time
+    
+    vector_float2 gravity_well_point;
+    float gravity_well_force;
 };
 
 enum BufferIndex

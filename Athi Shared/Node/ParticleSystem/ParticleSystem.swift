@@ -34,6 +34,9 @@ final class ParticleSystem
         var gravity_force: float2 = float2(0)       // force of gravity
         var viewport_size: float2 = float2(0)       // size of the current viewport
         var delta_time: Float = 0                   // frame delta time
+        
+        var gravity_well_point: float2 = float2(0)
+        var gravity_well_force: Float = 0
     }
     
     public var particleCount: Int = 0 // Amount of particles
@@ -93,7 +96,7 @@ final class ParticleSystem
     private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
     #endif
     var particleColor = float4(1)
-    var numVerticesPerParticle = 12
+    var numVerticesPerParticle = 36
     private var quad: Quad
     private var device: MTLDevice
     private var vertexBuffer: MTLBuffer
@@ -214,6 +217,8 @@ final class ParticleSystem
         simParam.gravity_force = tempGravityForce
         simParam.viewport_size = viewportSize
         simParam.delta_time = 1/60
+        simParam.gravity_well_point = mousePos
+        simParam.gravity_well_force = (gMouseOption == MouseOption.Drag) ? 1000 : 0
         
         computeEncoder?.setBytes(&simParam, length: MemoryLayout<SimParam>.stride, index: BufferIndex.SimParamIndex)
 
