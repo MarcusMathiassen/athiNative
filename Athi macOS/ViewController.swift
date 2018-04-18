@@ -175,9 +175,9 @@ class MACOSViewController: NSViewController {
 
     @IBAction func addParticlesButton(_ sender: NSButton)
     {
-        for j in stride(from: 0, to: framebufferWidth, by: 50)
+        for j in stride(from: 0, to: framebufferWidth, by: 10)
         {
-            for k in stride(from: 0, to: framebufferHeight, by: 50)
+            for k in stride(from: 0, to: framebufferHeight, by: 10)
             {
                 let col = renderer.particleSystem.particleColor
                 let pos = float2(j,k)

@@ -43,6 +43,7 @@ typedef enum BufferIndex
     ColorIndex = 4,
     VertexIndex = 5,
     ViewportIndex = 6,
+    ParticleCountIndex = 7,
     
 } BufferIndex;
 

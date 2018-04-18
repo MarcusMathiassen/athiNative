@@ -49,12 +49,26 @@ final class Renderer: NSObject, MTKViewDelegate
     
     var particleSystem: ParticleSystem
 
+    
+    // Tripple buffering
+    var maxNumInFlightBuffers = 3
+    var currentQueue = 0
+    var inFlightSemaphore = DispatchSemaphore(value: 0)
+    //
+    
+    
     var device: MTLDevice
-    let commandQueue: MTLCommandQueue?
+    let commandQueues: [MTLCommandQueue?]
 
     init?(view: MTKView)
     {
         device = view.device!
+        particleSystem = ParticleSystem(device: device)
+        commandQueues = [device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
+        
+        inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
+
+        super.init()
         
         // CrossPlatform stuff
         #if os(macOS)
@@ -92,20 +106,24 @@ final class Renderer: NSObject, MTKViewDelegate
         print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
         print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
         print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
-
-        guard let queue = self.device.makeCommandQueue() else
-        {
-             return nil 
-        }
-        
-        commandQueue = queue
-        
-        particleSystem = ParticleSystem(device: device)
-
-        super.init()
     }
 
     func draw(in view: MTKView) {
+        
+        inFlightSemaphore.wait()
+        
+        currentQueue = (currentQueue + 1) % maxNumInFlightBuffers
+
+        /// Per frame updates hare
+    
+        let commandBuffer = (commandQueues[currentQueue]?.makeCommandBuffer())!
+        
+        commandBuffer.label = "MyCommandBuffer"
+        
+        let block_sema = inFlightSemaphore
+        commandBuffer.addCompletedHandler { (commandBuffer) in
+            block_sema.signal()
+        }
         
         var frameDescriptor = FrameDescriptor()
         frameDescriptor.fillMode = fillMode
@@ -124,22 +142,19 @@ final class Renderer: NSObject, MTKViewDelegate
         if particleColorCycle {
             particleSystem.particleColor = colorOverTime(getTime() * 0.5)
         }
-
+        
         let startTime = getTime()
-
+        
         updateInput()
-
+        
         updateVariables()
 
-        /// Per frame updates hare
 
-        guard let commandBuffer = commandQueue?.makeCommandBuffer() else {
-            return
+//        particleSystem.update()
+        if particleSystem.enableCollisions {
+            particleSystem.updateParticlesCollisionsGPU(commandBuffer: commandBuffer)
         }
-        commandBuffer.label = "MyCommandBuffer"
-
-//        particleSystem.updateParticlesGPU(commandBuffer: commandBuffer)
-        particleSystem.update()
+        particleSystem.updateParticlesGPU(commandBuffer: commandBuffer)
         particleSystem.draw(
             view: view,
             frameDescriptor: frameDescriptor,

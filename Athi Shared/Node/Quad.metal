@@ -88,27 +88,29 @@ fragment FragOut quadFrag(Vertex                              vert           [[s
     return { colorTexture.sample(textureSampler, vert.uv) };
 }
 
-kernel void pixelate(texture2d<float, access::read>     texIn           [[texture(0)]],
-                     texture2d<float, access::write>    texOut          [[texture(1)]],
-                     constant float*                    sigma           [[buffer(0)]],
-                     uint2                              gid             [[thread_position_in_grid]])
+kernel
+void pixelate(texture2d<half, access::read>     texIn           [[texture(0)]],
+              texture2d<half, access::write>    texOut          [[texture(1)]],
+              constant float*                   sigma           [[buffer(0)]],
+              uint2                             gid             [[thread_position_in_grid]])
 {
     const uint weight = *sigma;
     const uint2 pixellatedGid = uint2((gid.x / weight) * weight, (gid.y / weight) * weight);
     
-    const float4 colorAtPixel = texIn.read(pixellatedGid);
+    const half4 colorAtPixel = texIn.read(pixellatedGid);
     
     texOut.write(colorAtPixel, gid);
 }
 
-kernel void mix(texture2d<float, access::read>     tex1          [[texture(0)]],
-                texture2d<float, access::read>     tex2          [[texture(1)]],
-                texture2d<float, access::write>    dest          [[texture(2)]],
-                uint2                              gid           [[thread_position_in_grid]])
+kernel
+void mix(texture2d<half, access::read>     tex1          [[texture(0)]],
+         texture2d<half, access::read>     tex2          [[texture(1)]],
+         texture2d<half, access::write>    dest          [[texture(2)]],
+         uint2                             gid           [[thread_position_in_grid]])
 {
-    float4 c1 = tex1.read(gid);
-    float4 c2 = tex2.read(gid);
-    float4 rc = c1 + c2;
+    const half4 c1 = tex1.read(gid);
+    const half4 c2 = tex2.read(gid);
+    const half4 rc = c1 + c2;
     
     dest.write(rc, gid);
 }
