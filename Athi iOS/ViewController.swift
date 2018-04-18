@@ -55,13 +55,29 @@ class IOSViewController: UIViewController {
             point *= 2
             point.y -= screenHeight
             point.y *= -1
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: colorOverTime(getTime()), radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+
+            
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
+
         }
     }
 

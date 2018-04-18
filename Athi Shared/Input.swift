@@ -10,6 +10,7 @@ enum MouseOption: Int {
     case Spawn = 0
     case Drag = 1
     case Color = 2
+    case Repel = 3
 }
 
 var gMouseOption = MouseOption.Spawn

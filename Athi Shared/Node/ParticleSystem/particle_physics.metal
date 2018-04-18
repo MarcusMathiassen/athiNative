@@ -10,15 +10,13 @@
 using namespace metal;
 #include "particleShaderTypes.h"
 
+
 constant float kGravitationalConstant = 6.67408e-6;
 
 float2 separate(float2 ap, float ar, float2 bp, float br)
 {
     // distance
-    const float distx = pow(bp.x - ap.x, 2);
-    const float disty = pow(bp.y - ap.y, 2);
-    const float dist = sqrt(distx - disty);
-    const float collision_depth = (ar + br) - dist;
+    const float collision_depth = (ar + br) - distance(bp, ap);
     
     const float dx = bp.x - ap.x;
     const float dy = bp.y - ap.y;
@@ -29,28 +27,13 @@ float2 separate(float2 ap, float ar, float2 bp, float br)
     const float sin_angle = sin(collision_angle);
     
     // move the balls away from eachother so they dont overlap
-    const float a_move_x = collision_depth * 0.5f * cos_angle;
-    const float a_move_y = collision_depth * 0.5f * sin_angle;
-    
-    // store the new move values
-    float2 a_pos_move;
-    
-    // Make sure they dont moved beyond the border
-    if (ap.x + a_move_x >= -1.0f + ar && ap.x + a_move_x <= 1.0f - ar)
-        a_pos_move.x += a_move_x;
-    if (ap.y + a_move_y >= -1.0f + ar && ap.y + a_move_y <= 1.0f - ar)
-        a_pos_move.y += a_move_y;
+    const float2 a_pos_move = { -collision_depth * 0.5f * cos_angle, -collision_depth * 0.5f * sin_angle };
     
     // Update.
     return ap + a_pos_move;
 }
 
-bool collision_check(
-    float2 ap,
-    float2 bp,
-    float ar,
-    float br
-    )
+bool collision_check(float2 ap, float2 bp, float ar, float br)
 {
     const float ax = ap.x;
     const float ay = ap.y;
@@ -75,59 +58,39 @@ bool collision_check(
     return false;
 }
 
-float2 collision_resolve(
-    float2 ap, 
-    float2 bp, 
-    float2 av,
-    float2 bv,
-    float m1,
-    float m2
-    )
+float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, float m2)
 {
     // local variables
-    const float dx = bp.x - ap.x;
-    const float dy = bp.y - ap.y;
-    const float2 a_vel = av;
-    const float2 b_vel = bv;
-    const float vdx = b_vel.x - a_vel.x;
-    const float vdy = b_vel.y - a_vel.y;
+    const float2 dp = p2 - p1;
+    const float2 dv = v2 - v1;
+    const float d = dp.x * dv.x + dp.y * dv.y;
     
-    // seperate the circles
-    // separate_circles(a, b);
-    
-    const float d = dx * vdx + dy * vdy;
-    
-    // skip if they're moving away from eachother
-    if (d < 0.0) {
-        const float2 norm = normalize(float2(dx, dy));
+    // We skip any two particles moving away from eachother
+    if (d < 0) {
+        const float2 norm = normalize(dp);
         const float2 tang = float2(norm.y * -1.0f, norm.x);
         
-        const float scal_norm_1 = dot(norm, a_vel);
-        const float scal_norm_2 = dot(norm, b_vel);
-        const float scal_tang_1 = dot(tang, a_vel);
+        const float scal_norm_1 = dot(norm, v1);
+        const float scal_norm_2 = dot(norm, v2);
+        const float scal_tang_1 = dot(tang, v1);
         const float scal_norm_1_after = (scal_norm_1 * (m1 - m2) + 2.0f * m2 * scal_norm_2) / (m1 + m2);
         const float2 scal_norm_1_after_vec = norm * scal_norm_1_after;
         const float2 scal_norm_1_vec = tang * scal_tang_1;
         
         return (scal_norm_1_vec + scal_norm_1_after_vec) * 0.99f;
     }
-    return av;
+    return v1;
 }
 
-float2 pull_force(float2 p1,
-                  float m1,
-                  float2 point,
-                  float force)
+float2 gravity_well(float2 v1,
+                    float2 p1,
+                    float2 p2,
+                    float m1,
+                    float m2)
 {
-    const float x1 = p1.x;
-    const float y1 = p1.y;
-    const float x2 = point.x;
-    const float y2 = point.y;
-    const float m2 = force;
-    
-    const float dx = x2 - x1;
-    const float dy = y2 - y1;
-    const float d = sqrt(dx * dx + dy * dy);
+    const float dx = p2.x - p1.x;
+    const float dy = p2.y - p1.y;
+    const float d = distance(p2, p1);
     
     const float angle = atan2(dy, dx);
     const float G = kGravitationalConstant;
@@ -136,7 +99,27 @@ float2 pull_force(float2 p1,
     const float nX = F * cos(angle);
     const float nY = F * sin(angle);
     
-    return float2(nX, nY);
+    return float2(v1.x + nX, v1.y + nY);
+}
+
+float2 repel_from_point(float2 v1,
+                        float2 p1,
+                        float2 p2,
+                        float m1,
+                        float m2)
+{
+    const float dx = p2.x - p1.x;
+    const float dy = p2.y - p1.y;
+    const float d = distance(p2, p1);
+    
+    const float angle = atan2(dy, dx);
+    const float G = kGravitationalConstant;
+    const float F = G * m1 * m2 / d * d;
+    
+    const float nX = -F * cos(angle);
+    const float nY = -F * sin(angle);
+    
+    return float2(v1.x + nX, v1.y + nY);
 }
 
 kernel
@@ -145,9 +128,9 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
                      device float2*        velocity         [[buffer(VelocityIndex)]],
                      constant float*       radius           [[buffer(RadiusIndex)]],
                      constant float*       mass             [[buffer(MassIndex)]],
-                     uint                  gid              [[thread_position_in_grid]],
-                     uint                  lid              [[thread_position_in_threadgroup]],
-                     uint                  lsize            [[threads_per_threadgroup]]
+                     uint                  gid              [[thread_position_in_grid]]
+//                     uint                  lid              [[thread_position_in_threadgroup]],
+//                     uint                  lsize            [[threads_per_threadgroup]]
                      )
 {
     //----------------------------------
@@ -156,9 +139,9 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
     
     // Particle
     const int       id      = gid;
-    
-    float2          n_pos   = position[id];
-    float2          n_vel   = velocity[id];
+
+    thread float2   n_pos   = position[id];
+    thread float2   n_vel   = velocity[id];
     const float     n_radi  = radius[id];
     const float     n_mass  = mass[id];
     
@@ -169,6 +152,7 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
     //----------------------------------
     //  Particle Collision
     //----------------------------------
+    if (sim_param.enable_collisions)
     {
         const int i = gid;
 
@@ -177,9 +161,9 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
             if (i == j) continue;
 
             if (collision_check(n_pos, position[j], n_radi, radius[j])) {
-
-                //            n_pos = separate(n_pos, n_radi, position[j], radius[j]);
-                n_vel = collision_resolve(n_pos, position[j], n_vel, velocity[j], n_mass, mass[j]);
+                
+//                n_pos = separate(n_pos, n_radi, position[j], radius[j]);
+                n_vel = collision_resolve(n_pos, n_vel, n_mass, position[j], velocity[j], mass[j]);
             }
         }
     }
@@ -188,8 +172,13 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
     //  GravityWell, Pull, etc.
     //----------------------------------
     {
-        if (sim_param.gravity_well_force > 0)
-            n_vel += pull_force(n_pos, n_mass, sim_param.gravity_well_point, sim_param.gravity_well_force);
+        if (sim_param.gravity_well_force != 0) {
+            n_vel = gravity_well(n_vel, n_pos, sim_param.gravity_well_point, n_mass, sim_param.gravity_well_force);
+        }
+        
+//        if (sim_param.should_repel) {
+//            n_vel = -1 * gravity_well(n_vel, n_pos, sim_param.gravity_well_point, n_mass, sim_param.gravity_well_force);
+//        }
     }
     
     //----------------------------------
@@ -199,13 +188,31 @@ void particle_update(constant SimParam&    sim_param        [[buffer(SimParamInd
         // Gravity
         n_vel += sim_param.gravity_force;
         
-        // Border collision
-        if (n_pos.x < 0 + n_radi)                  { n_pos.x = 0 + n_radi; n_vel.x = -n_vel.x; }
-        if (n_pos.x > viewport_size.x - n_radi)    { n_pos.x = viewport_size.x - n_radi; n_vel.x = -n_vel.x; }
-        if (n_pos.y < 0 + n_radi)                  { n_pos.y = 0 + n_radi; n_vel.y = -n_vel.y; }
-        if (n_pos.y > viewport_size.y - n_radi)    { n_pos.y = viewport_size.y - n_radi; n_vel.y = -n_vel.y; }
+        if (sim_param.enable_border_collisions)
+        {
+            // Border collision
+            if (n_pos.x < 0 + n_radi) {
+                n_pos.x = 0 + n_radi;
+                n_vel.x *= -1;
+            }
+            if (n_pos.x > viewport_size.x - n_radi) {
+                n_pos.x = viewport_size.x - n_radi;
+                n_vel.x *= -1;
+            }
+            if (n_pos.y < 0 + n_radi) {
+                n_pos.y = 0 + n_radi;
+                n_vel.y *= -1;
+            }
+            if (n_pos.y > viewport_size.y - n_radi) {
+                n_pos.y = viewport_size.y - n_radi;
+                n_vel.y *= -1;
+            }
+        }
+        
+        // We wait on every thread before updating the particles position and velocity
+        threadgroup_barrier(mem_flags::mem_none);
 
-        // Update the particles value
+        // Update the particle
         velocity[id] = n_vel;
         position[id] = n_pos + n_vel;
     }

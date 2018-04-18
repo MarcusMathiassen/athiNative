@@ -963,6 +963,17 @@
                                                                 <action selector="addParticlesButton:" target="XfG-lQ-9wD" id="YOa-pO-mEX"/>
                                                             </connections>
                                                         </button>
+                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0Y1-Wg-Ih9">
+                                                            <rect key="frame" x="31" y="263" width="116" height="18"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <buttonCell key="cell" type="check" title="Border collision" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="jh5-Et-maT">
+                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                <font key="font" metaFont="system"/>
+                                                            </buttonCell>
+                                                            <connections>
+                                                                <action selector="borderCollisionButton:" target="XfG-lQ-9wD" id="J54-Sp-hyT"/>
+                                                            </connections>
+                                                        </button>
                                                     </subviews>
                                                     <animations>
                                                         <caTransition key="subviews">

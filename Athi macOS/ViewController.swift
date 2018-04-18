@@ -24,10 +24,6 @@ class MACOSViewController: NSViewController {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
         mousePos *= pixelScale
         // print("Mouse position:", mousePos)
-
-        if !isMouseDown {
-            return
-        }
     }
 
     override func scrollWheel(with event: NSEvent) {
@@ -39,7 +35,7 @@ class MACOSViewController: NSViewController {
     override func mouseDragged(with event: NSEvent) {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
         mousePos *= pixelScale
-
+        
         isMouseDragging = true
     }
 
@@ -84,6 +80,10 @@ class MACOSViewController: NSViewController {
         renderer.particleSystem.postProcessingSamples = Int(sender.intValue)
     }
 
+    @IBAction func borderCollisionButton(_ sender: NSButton) {
+        renderer.particleSystem.enableBorderCollision = (sender.state.rawValue == 0) ? false : true
+
+    }
     @IBAction func postprocessingButton(_ sender: NSButton) {
         renderer.particleSystem.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
     }
@@ -163,6 +163,7 @@ class MACOSViewController: NSViewController {
                           case 0: gMouseOption = MouseOption.Spawn
                           case 1: gMouseOption = MouseOption.Color
                           case 2: gMouseOption = MouseOption.Drag
+                          case 3: gMouseOption = MouseOption.Repel
                           default: break
                           }
                         
@@ -209,6 +210,8 @@ class MACOSViewController: NSViewController {
 
         framebufferWidth = Float(view.frame.width) * pixelScale
         framebufferHeight = Float(view.frame.height) * pixelScale
+        
+        mouseOptionButton.addItem(withTitle: "Repel")
         
         guard let mtkView = self.view as? MTKView else {
             print("View attached to ViewController is not an MTKView")

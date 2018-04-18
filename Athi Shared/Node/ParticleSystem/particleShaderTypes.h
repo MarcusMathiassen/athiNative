@@ -43,6 +43,11 @@ struct SimParam
     
     vector_float2 gravity_well_point;
     float gravity_well_force;
+    
+    bool enable_collisions;
+    bool enable_border_collisions;
+    
+    bool should_repel;
 };
 
 enum BufferIndex

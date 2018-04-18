@@ -37,6 +37,11 @@ final class ParticleSystem
         
         var gravity_well_point: float2 = float2(0)
         var gravity_well_force: Float = 0
+        
+        var enable_collisions: Bool = false
+        var enable_border_collisions: Bool = false
+        
+        var should_repel: Bool = false
     }
     
     public var particleCount: Int = 0 // Amount of particles
@@ -51,6 +56,7 @@ final class ParticleSystem
     //
     
     // Options
+    var shouldRepel: Bool = false
     var enableMultithreading: Bool = true
     var enableBorderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
@@ -85,7 +91,7 @@ final class ParticleSystem
     
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 1
-    var blurStrength: Float = 2
+    var blurStrength: Float = 10
     var preAllocatedParticles = 100
     private var particlesAllocatedCount: Int
     #if os(macOS)
@@ -115,6 +121,7 @@ final class ParticleSystem
     private var massBuffer: MTLBuffer
     private var colorBuffer: MTLBuffer
     
+    private var blurKernel: MPSImageGaussianBlur
     
     var bufferSemaphore = DispatchSemaphore(value: 0)
     
@@ -122,6 +129,8 @@ final class ParticleSystem
     {
         self.device = device
         quad = Quad(device: device)
+        
+        blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
         
         let library = device.makeDefaultLibrary()!
         let vertexFunc = library.makeFunction(name: "particle_vert")!
@@ -218,7 +227,10 @@ final class ParticleSystem
         simParam.viewport_size = viewportSize
         simParam.delta_time = 1/60
         simParam.gravity_well_point = mousePos
-        simParam.gravity_well_force = (gMouseOption == MouseOption.Drag) ? 1000 : 0
+        simParam.gravity_well_force = (gMouseOption == MouseOption.Drag) ? 1e3 : 0
+        simParam.enable_collisions = enableCollisions
+        simParam.enable_border_collisions = enableBorderCollision
+        simParam.should_repel = shouldRepel
         
         computeEncoder?.setBytes(&simParam, length: MemoryLayout<SimParam>.stride, index: BufferIndex.SimParamIndex)
 
@@ -232,7 +244,7 @@ final class ParticleSystem
         
         // A one dimensional thread group Swift to pass Metal a one dimensional array
         let threadGroupCount = MTLSize(width:w, height:1, depth:1)
-        let threadGroups = MTLSize(width:(particleCount + threadGroupCount.width - 1) / threadGroupCount.width, height:1, depth:1)
+        let threadGroups = MTLSize(width: (particleCount + threadGroupCount.width - 1) / threadGroupCount.width, height:1, depth:1)
         computeEncoder?.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
         
         print("Particle GPU Update threadGroupsCount", threadGroupCount)
@@ -253,7 +265,7 @@ final class ParticleSystem
         
         commandBuffer.pushDebugGroup("ParticleSystem Draw")
         
-        var renderPassDesc = MTLRenderPassDescriptor()
+        let renderPassDesc = MTLRenderPassDescriptor()
         renderPassDesc.colorAttachments[0].clearColor = frameDescriptor.clearColor
         renderPassDesc.colorAttachments[0].texture = inTexture
         renderPassDesc.colorAttachments[0].loadAction = .clear
@@ -273,10 +285,7 @@ final class ParticleSystem
         updateGPUBuffers(commandBuffer: commandBuffer)
         
         var simParam = SimParam()
-        simParam.particle_count = particleCount
-        simParam.gravity_force = tempGravityForce
         simParam.viewport_size = viewportSize
-        simParam.delta_time = 1/60
         
         renderEncoder.setVertexBytes(&simParam, length: MemoryLayout<SimParam>.stride, index: BufferIndex.SimParamIndex)
         
@@ -301,36 +310,38 @@ final class ParticleSystem
         if enablePostProcessing {
             
             renderEncoder.pushDebugGroup("Apply Post Processing")
-
             
-            let blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
-            blurKernel.encode(commandBuffer: commandBuffer, sourceTexture: inTexture, destinationTexture: outTexture)
+            let blurKernelT = MPSImageGaussianBlur(device: device, sigma: blurStrength)
+            blurKernelT.encode(commandBuffer: commandBuffer, sourceTexture: inTexture, destinationTexture: outTexture)
 
-//            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: finalTexture, sigma: blurStrength)
-
-            
             quad.mix(commandBuffer: commandBuffer, inputTexture1: inTexture, inputTexture2: outTexture, outTexture: finalTexture, sigma: 5.0)
             
-//
+            //            quad.pixelate(commandBuffer: commandBuffer, inputTexture: inTexture, outputTexture: finalTexture, sigma: blurStrength)
+            
+            
             renderEncoder.popDebugGroup()
         }
         
         
-        renderPassDesc = view.currentRenderPassDescriptor!
-        renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
+        let viewRenderPassDesc = view.currentRenderPassDescriptor
         
-        renderEncoder.pushDebugGroup("Draw particles (on-screen)")
-        
-        quad.draw(renderEncoder: renderEncoder, texture: finalTexture)
-        
-        renderEncoder.popDebugGroup()
-        renderEncoder.endEncoding()
-        
-        commandBuffer.popDebugGroup()
-        
-        
-        commandBuffer.addCompletedHandler { (commandBuffer) in
-            self.bufferSemaphore.signal()
+        if viewRenderPassDesc != nil {
+            
+            renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
+            
+            renderEncoder.pushDebugGroup("Draw particles (on-screen)")
+            
+            quad.draw(renderEncoder: renderEncoder, texture: finalTexture)
+            
+            renderEncoder.popDebugGroup()
+            renderEncoder.endEncoding()
+            
+            commandBuffer.popDebugGroup()
+            
+            
+            commandBuffer.addCompletedHandler { (commandBuffer) in
+                self.bufferSemaphore.signal()
+            }
         }
     }
     
@@ -773,14 +784,16 @@ final class ParticleSystem
     //////////  UTILITY
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    
-    
-    
+
     public func addParticleWith(position: float2, color: float4, radius: Float)
     {
         self.id.append(particleCount)
         self.position.append(position)
-        self.velocity.append(randFloat2(-5, 5))
+        if hasInitialVelocity {
+            self.velocity.append(randFloat2(-5, 5))
+        } else {
+            self.velocity.append(float2(0))
+        }
         self.radius.append(radius)
         self.color.append(color)
         //        self.density.append(1)
