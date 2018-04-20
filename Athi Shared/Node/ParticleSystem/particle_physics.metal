@@ -11,29 +11,6 @@
 using namespace metal;
 #include "ShaderTypes.h"
 
-constant float kGravitationalConstant = 6.67408e-6;
-constant float gk_energy_loss = 0.98f;
-
-float2 separate(float2 ap, float ar, float2 bp, float br)
-{
-    // distance
-    const float collision_depth = (ar + br) - distance(bp, ap);
-
-    const float dx = bp.x - ap.x;
-    const float dy = bp.y - ap.y;
-
-    // contact angle
-    const float collision_angle = atan2(dy, dx);
-    const float cos_angle = cos(collision_angle);
-    const float sin_angle = sin(collision_angle);
-
-    // move the balls away from eachother so they dont overlap
-    const float2 a_pos_move = { -collision_depth * 0.5f * cos_angle, -collision_depth * 0.5f * sin_angle };
-
-    // Update.
-    return ap + a_pos_move;
-}
-
 bool collision_check(float2 ap, float2 bp, float ar, float br)
 {
     const float ax = ap.x;
@@ -78,145 +55,48 @@ float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, f
         const float2 scal_norm_1_after_vec = norm * scal_norm_1_after;
         const float2 scal_norm_1_vec = tang * scal_tang_1;
 
-        return (scal_norm_1_vec + scal_norm_1_after_vec) * gk_energy_loss;
+        return (scal_norm_1_vec + scal_norm_1_after_vec);
     }
     return v1;
 }
 
-float2 gravity_well(float2 v1,
-                    float2 p1,
-                    float2 p2,
-                    float m1,
-                    float m2)
-{
-    const float dx = p2.x - p1.x;
-    const float dy = p2.y - p1.y;
-    const float d = distance(p2, p1);
-
-    const float angle = atan2(dy, dx);
-    const float G = kGravitationalConstant;
-    const float F = G * m1 * m2 / d * d;
-
-    const float nX = F * cos(angle);
-    const float nY = F * sin(angle);
-
-    return float2(v1.x + nX, v1.y + nY);
-}
-
-float2 repel_from_point(float2 v1,
-                        float2 p1,
-                        float2 p2,
-                        float m1,
-                        float m2)
-{
-    const float dx = p2.x - p1.x;
-    const float dy = p2.y - p1.y;
-    const float d = distance(p2, p1);
-
-    const float angle = atan2(dy, dx);
-    const float G = kGravitationalConstant;
-    const float F = G * m1 * m2 / d * d;
-
-    const float nX = -F * cos(angle);
-    const float nY = -F * sin(angle);
-
-    return float2(v1.x + nX, v1.y + nY);
-}
-
 kernel
-void particle_update(constant SimParam&         sim_param               [[buffer(SimParamIndex)]],
-                     device float2*             position                [[buffer(PositionIndex)]],
-                     device float2*             velocity                [[buffer(VelocityIndex)]],
-                     constant float*            radius                  [[buffer(RadiusIndex)]],
-                     constant float*            mass                    [[buffer(MassIndex)]],
-                     device atomic_uint&        total_comparisons       [[buffer(ComparisonIndex)]],
-                     uint                       gid                     [[thread_position_in_grid]]
+void particle_update(constant MotionParam&      motionParam                 [[buffer(MotionParamIndex)]],
+                     constant uint&             collidablesCount            [[buffer(CollidablesCountIndex)]],
+                     device Collidable*         collidable                  [[buffer(CollidablesIndex)]],
+                     uint                       gid                         [[thread_position_in_grid]]
+//                     uint                       lid                         [[thread_position_in_threadgroup]],
+//                     uint                       lsize                       [[threads_per_threadgroup]]
                      )
 {
     //----------------------------------
-    //  Local variables
+    //  Collision Detection and Resolve
     //----------------------------------
+    
+    const uint       index   = gid;                         // the index of this threads particle
+    float2           newPos  = collidable[index].position;  // position
+    float2           newVel  = collidable[index].velocity;  // velocity
+    const float      radi  = collidable[index].radius;      // radius
+    const float      mass  = collidable[index].mass;        // mass
 
-    // Particle
-    const int       id      = gid;                      // the id of this threads particle
+    for (uint otherIndex = 0; otherIndex < collidablesCount; ++otherIndex) {
 
-    thread float2           n_pos   = position[id];     // local particle position
-    thread float2           n_vel   = velocity[id];     // local particle velocity
-    thread const float      n_radi  = radius[id];       // local particle radius
-    thread const float      n_mass  = mass[id];         // local particle mass
+        if (index == otherIndex) continue;
+        
+        const float2 other_pos = collidable[otherIndex].position;
+        const float2 other_vel = collidable[otherIndex].velocity;
+        const float other_radi = collidable[otherIndex].radius;
+        const float other_mass = collidable[otherIndex].mass;
 
-    // Sim params
-    thread const float2    viewport_size   = sim_param.viewport_size;
-    thread const int       particle_count  = sim_param.particle_count;
-
-    //----------------------------------
-    //  Particle Collision
-    //----------------------------------
-    if (sim_param.enable_collisions)
-    {
-        thread uint accum_comparisons = 0;
-
-        const int i = gid;
-
-        for (int j = 0; j < particle_count; ++j) {
-
-            if (i == j) continue;
-
-            if (collision_check(n_pos, position[j], n_radi, radius[j])) {
-                ++accum_comparisons;
-//                n_pos = separate(n_pos, n_radi, position[j], radius[j]);
-                n_vel = collision_resolve(n_pos, n_vel, n_mass, position[j], velocity[j], mass[j]);
-            }
+        if (collision_check(newPos, other_pos, radi, other_radi)) {
+            newVel = collision_resolve(newPos, newVel, mass, other_pos, other_vel, other_mass);
         }
-        atomic_fetch_add_explicit(&total_comparisons, accum_comparisons, memory_order_relaxed);
     }
 
-    //----------------------------------
-    //  GravityWell, Pull, etc.
-    //----------------------------------
-    {
-        if (sim_param.gravity_well_force != 0) {
-            n_vel = gravity_well(n_vel, n_pos, sim_param.gravity_well_point, n_mass, sim_param.gravity_well_force);
-        }
+    // We wait on every thread before updating the particles position and velocity
+    threadgroup_barrier(mem_flags::mem_none);
 
-//        if (sim_param.should_repel) {
-//            n_vel = -1 * gravity_well(n_vel, n_pos, sim_param.gravity_well_point, n_mass, sim_param.gravity_well_force);
-//        }
-    }
-
-    //----------------------------------
-    //  Particle Update
-    //----------------------------------
-    {
-        // Gravity
-        n_vel += sim_param.gravity_force;
-
-        if (sim_param.enable_border_collisions)
-        {
-            // Border collision
-            if (n_pos.x < 0 + n_radi) {
-                n_pos.x = 0 + n_radi;
-                n_vel.x *= -1 * gk_energy_loss;
-            }
-            if (n_pos.x > viewport_size.x - n_radi) {
-                n_pos.x = viewport_size.x - n_radi;
-                n_vel.x *= -1 * gk_energy_loss;
-            }
-            if (n_pos.y < 0 + n_radi) {
-                n_pos.y = 0 + n_radi;
-                n_vel.y *= -1 * gk_energy_loss;
-            }
-            if (n_pos.y > viewport_size.y - n_radi) {
-                n_pos.y = viewport_size.y - n_radi;
-                n_vel.y *= -1 * gk_energy_loss;
-            }
-        }
-
-        // We wait on every thread before updating the particles position and velocity
-        threadgroup_barrier(mem_flags::mem_none);
-
-        // Update the particle
-        velocity[id] = n_vel;
-        position[id] = n_pos + n_vel;
-    }
+    // Update the particle
+    collidable[index].velocity = newVel;
+    collidable[index].position = newPos + newVel * motionParam.deltaTime;
 }

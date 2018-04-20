@@ -145,7 +145,7 @@ final class Renderer: NSObject, MTKViewDelegate
 
         updateVariables()
 
-        particleSystem.update()
+        particleSystem.update(commandBuffer: commandBuffer)
 //        particleSystem.updateParticlesGPU(commandBuffer: commandBuffer)
         particleSystem.draw(
             view: view,
@@ -183,19 +183,21 @@ final class Renderer: NSObject, MTKViewDelegate
             particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
 
         case MouseOption.Drag:
-            particleSystem.shouldRepel = false
-            let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
-            if gmouseAttachedToIDs.isEmpty {
-                for id in particleIDsToDrag {
-                    gmouseAttachedToIDs.append(id)
-                }
-            }
-
-            particleSystem.goTowardsPoint(mousePos, particleIDs: gmouseAttachedToIDs)
+             break
+//            particleSystem.shouldRepel = false
+//            let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
+//            if gmouseAttachedToIDs.isEmpty {
+//                for id in particleIDsToDrag {
+//                    gmouseAttachedToIDs.append(id)
+//                }
+//            }
+//
+//            particleSystem.goTowardsPoint(mousePos, particleIDs: gmouseAttachedToIDs)
 
         case MouseOption.Color:
-            let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
-            particleSystem.colorParticles(IDs: particleIDsToDrag, color: particleSystem.particleColor)
+             break
+//            let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
+//            particleSystem.colorParticles(IDs: particleIDsToDrag, color: particleSystem.particleColor)
 
         case MouseOption.Repel:
             particleSystem.shouldRepel = true

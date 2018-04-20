@@ -23,31 +23,26 @@
 
 typedef NS_ENUM(NSInteger, BufferIndex)
 {
-    PositionIndex,
-    VelocityIndex,
-    RadiusIndex,
-    MassIndex,
-    ColorIndex,
     VertexIndex,
-    SimParamIndex,
-    ComparisonIndex,
+    ColorIndex,
+    ViewportSizeIndex,
+    MotionParamIndex,
+    CollidablesIndex,
+    CollidablesCountIndex,
 };
 
 typedef struct
 {
-    int             particle_count;   // number of particles
-    vector_float2   gravity_force;    // force of gravity
-    vector_float2   viewport_size;    // size of the current viewport
-    float           delta_time;       // frame delta time
-    
-    vector_float2 gravity_well_point;
-    float gravity_well_force;
-    
-    bool enable_collisions;
-    bool enable_border_collisions;
-    
-    bool should_repel;
-} SimParam;
+    vector_float2   position;
+    vector_float2   velocity;
+    float           radius;
+    float           mass;
+} Collidable;
+
+typedef struct
+{
+    float           deltaTime;       // frame delta time
+} MotionParam;
 
 #endif /* ShaderTypes_h */
 
