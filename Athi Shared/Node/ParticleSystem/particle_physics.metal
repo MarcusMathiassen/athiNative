@@ -7,7 +7,6 @@
 //
 
 #include <metal_stdlib>
-#include <metal_atomic>
 using namespace metal;
 #include "ShaderTypes.h"
 
@@ -63,40 +62,35 @@ float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, f
 kernel
 void particle_update(constant MotionParam&      motionParam                 [[buffer(MotionParamIndex)]],
                      constant uint&             collidablesCount            [[buffer(CollidablesCountIndex)]],
-                     device Collidable*         collidable                  [[buffer(CollidablesIndex)]],
-                     uint                       gid                         [[thread_position_in_grid]]
-//                     uint                       lid                         [[thread_position_in_threadgroup]],
-//                     uint                       lsize                       [[threads_per_threadgroup]]
-                     )
+                     constant Collidable*       collidableIn                [[buffer(CollidablesInIndex)]],
+                     device Collidable*         collidableOut               [[buffer(CollidablesOutIndex)]],
+                     uint                       gid                         [[thread_position_in_grid]])
 {
     //----------------------------------
     //  Collision Detection and Resolve
     //----------------------------------
     
-    const uint       index   = gid;                         // the index of this threads particle
-    float2           newPos  = collidable[index].position;  // position
-    float2           newVel  = collidable[index].velocity;  // velocity
-    const float      radi  = collidable[index].radius;      // radius
-    const float      mass  = collidable[index].mass;        // mass
+    const uint index = gid;                      // the index of this threads particle
+    float2 newPos = collidableIn[index].position;  // position
+    float2 newVel = collidableIn[index].velocity;  // velocity
+    const float radi = collidableIn[index].radius; // radius
+    const float mass = collidableIn[index].mass;   // mass
 
     for (uint otherIndex = 0; otherIndex < collidablesCount; ++otherIndex) {
 
         if (index == otherIndex) continue;
         
-        const float2 other_pos = collidable[otherIndex].position;
-        const float2 other_vel = collidable[otherIndex].velocity;
-        const float other_radi = collidable[otherIndex].radius;
-        const float other_mass = collidable[otherIndex].mass;
+        const float2 other_pos = collidableIn[otherIndex].position;
+        const float2 other_vel = collidableIn[otherIndex].velocity;
+        const float other_radi = collidableIn[otherIndex].radius;
+        const float other_mass = collidableIn[otherIndex].mass;
 
         if (collision_check(newPos, other_pos, radi, other_radi)) {
             newVel = collision_resolve(newPos, newVel, mass, other_pos, other_vel, other_mass);
         }
     }
 
-    // We wait on every thread before updating the particles position and velocity
-    threadgroup_barrier(mem_flags::mem_none);
-
     // Update the particle
-    collidable[index].velocity = newVel;
-    collidable[index].position = newPos + newVel * motionParam.deltaTime;
+    collidableOut[index].velocity = newVel;
+    collidableOut[index].position = newPos + newVel;
 }

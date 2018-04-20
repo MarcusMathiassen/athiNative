@@ -8,6 +8,7 @@
 
 import Metal
 import MetalKit
+import simd
 
 struct MotionParam {
     var deltaTime: Float = 0
@@ -40,20 +41,19 @@ protocol Collidable {
 final class CollisionDetection <T: Collidable> {
 
     var collidables: [T] = []
-    var newPositions: [float2] = []
 
     var computeParam: ComputeParam! = nil
     var motionParam: MotionParam! = nil
-
     
     // Metal resources
     var device: MTLDevice
-    var collidablesAllocated: Int = 0
+    var collidablesAllocated: Int = 1
     
     var bufferSemaphore = DispatchSemaphore(value: 0)
     
     var computePipelineState: MTLComputePipelineState?
-    var collidablesBuffer: MTLBuffer
+    var collidablesInBuffer: MTLBuffer
+    var collidablesOutBuffer: MTLBuffer
     
     /**
         @Lightweight
@@ -61,24 +61,35 @@ final class CollisionDetection <T: Collidable> {
     init(device: MTLDevice) {
         self.device = device
         
-        collidablesBuffer = device.makeBuffer(
-            length: MemoryLayout<T>.stride,
+        collidablesInBuffer = device.makeBuffer(
+            length: MemoryLayout<T>.stride * collidablesAllocated,
             options: .storageModeShared)!
+        
+        collidablesOutBuffer = device.makeBuffer(
+            length: MemoryLayout<T>.stride * collidablesAllocated,
+            options: .storageModeShared)!
+        
+        let library = device.makeDefaultLibrary()
+        let computeFunc = library?.makeFunction(name: "particle_update")
+        
+        do {
+            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
+        } catch {
+            print("Pipeline: Creating pipeline state failed")
+        }
     }
     
     /**
      Returns the collidables new position
      */
-    public func runTimeStep(
-        commandBuffer: MTLCommandBuffer,
-        collidables: [T],
-        motionParam: MotionParam,
-        computeParam: ComputeParam) -> [T] {
-
+    public func runTimeStep(commandBuffer: MTLCommandBuffer,
+                            collidables: [T],
+                            motionParam: MotionParam,
+                            computeParam: ComputeParam) -> [T] {
+        
         precondition(collidables.count > 1, "More than one collidable needed")
         
         self.collidables = collidables
-        self.newPositions = [float2](repeating: float2(0), count: collidables.count)
 
         // Update our local versions
         self.computeParam = computeParam
@@ -90,7 +101,7 @@ final class CollisionDetection <T: Collidable> {
         case .GPU: resolveOnGPU(commandBuffer: commandBuffer)
         }
         
-        return collidables
+        return self.collidables
     }
 
     private func resolveOnCPU() {
@@ -117,9 +128,14 @@ final class CollisionDetection <T: Collidable> {
         computeEncoder?.setBytes(&collidablesCount,
                                  length: MemoryLayout<UInt>.stride,
                                  index: BufferIndex.CollidablesCountIndex.rawValue)
-        computeEncoder?.setBuffer(collidablesBuffer,
+        
+        computeEncoder?.setBuffer(collidablesInBuffer,
                                   offset: 0,
-                                  index: BufferIndex.CollidablesIndex.rawValue)
+                                  index: BufferIndex.CollidablesInIndex.rawValue)
+        
+        computeEncoder?.setBuffer(collidablesOutBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.CollidablesOutIndex.rawValue)
         
         // Compute kernel threadgroup size
         let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
@@ -142,6 +158,33 @@ final class CollisionDetection <T: Collidable> {
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
+        
+        // Copy the GPU buffer over to the CPU
+        memcpy(&self.collidables, self.collidablesOutBuffer.contents(), self.collidables.count * MemoryLayout<T>.stride)
+    }
+    
+    private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
+        
+        // Reallocate more if needed
+        if collidables.count > collidablesAllocated {
+            
+            // Update the size of the GPU buffers
+            collidablesInBuffer = device.makeBuffer(
+                length: collidables.count * MemoryLayout<T>.stride,
+                options: MTLResourceOptions.storageModeShared)!
+            
+            // Update the size of the GPU buffers
+            collidablesOutBuffer = device.makeBuffer(
+                length: collidables.count * MemoryLayout<T>.stride,
+                options: MTLResourceOptions.storageModeShared)!
+            
+            // Update the allocated particle count
+            collidablesAllocated = collidables.count
+        }
+        
+        collidablesInBuffer.contents().copyMemory(
+            from: &collidables,
+            byteCount: collidables.count * MemoryLayout<T>.stride)
     }
 
     private func resolveWithTree(treeNodes: [[Int]], range: ClosedRange<Int>) {
@@ -155,8 +198,8 @@ final class CollisionDetection <T: Collidable> {
                 
                 // We accumulate positions and velocities and add them to the original at the end.
                 // So we grab them now.
-                var newVel = float2(0)
-                let newPos = float2(0)
+                var newVel = coll1.velocity
+                let newPos = coll1.position
                 
                 for otherIndex in 0 ..< treeNodes[nodeIndex].count {
 
@@ -174,7 +217,7 @@ final class CollisionDetection <T: Collidable> {
                 }
                 
                 // Update our local version of the particles position with the new velocity
-                collidables[index].velocity += newVel * motionParam.deltaTime
+                collidables[index].velocity += newVel
                 collidables[index].position += newPos + newVel
             }
         }
@@ -210,7 +253,7 @@ final class CollisionDetection <T: Collidable> {
             }
             
             // Update our local version of the particles position with the new velocity
-            collidables[index].velocity += newVel * motionParam.deltaTime
+            collidables[index].velocity += newVel
             collidables[index].position += newPos + newVel
         }
     }
@@ -340,38 +383,5 @@ final class CollisionDetection <T: Collidable> {
         }
         
         return ap + apNew
-    }
-    
-    private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
-        
-        commandBuffer.addCompletedHandler { (commandBuffer) in
-            self.bufferSemaphore.signal()
-        }
-        
-        // Reallocate more if needed
-        if collidables.count > collidablesAllocated {
-            
-            // We have to wait until the buffers no longer in use by the GPU
-            bufferSemaphore.wait()
-            
-            // Reserve space on the CPU buffers
-            collidables.reserveCapacity(collidablesAllocated * MemoryLayout<Collidable>.stride)
-            
-            // Copy the GPU buffers over to the CPU
-            memcpy(&collidables, collidablesBuffer.contents(), collidablesAllocated * MemoryLayout<Collidable>.stride)
-            
-            // Update the size of the GPU buffers
-            collidablesBuffer = device.makeBuffer(
-                length: collidables.count * MemoryLayout<T>.stride,
-                options: MTLResourceOptions.storageModeShared)!
-            
-            // Copy the CPU buffers back to the GPU
-            collidablesBuffer.contents().copyMemory(
-                from: &collidables,
-                byteCount: collidables.count * MemoryLayout<T>.stride)
-
-            // Update the allocated particle count
-            collidablesAllocated = collidables.count
-        }
     }
 }

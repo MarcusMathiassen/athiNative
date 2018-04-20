@@ -29,7 +29,8 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     ColorIndex,
     ViewportSizeIndex,
     MotionParamIndex,
-    CollidablesIndex,
+    CollidablesInIndex,
+    CollidablesOutIndex,
     CollidablesCountIndex,
 };
 

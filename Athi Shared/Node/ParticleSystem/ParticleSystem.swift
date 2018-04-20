@@ -70,7 +70,7 @@ final class ParticleSystem {
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 1
     var blurStrength: Float = 10
-    var preAllocatedParticles = 100
+    var preAllocatedParticles = 1
     private var particlesAllocatedCount: Int
     #if os(macOS)
     private var dynamicBufferResourceOption: MTLResourceOptions = .storageModeShared
@@ -195,8 +195,8 @@ final class ParticleSystem {
         // Rebuild arrays
         for i in 0 ..< particles.count {
             positions[i] = particles[i].position
-            radii[i] = particles[i].radius
         }
+        
         updateGPUBuffers(commandBuffer: commandBuffer)
 
         renderEncoder.setVertexBytes(&viewportSize,
@@ -273,10 +273,10 @@ final class ParticleSystem {
             renderEncoder.endEncoding()
 
             commandBuffer.popDebugGroup()
-
-            commandBuffer.addCompletedHandler { (_) in
-                self.bufferSemaphore.signal()
-            }
+            
+//            commandBuffer.addCompletedHandler { (commandBuffer) in
+//                self.bufferSemaphore.signal()
+//            }
         }
     }
 
@@ -296,7 +296,7 @@ final class ParticleSystem {
             motionParam.deltaTime = 1/60
 
             var computeParam = ComputeParam()
-            computeParam.computeDeviceOption = .CPU
+            computeParam.computeDeviceOption = .GPU
             computeParam.isMultithreaded = true
             computeParam.preferredThreadCount = 8
             computeParam.treeOption = .None
@@ -317,12 +317,15 @@ final class ParticleSystem {
 
     private func buildVertices(numVertices: Int) {
 
-        // We cant draw anything with less than 3 vertices so just return
-        if numVertices < 3 { return }
+        precondition(numVertices > 3, "Can't draw anything with less than 3 vertices")
 
         // Clear previous values
         vertices.removeAll()
         indices.removeAll()
+        
+        vertices.reserveCapacity(numVertices)
+        indices.reserveCapacity(numVertices)
+
 
         // Add indices
         for num in 0 ..< numVertices - 2 {
@@ -355,33 +358,34 @@ final class ParticleSystem {
         if particleCount > particlesAllocatedCount {
             
             // We have to wait until the buffers no longer in use by the GPU
-            bufferSemaphore.wait()
-            
-            // Reserve space on the CPU buffers
-            positions.reserveCapacity(   particlesAllocatedCount * MemoryLayout<float2>.stride)
-            radii.reserveCapacity(     particlesAllocatedCount * MemoryLayout<Float>.stride)
-            colors.reserveCapacity(      particlesAllocatedCount * MemoryLayout<float4>.stride)
-            
-            // Copy the GPU buffers over to the CPU
-            memcpy(&positions,   positionBuffer.contents(),  particlesAllocatedCount * MemoryLayout<float2>.stride)
-            memcpy(&radii,     radiusBuffer.contents(),    particlesAllocatedCount * MemoryLayout<Float>.stride)
-            memcpy(&colors,      colorBuffer.contents(),     particlesAllocatedCount * MemoryLayout<float4>.stride)
-            
-            
+//            bufferSemaphore.wait()
+//
+//            // Reserve space on the CPU buffers
+//            positions.reserveCapacity(   particlesAllocatedCount * MemoryLayout<float2>.stride)
+//            radii.reserveCapacity(     particlesAllocatedCount * MemoryLayout<Float>.stride)
+//            colors.reserveCapacity(      particlesAllocatedCount * MemoryLayout<float4>.stride)
+//
+//            // Copy the GPU buffers over to the CPU
+//            memcpy(&positions,   positionBuffer.contents(),  particlesAllocatedCount * MemoryLayout<float2>.stride)
+//            memcpy(&radii,     radiusBuffer.contents(),    particlesAllocatedCount * MemoryLayout<Float>.stride)
+//            memcpy(&colors,      colorBuffer.contents(),     particlesAllocatedCount * MemoryLayout<float4>.stride)
+
+
             // Update the size of the GPU buffers
             positionBuffer = device.makeBuffer( length: particleCount * MemoryLayout<float2>.stride,    options: dynamicBufferResourceOption)!
             radiusBuffer = device.makeBuffer(   length: particleCount * MemoryLayout<Float>.stride,     options: dynamicBufferResourceOption)!
             colorBuffer = device.makeBuffer(    length: particleCount * MemoryLayout<float4>.stride,    options: dynamicBufferResourceOption)!
             
-            // Copy the CPU buffers back to the GPU
-            positionBuffer.contents().copyMemory(   from: &positions,    byteCount: particleCount * MemoryLayout<float2>.stride)
-            radiusBuffer.contents().copyMemory(     from: &radii,      byteCount: particleCount * MemoryLayout<Float>.stride)
-            colorBuffer.contents().copyMemory(      from: &colors,       byteCount: particleCount * MemoryLayout<float4>.stride)
-            
             // Update the allocated particle count
             particlesAllocatedCount = particleCount
             
         }
+        
+        // Copy the CPU buffers back to the GPU
+        positionBuffer.contents().copyMemory(   from: &positions,    byteCount: particleCount * MemoryLayout<float2>.stride)
+        radiusBuffer.contents().copyMemory(     from: &radii,      byteCount: particleCount * MemoryLayout<Float>.stride)
+        colorBuffer.contents().copyMemory(      from: &colors,       byteCount: particleCount * MemoryLayout<float4>.stride)
+        
     }
 
     ////////////////////////////////////////////////////////
@@ -422,5 +426,6 @@ final class ParticleSystem {
         p.velocity = vel
         p.radius = radius
         p.mass = Float.pi * radius * radius
+        particles.append(p)
     }
 }
