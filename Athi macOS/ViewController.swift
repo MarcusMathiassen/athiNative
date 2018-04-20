@@ -37,6 +37,19 @@ class MACOSViewController: NSViewController {
         mousePos *= pixelScale
         
         isMouseDragging = true
+        
+        
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+
     }
 
     override func mouseDown(with _: NSEvent) {

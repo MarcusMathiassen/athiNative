@@ -8,33 +8,44 @@
 
 #include <metal_stdlib>
 using namespace metal;
-#include "particleShaderTypes.h"
+#include "ShaderTypes.h"
+
+struct VertexOut
+{
+    vector_float4 position[[position]];
+    vector_float4 color;
+};
+
+struct FragmentOut
+{
+    vector_float4 color0[[color(0)]];
+    vector_float4 color1[[color(1)]];
+};
 
 vertex
-ParticleOut particle_vert(constant SimParam& simParam            [[buffer(SimParamIndex)]],
-                          constant float2*   position            [[buffer(PositionIndex)]],
-                          constant float*    radius              [[buffer(RadiusIndex)]],
-                          constant float4*   color               [[buffer(ColorIndex)]],
-                          constant float2*   vertices            [[buffer(VertexIndex)]],
-                          uint vid                               [[vertex_id]],
-                          uint iid                               [[instance_id]]
-                         )
+VertexOut particle_vert(constant SimParam& simParam            [[buffer(SimParamIndex)]],
+                        constant float2*   position            [[buffer(PositionIndex)]],
+                        constant float*    radius              [[buffer(RadiusIndex)]],
+                        constant float4*   color               [[buffer(ColorIndex)]],
+                        constant float2*   vertices            [[buffer(VertexIndex)]],
+                        uint vid                               [[vertex_id]],
+                        uint iid                               [[instance_id]]
+                        )
 {
     // The viewspace position of our vertex.
     // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
     const float2 fpos = -1.0 + (radius[iid] * vertices[vid] + position[iid]) / (simParam.viewport_size / 2.0);
     
+    VertexOut vOut;
+    vOut.position = float4(fpos, 0, 1);
+    vOut.color = color[iid];
     
-    ParticleOut pOut;
-    pOut.position = float4(fpos, 0, 1);
-    pOut.color = color[iid];
-    
-    return pOut;
+    return vOut;
 }
 
 fragment
-FragmentOut particle_frag(ParticleOut particle [[stage_in]])
+FragmentOut particle_frag(VertexOut vert [[stage_in]])
 {
-    return { particle.color, particle.color };
+    return { vert.color, vert.color };
 }
 
