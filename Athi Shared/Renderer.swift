@@ -146,7 +146,6 @@ final class Renderer: NSObject, MTKViewDelegate
         updateVariables()
 
         particleSystem.update(commandBuffer: commandBuffer)
-//        particleSystem.updateParticlesGPU(commandBuffer: commandBuffer)
         particleSystem.draw(
             view: view,
             frameDescriptor: frameDescriptor,

@@ -23,17 +23,18 @@ struct FragmentOut
 };
 
 vertex
-VertexOut particle_vert(constant float2&  viewport_size        [[buffer(ViewportSizeIndex)]],
-                        constant Collidable* collidable        [[buffer(CollidablesIndex)]],
-                        constant float4*   color               [[buffer(ColorIndex)]],
-                        constant float2*   vertices            [[buffer(VertexIndex)]],
-                        uint vid                               [[vertex_id]],
-                        uint iid                               [[instance_id]]
+VertexOut particle_vert(constant float2&    viewport_size   [[buffer(ViewportSizeIndex)]],
+                        constant float2*    position        [[buffer(PositionIndex)]],
+                        constant float*     radius          [[buffer(RadiusIndex)]],
+                        constant float4*    color           [[buffer(ColorIndex)]],
+                        constant float2*    vertices        [[buffer(VertexIndex)]],
+                        uint vid                            [[vertex_id]],
+                        uint iid                            [[instance_id]]
                         )
 {
     // The viewspace position of our vertex.
     // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
-    const float2 fpos = -1.0 + (vertices[vid] * collidable[iid].radius + collidable[iid].position) / (viewport_size / 2.0);
+    const float2 fpos = -1.0 + (radius[iid] * vertices[vid] + position[iid]) / (viewport_size / 2.0);
     
     VertexOut vOut;
     vOut.position = float4(fpos, 0, 1);

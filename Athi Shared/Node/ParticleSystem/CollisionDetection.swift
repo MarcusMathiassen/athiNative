@@ -62,9 +62,8 @@ final class CollisionDetection <T: Collidable> {
         self.device = device
         
         collidablesBuffer = device.makeBuffer(
-            length: MemoryLayout<T>.stride * 1,
+            length: MemoryLayout<T>.stride,
             options: .storageModeShared)!
-        
     }
     
     /**
@@ -114,6 +113,10 @@ final class CollisionDetection <T: Collidable> {
         
         computeEncoder?.setComputePipelineState(computePipelineState!)
         
+        var collidablesCount = collidables.count
+        computeEncoder?.setBytes(&collidablesCount,
+                                 length: MemoryLayout<UInt>.stride,
+                                 index: BufferIndex.CollidablesCountIndex.rawValue)
         computeEncoder?.setBuffer(collidablesBuffer,
                                   offset: 0,
                                   index: BufferIndex.CollidablesIndex.rawValue)
