@@ -180,6 +180,12 @@ class MACOSViewController: NSViewController {
                           default: break
                           }
                         
+                        switch self.computeDeviceOptionButton.indexOfSelectedItem {
+                        case 0: gComputeDeviceOption = .GPU
+                        case 1: gComputeDeviceOption = .CPU
+                        default: break
+                        }
+                        
 
         })
 
@@ -187,6 +193,7 @@ class MACOSViewController: NSViewController {
         RunLoop.current.add(timer!, forMode: .defaultRunLoopMode)
     }
 
+    @IBOutlet weak var computeDeviceOptionButton: NSPopUpButton!
     @IBAction func addParticlesButton(_ sender: NSButton)
     {
         for j in stride(from: 0, to: framebufferWidth, by: 10)

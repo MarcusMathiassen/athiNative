@@ -31,7 +31,6 @@ struct FrameDescriptor {
 
     var clearColor: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
     var pixelFormat: MTLPixelFormat = .bgra8Unorm
-
     var deltaTime: Float = 0.0
 }
 

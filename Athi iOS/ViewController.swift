@@ -109,6 +109,9 @@ class IOSViewController: UIViewController {
         }
     }
 
+    @IBAction func computeDeviceSegmentedControl(_ sender: UISegmentedControl) {
+        gComputeDeviceOption = (sender.selectedSegmentIndex == 0) ? .GPU : .CPU
+    }
     func startGyros() {
         if motion.isGyroAvailable {
             motion.gyroUpdateInterval = 1.0 / 60.0
@@ -126,6 +129,7 @@ class IOSViewController: UIViewController {
                                   // Use the gyroscope data in your app.
                                   gyroRotation = float3(Float(x), Float(y), Float(z))
                               }
+   
             })
 
             // Add the timer to the current run loop.

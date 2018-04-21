@@ -8,7 +8,7 @@
 
 #include <metal_stdlib>
 using namespace metal;
-#include "ShaderTypes.h"
+#include "../../../ShaderTypes.h"
 
 bool collision_check(float2 ap, float2 bp, float ar, float br)
 {
@@ -60,30 +60,29 @@ float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, f
 }
 
 kernel
-void particle_update(constant MotionParam&      motionParam                 [[buffer(MotionParamIndex)]],
+void collision_detection_and_resolve(constant MotionParam&      motionParam                 [[buffer(MotionParamIndex)]],
                      constant uint&             collidablesCount            [[buffer(CollidablesCountIndex)]],
-                     constant Collidable*       collidableIn                [[buffer(CollidablesInIndex)]],
-                     device Collidable*         collidableOut               [[buffer(CollidablesOutIndex)]],
+                     device Collidable*         collidable                  [[buffer(CollidablesIndex)]],
                      uint                       gid                         [[thread_position_in_grid]])
 {
     //----------------------------------
     //  Collision Detection and Resolve
     //----------------------------------
-    
-    const uint index = gid;                      // the index of this threads particle
-    float2 newPos = collidableIn[index].position;  // position
-    float2 newVel = collidableIn[index].velocity;  // velocity
-    const float radi = collidableIn[index].radius; // radius
-    const float mass = collidableIn[index].mass;   // mass
 
+    const uint index = gid;                      // the index of this threads particle
+    float2 newPos = collidable[index].position;  // position
+    float2 newVel = collidable[index].velocity;  // velocity
+    const float radi = collidable[index].radius; // radius
+    const float mass = collidable[index].mass;   // mass
+    
     for (uint otherIndex = 0; otherIndex < collidablesCount; ++otherIndex) {
 
         if (index == otherIndex) continue;
-        
-        const float2 other_pos = collidableIn[otherIndex].position;
-        const float2 other_vel = collidableIn[otherIndex].velocity;
-        const float other_radi = collidableIn[otherIndex].radius;
-        const float other_mass = collidableIn[otherIndex].mass;
+
+        const float2 other_pos = collidable[otherIndex].position;
+        const float2 other_vel = collidable[otherIndex].velocity;
+        const float other_radi = collidable[otherIndex].radius;
+        const float other_mass = collidable[otherIndex].mass;
 
         if (collision_check(newPos, other_pos, radi, other_radi)) {
             newVel = collision_resolve(newPos, newVel, mass, other_pos, other_vel, other_mass);
@@ -91,6 +90,6 @@ void particle_update(constant MotionParam&      motionParam                 [[bu
     }
 
     // Update the particle
-    collidableOut[index].velocity = newVel;
-    collidableOut[index].position = newPos + newVel;
+    collidable[index].velocity = newVel;
+    collidable[index].position += newVel;
 }

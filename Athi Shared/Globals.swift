@@ -8,6 +8,8 @@
 
 let kGravitationalConstant = 6.67408e-6
 
+var gComputeDeviceOption: ComputeDeviceOption = .GPU
+
 var pixelScale: Float = 0
 
 var particleSize: Float = 5

@@ -974,6 +974,20 @@
                                                                 <action selector="borderCollisionButton:" target="XfG-lQ-9wD" id="J54-Sp-hyT"/>
                                                             </connections>
                                                         </button>
+                                                        <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vkM-oN-dRg">
+                                                            <rect key="frame" x="114" y="72" width="76" height="26"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <popUpButtonCell key="cell" type="push" title="GPU" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="Wrx-RL-r9t" id="LLn-Eu-4xT">
+                                                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                                                <font key="font" metaFont="menu"/>
+                                                                <menu key="menu" id="0ED-gs-HKU">
+                                                                    <items>
+                                                                        <menuItem title="GPU" state="on" id="Wrx-RL-r9t"/>
+                                                                        <menuItem title="CPU" id="Zdh-qF-a4t"/>
+                                                                    </items>
+                                                                </menu>
+                                                            </popUpButtonCell>
+                                                        </popUpButton>
                                                     </subviews>
                                                     <animations>
                                                         <caTransition key="subviews">
@@ -1018,6 +1032,7 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="computeDeviceOptionButton" destination="vkM-oN-dRg" id="9xw-wq-x69"/>
                         <outlet property="framerateLabel" destination="s28-Sn-G3G" id="ndr-Bk-7U0"/>
                         <outlet property="frametimeLabel" destination="mjz-Ac-MgR" id="yrN-bx-PtF"/>
                         <outlet property="menuView" destination="KIz-GW-2lc" id="0B5-sq-t3u"/>

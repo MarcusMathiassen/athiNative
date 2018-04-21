@@ -20,15 +20,15 @@ enum ComputeDeviceOption {
 }
 
 enum TreeOption {
-    case Quadtree
-    case None
+    case quadtree
+    case noTree
 }
 
 struct ComputeParam {
     var isMultithreaded: Bool = true // Application is multithreaded by default.
     var preferredThreadCount: Int = 0// Uses the machines maximum number by default
     var computeDeviceOption: ComputeDeviceOption = .GPU
-    var treeOption: TreeOption = .Quadtree
+    var treeOption: TreeOption = .quadtree
 }
 
 protocol Collidable {
@@ -44,41 +44,37 @@ final class CollisionDetection <T: Collidable> {
 
     var computeParam: ComputeParam! = nil
     var motionParam: MotionParam! = nil
-    
+
     // Metal resources
     var device: MTLDevice
-    var collidablesAllocated: Int = 1
-    
-    var bufferSemaphore = DispatchSemaphore(value: 0)
-    
+    var collidablesAllocated: Int = 0
+
+    var bufferSemaphore = DispatchSemaphore(value: 1)
+
     var computePipelineState: MTLComputePipelineState?
-    var collidablesInBuffer: MTLBuffer
-    var collidablesOutBuffer: MTLBuffer
-    
+    var collidablesBuffer: MTLBuffer
+
     /**
         @Lightweight
      */
     init(device: MTLDevice) {
+
         self.device = device
-        
-        collidablesInBuffer = device.makeBuffer(
-            length: MemoryLayout<T>.stride * collidablesAllocated,
+
+        collidablesBuffer = device.makeBuffer(
+            length: MemoryLayout<T>.stride,
             options: .storageModeShared)!
-        
-        collidablesOutBuffer = device.makeBuffer(
-            length: MemoryLayout<T>.stride * collidablesAllocated,
-            options: .storageModeShared)!
-        
+
         let library = device.makeDefaultLibrary()
-        let computeFunc = library?.makeFunction(name: "particle_update")
-        
+        let computeFunc = library?.makeFunction(name: "collision_detection_and_resolve")
+
         do {
             try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
     }
-    
+
     /**
      Returns the collidables new position
      */
@@ -86,9 +82,12 @@ final class CollisionDetection <T: Collidable> {
                             collidables: [T],
                             motionParam: MotionParam,
                             computeParam: ComputeParam) -> [T] {
-        
+
         precondition(collidables.count > 1, "More than one collidable needed")
-        
+
+        // If the collidables.count between calls change, just reset the collidablesAllocated count
+        if collidables.count < collidablesAllocated { collidablesAllocated = 0 }
+
         self.collidables = collidables
 
         // Update our local versions
@@ -100,12 +99,12 @@ final class CollisionDetection <T: Collidable> {
         case .CPU: resolveOnCPU()
         case .GPU: resolveOnGPU(commandBuffer: commandBuffer)
         }
-        
+
         return self.collidables
     }
 
     private func resolveOnCPU() {
-        
+
         if computeParam.isMultithreaded {
             processRangeCPU(0 ... collidables.count) // @Temporary
         } else {
@@ -114,168 +113,165 @@ final class CollisionDetection <T: Collidable> {
     }
 
     private func resolveOnGPU(commandBuffer: MTLCommandBuffer) {
-        
+
         commandBuffer.pushDebugGroup("Collidables GPU Collision Detection")
-        
+
+        commandBuffer.addCompletedHandler { (_) in
+
+            memcpy(&self.collidables, self.collidablesBuffer.contents(), self.collidablesAllocated * MemoryLayout<T>.stride)
+
+            self.bufferSemaphore.signal()
+        }
+    
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+
+        computeEncoder?.setComputePipelineState(computePipelineState!)
+
         // Make sure to update the buffers before computing
         updateGPUBuffers(commandBuffer: commandBuffer)
-        
-        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
-        
-        computeEncoder?.setComputePipelineState(computePipelineState!)
-        
+
+        computeEncoder?.setBuffer(collidablesBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.CollidablesIndex.rawValue)
+
         var collidablesCount = collidables.count
         computeEncoder?.setBytes(&collidablesCount,
                                  length: MemoryLayout<UInt>.stride,
                                  index: BufferIndex.CollidablesCountIndex.rawValue)
-        
-        computeEncoder?.setBuffer(collidablesInBuffer,
-                                  offset: 0,
-                                  index: BufferIndex.CollidablesInIndex.rawValue)
-        
-        computeEncoder?.setBuffer(collidablesOutBuffer,
-                                  offset: 0,
-                                  index: BufferIndex.CollidablesOutIndex.rawValue)
-        
+
+        computeEncoder?.setBytes(&motionParam,
+                                 length: MemoryLayout<MotionParam>.stride,
+                                 index: BufferIndex.MotionParamIndex.rawValue)
+
         // Compute kernel threadgroup size
         let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
-        
+
         // A one dimensional thread group Swift to pass Metal a one dimensional array
         let threadGroupCount = MTLSize(
             width: threadExecutionWidth,
             height: 1,
             depth: 1)
-        
+
         let recommendedThreadGroupWidth = (collidables.count + threadGroupCount.width - 1) / threadGroupCount.width
-        
+
         let threadGroups = MTLSize(
             width: recommendedThreadGroupWidth,
             height: 1,
             depth: 1)
-        
+
         computeEncoder?.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
-        
+
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
-        
-        // Copy the GPU buffer over to the CPU
-        memcpy(&self.collidables, self.collidablesOutBuffer.contents(), self.collidables.count * MemoryLayout<T>.stride)
     }
-    
+
     private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
+
+        // We need exclusive access to the buffer to make sure our copy is safe and correct
+        _ = self.bufferSemaphore.wait(timeout: DispatchTime.distantFuture)
         
-        // Reallocate more if needed
+        // Resize the buffer if needed
         if collidables.count > collidablesAllocated {
             
-            // Update the size of the GPU buffers
-            collidablesInBuffer = device.makeBuffer(
+             // We copy back the contents
+             collidables.reserveCapacity(collidablesAllocated)
+             memcpy(&collidables, collidablesBuffer.contents(), collidablesAllocated * MemoryLayout<T>.stride)
+
+            // Resize the buffer with the new size
+            collidablesBuffer = device.makeBuffer(
                 length: collidables.count * MemoryLayout<T>.stride,
                 options: MTLResourceOptions.storageModeShared)!
-            
-            // Update the size of the GPU buffers
-            collidablesOutBuffer = device.makeBuffer(
-                length: collidables.count * MemoryLayout<T>.stride,
-                options: MTLResourceOptions.storageModeShared)!
-            
-            // Update the allocated particle count
+
             collidablesAllocated = collidables.count
         }
         
-        collidablesInBuffer.contents().copyMemory(
+        // Update the buffer with our collidables
+        collidablesBuffer.contents().copyMemory(
             from: &collidables,
-            byteCount: collidables.count * MemoryLayout<T>.stride)
+            byteCount: collidablesAllocated * MemoryLayout<T>.stride)
     }
 
     private func resolveWithTree(treeNodes: [[Int]], range: ClosedRange<Int>) {
-        
+
         for nodeIndex in range.lowerBound ..< range.upperBound {
 
             for index in 0 ..< treeNodes[nodeIndex].count {
-                
+
                 // Grab the first collidable
-                let coll1 = collidables[treeNodes[nodeIndex][index]]
-                
-                // We accumulate positions and velocities and add them to the original at the end.
-                // So we grab them now.
-                var newVel = coll1.velocity
-                let newPos = coll1.position
-                
+                var coll1 = collidables[treeNodes[nodeIndex][index]]
+
+                // Check for collisons with all other collidables
                 for otherIndex in 0 ..< treeNodes[nodeIndex].count {
 
                     // Dont check with self
                     if index == otherIndex { continue }
-                    
+
                     // Grab the second collidable
                     let coll2 = collidables[treeNodes[nodeIndex][otherIndex]]
-                    
+
                     // If they collide. Update the first collidable with the new velocity.
                     // We accumulate it though, so we add it to our grabbed velocity.
                     if (checkCollision(coll1, coll2)) {
-                        newVel += resolveCollision(coll1, coll2)
+                        coll1.velocity = resolveCollision(coll1, coll2)
                     }
                 }
-                
+
                 // Update our local version of the particles position with the new velocity
-                collidables[index].velocity += newVel
-                collidables[index].position += newPos + newVel
+                collidables[index].velocity = coll1.velocity
+                collidables[index].position += coll1.velocity
             }
         }
     }
-    
+
     private func resolveWithoutTree(range: ClosedRange<Int>) {
-        
+
         // Compute all new positions and velocities
         for index in range.lowerBound ..< range.upperBound {
-            
+
             // Grab the first collidable
-            let coll1 = collidables[index]
-            
-            // We accumulate positions and velocities and add them to the original at the end.
-            // So we grab them now.
-            var newVel = float2(0)
-            let newPos = float2(0)
-            
+            var coll1 = collidables[index]
+
             // Check for collisons with all other collidables
             for otherIndex in range.lowerBound ..< range.upperBound {
-                
+
                 // Dont check with self
                 if index == otherIndex { continue }
-                
+
                 // Grab the second collidable
                 let coll2 = collidables[otherIndex]
-                
+
                 // If they collide. Update the first collidable with the new velocity.
                 // We accumulate it though, so we add it to our grabbed velocity.
                 if (checkCollision(coll1, coll2)) {
-                    newVel += resolveCollision(coll1, coll2)
+                   coll1.velocity = resolveCollision(coll1, coll2)
                 }
             }
-            
+
             // Update our local version of the particles position with the new velocity
-            collidables[index].velocity += newVel
-            collidables[index].position += newPos + newVel
+            collidables[index].velocity = coll1.velocity
+            collidables[index].position += coll1.velocity
         }
     }
-    
+
     private func processRangeCPU(_ range: ClosedRange<Int>) {
-        
+
         switch computeParam.treeOption {
-            
-        case .Quadtree:
-            
+
+        case .quadtree:
+
             let (min, max) = getMinAndMaxPosition(collidables: collidables)
             let quadtree = Quadtree<T>(min: min, max: max)
             quadtree.setInputData(collidables)
             quadtree.inputRange(range: 0 ... collidables.count)
-            
+
             var treeNodes: [[Int]] = []
             quadtree.getNodesOfIndices(containerOfNodes: &treeNodes)
-            
+
             resolveWithTree(treeNodes: treeNodes, range: range)
 
-        case .None:
-            
+        case .noTree:
+
             resolveWithoutTree(range: 0 ... collidables.count)
         }
     }
@@ -341,32 +337,32 @@ final class CollisionDetection <T: Collidable> {
         // Just return the original velocity
         return v1
     }
-    
+
     // Separates two intersecting circles.
     private func separate(_ a: T, _ b: T) -> float2 {
-        
+
         // Local variables
         let ap = a.position
         let bp = b.position
         let ar = a.radius
         let br = b.radius
-        
+
         let collisionDepth = (ar + br) - distance(bp, ap)
-        
+
         let dp = bp - ap
-        
+
         // contact angle
         let collisionAngle = atan2(dp.y, dp.x)
         let cosAngle = cos(collisionAngle)
         let sinAngle = sin(collisionAngle)
-        
+
         let aMove = float2(-collisionDepth * 0.5 * cosAngle, -collisionDepth * 0.5 * sinAngle)
         let bMove = float2( collisionDepth * 0.5 * cosAngle,  collisionDepth * 0.5 * sinAngle)
-        
+
         // stores the position offsets
         var apNew = float2(0)
         var bpNew = float2(0)
-        
+
         // Make sure they dont moved beyond the border
         // This will become not needed when borders are segments instead of hardcoded.
         if ap.x + aMove.x >= 0.0 + ar && ap.x + aMove.x <= framebufferWidth - ar {
@@ -381,7 +377,7 @@ final class CollisionDetection <T: Collidable> {
         if bp.y + bMove.y >= 0.0 + br && bp.y + bMove.y <= framebufferHeight - br {
             bpNew.y += bMove.y
         }
-        
+
         return ap + apNew
     }
 }

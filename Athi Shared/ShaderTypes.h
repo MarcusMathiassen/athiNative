@@ -24,15 +24,28 @@
 typedef NS_ENUM(NSInteger, BufferIndex)
 {
     VertexIndex,
+    
     PositionIndex,
     RadiusIndex,
     ColorIndex,
+    
     ViewportSizeIndex,
     MotionParamIndex,
-    CollidablesInIndex,
-    CollidablesOutIndex,
+    
+    CollidablesIndex,
     CollidablesCountIndex,
+    
+    ParticlesIndex,
+    ParticlesCountIndex,
 };
+
+typedef struct
+{
+    vector_float2   position;
+    vector_float2   velocity;
+    float           radius;
+    float           mass;
+} Particle;
 
 typedef struct
 {

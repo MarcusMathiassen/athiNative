@@ -8,7 +8,7 @@
 
 #include <metal_stdlib>
 using namespace metal;
-#include "ShaderTypes.h"
+#include "../../ShaderTypes.h"
 
 struct VertexOut
 {
@@ -49,3 +49,11 @@ FragmentOut particle_frag(VertexOut vert [[stage_in]])
     return { vert.color, vert.color };
 }
 
+kernel
+void particle_update(constant MotionParam&      motionParam               [[buffer(MotionParamIndex)]],
+                     device Collidable*         particles                 [[buffer(ParticlesIndex)]],
+                     uint                       gid                       [[thread_position_in_grid]])
+{
+    // Update the particle
+    particles[gid].position += particles[gid].velocity * motionParam.deltaTime;
+}
