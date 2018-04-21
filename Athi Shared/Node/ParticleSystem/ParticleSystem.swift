@@ -97,7 +97,7 @@ final class ParticleSystem {
     var finalTexture: MTLTexture
 
     var bufferSemaphore = DispatchSemaphore(value: 1)
-
+    
     init(device: MTLDevice) {
         self.device = device
         quad = Quad(device: device)
@@ -165,7 +165,7 @@ final class ParticleSystem {
         outTexture = device.makeTexture(descriptor: textureDesc)!
 
         finalTexture = device.makeTexture(descriptor: textureDesc)!
-
+        
         buildVertices(numVertices: numVerticesPerParticle)
     }
 
@@ -281,6 +281,21 @@ final class ParticleSystem {
         }
     }
 
+    public func drawDebug(
+        color: float4,
+        view: MTKView,
+        frameDescriptor: FrameDescriptor,
+        commandBuffer: MTLCommandBuffer
+        ) {
+        
+        collisionDetection.drawDebug(
+            color: color,
+            view: view,
+            frameDescriptor: frameDescriptor,
+            commandBuffer: commandBuffer
+        )
+    }
+    
     public func update(commandBuffer: MTLCommandBuffer) {
 
         if isPaused { return }
@@ -299,7 +314,7 @@ final class ParticleSystem {
             computeParam.computeDeviceOption = gComputeDeviceOption
             computeParam.isMultithreaded = true
             computeParam.preferredThreadCount = 8
-            computeParam.treeOption = .quadtree
+            computeParam.treeOption = gTreeOption
 
             particles = collisionDetection.runTimeStep(
                 commandBuffer: commandBuffer,

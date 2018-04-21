@@ -121,7 +121,7 @@ class MACOSViewController: NSViewController {
     @IBOutlet var particleCountLabel: NSTextField!
 
     @IBAction func treeOptimalSize(_ sender: NSButton) {
-        renderer.particleSystem.useTreeOptimalSize = (sender.state.rawValue == 0) ? false : true
+        gDrawDebug = (sender.state.rawValue == 0) ? false : true
     }
 
     @IBAction func clearParticlesButton(_: NSButton) {
@@ -184,6 +184,12 @@ class MACOSViewController: NSViewController {
                         case 1: gComputeDeviceOption = .CPU
                         default: break
                         }
+                        
+                        switch self.treeOptionButton.indexOfSelectedItem {
+                        case 0: gTreeOption = .quadtree
+                        case 1: gTreeOption = .noTree
+                        default: break
+                        }
 
         })
 
@@ -191,6 +197,7 @@ class MACOSViewController: NSViewController {
         RunLoop.current.add(timer!, forMode: .defaultRunLoopMode)
     }
 
+    @IBOutlet weak var treeOptionButton: NSPopUpButton!
     @IBOutlet weak var computeDeviceOptionButton: NSPopUpButton!
     @IBAction func addParticlesButton(_ sender: NSButton) {
         for j in stride(from: 0, to: framebufferWidth, by: 10) {

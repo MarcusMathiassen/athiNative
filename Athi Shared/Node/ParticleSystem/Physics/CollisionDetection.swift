@@ -44,6 +44,9 @@ final class CollisionDetection <T: Collidable> {
 
     var computeParam: ComputeParam! = nil
     var motionParam: MotionParam! = nil
+    
+    var primitiveRenderer: PrimitiveRenderer
+    var quadtree: Quadtree?
 
     // Metal resources
     var device: MTLDevice
@@ -60,6 +63,8 @@ final class CollisionDetection <T: Collidable> {
     init(device: MTLDevice) {
 
         self.device = device
+        
+        primitiveRenderer = PrimitiveRenderer(device: device)
 
         collidablesBuffer = device.makeBuffer(
             length: MemoryLayout<T>.stride,
@@ -199,14 +204,17 @@ final class CollisionDetection <T: Collidable> {
         case .quadtree:
 
             let (min, max) = getMinAndMaxPosition(collidables: collidables)
-            let quadtree = Quadtree(min: min, max: max)
-            quadtree.setInputData(collidables)
-            quadtree.inputRange(range: 0 ... collidables.count)
-
-            var treeNodes: [[Int]] = []
-            quadtree.getNodesOfIndices(containerOfNodes: &treeNodes)
+            quadtree = Quadtree(min: min, max: max)
+            quadtree?.setInputData(collidables)
+            quadtree?.inputRange(range: 0 ... collidables.count)
             
-            resolveWithTree(treeNodes)
+            
+            resolveRangeWithNeighbours(range: range)
+
+//            var treeNodes: [[Int]] = []
+//            quadtree?.getNodesOfIndices(containerOfNodes: &treeNodes)
+//
+//            resolveWithTree(treeNodes)
 
         case .noTree:
 
@@ -214,6 +222,36 @@ final class CollisionDetection <T: Collidable> {
         }
     }
     
+    private func resolveRangeWithNeighbours(range: ClosedRange<Int>) {
+        
+        for index in range.lowerBound ..< range.upperBound {
+            
+            // Grab the first collidable
+            var coll1 = collidables[index]
+            
+            var neighbours: [Int] = []
+            quadtree?.getNeighbours(containerOfNodes: &neighbours, collidable: coll1)
+            
+            for otherIndex in neighbours {
+                
+                // Dont check with self
+                if index == otherIndex { continue }
+                
+                // Grab the second collidable
+                let coll2 = collidables[otherIndex]
+                
+                // If they collide. Update the first collidable with the new velocity.
+                // We accumulate it though, so we add it to our grabbed velocity.
+                if (checkCollision(coll1, coll2)) {
+                    coll1.velocity = resolveCollision(coll1, coll2)
+                }
+            }
+            
+            // Update our local version of the particles position with the new velocity
+            collidables[index].velocity = coll1.velocity
+            collidables[index].position += coll1.velocity
+        }
+    }
     private func resolveWithTree(_ treeNodes: [[Int]]) {
         
         for node in treeNodes {
@@ -224,13 +262,13 @@ final class CollisionDetection <T: Collidable> {
                 
                 // Check for collisons with all other collidables
                 for otherIndex in node {
-                    
+
                     // Dont check with self
                     if index == otherIndex { continue }
-                    
+
                     // Grab the second collidable
                     let coll2 = collidables[otherIndex]
-                    
+
                     // If they collide. Update the first collidable with the new velocity.
                     // We accumulate it though, so we add it to our grabbed velocity.
                     if (checkCollision(coll1, coll2)) {
@@ -242,6 +280,32 @@ final class CollisionDetection <T: Collidable> {
                 collidables[index].position += coll1.velocity
             }
         }
+    }
+    
+    public func drawDebug(
+        color: float4,
+        view: MTKView,
+        frameDescriptor: FrameDescriptor,
+        commandBuffer: MTLCommandBuffer
+        ) {
+        
+        // Draw tree nodes
+        var bounds: [Rect] = []
+        quadtree?.getNodesBounds(container: &bounds)
+        for bound in bounds {
+            primitiveRenderer.drawHollowRect(min: bound.min, max: bound.max, color: color)
+        }
+        
+        // Draw collision box around collidables
+        for collidable in collidables {
+            primitiveRenderer.drawHollowRect(position: collidable.position, color: color, size: collidable.radius, borderWidth: 0.5)
+        }
+        
+        primitiveRenderer.draw(
+            view: view,
+            frameDescriptor: frameDescriptor,
+            commandBuffer: commandBuffer
+        )
     }
     
     private func resolveWithoutTree(range: ClosedRange<Int>) {

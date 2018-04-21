@@ -46,7 +46,6 @@ final class Renderer: NSObject, MTKViewDelegate {
     var frametime: Float = 0
     var deltaTime: Float = 0
 
-    var primitiveRenderer: PrimitiveRenderer
     var particleSystem: ParticleSystem
 
     // Tripple buffering
@@ -63,7 +62,6 @@ final class Renderer: NSObject, MTKViewDelegate {
         device = view.device!
         
         particleSystem = ParticleSystem(device: device)
-        primitiveRenderer = PrimitiveRenderer(device: device)
         
         commandQueues = [device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 
@@ -154,14 +152,14 @@ final class Renderer: NSObject, MTKViewDelegate {
             commandBuffer: commandBuffer
         )
         
-        
-        primitiveRenderer.drawHollowRect(position: mousePos, color: float4(1), size: 100)
-
-        primitiveRenderer.draw(
-            view: view,
-            frameDescriptor: frameDescriptor,
-            commandBuffer: commandBuffer
-        )
+        if gDrawDebug {
+            particleSystem.drawDebug(
+                color: float4(1),
+                view: view,
+                frameDescriptor: frameDescriptor,
+                commandBuffer: commandBuffer
+            )
+        }
 
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()

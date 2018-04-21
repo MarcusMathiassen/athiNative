@@ -40,7 +40,7 @@ class PrimitiveRenderer {
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
         pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-
+        
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
         } catch {
@@ -78,6 +78,7 @@ class PrimitiveRenderer {
         commandBuffer.pushDebugGroup("PrimitiveRenderer Draw")
 
         let renderPassDesc = view.currentRenderPassDescriptor
+        renderPassDesc?.colorAttachments[0].loadAction = .load
         
         if renderPassDesc != nil {
 

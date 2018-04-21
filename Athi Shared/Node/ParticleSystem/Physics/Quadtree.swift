@@ -8,29 +8,29 @@
 
 import simd.vector_types // float2, float4
 
-final class Quadtree {
-
-    struct Rect {
-
-        var min = float2(0)
-        var max = float2(0)
-        var color = float4(1)
-
-        init(min: float2, max: float2) {
-            self.min = min
-            self.max = max
-        }
-
-        func containsPoint(position: float2, radius: Float) -> Bool {
-            if position.x - radius < max.x &&
-                position.x + radius > min.x &&
-                position.y - radius < max.y &&
-                position.y + radius > min.y {
-                return true
-            }
-            return false
-        }
+struct Rect {
+    
+    var min = float2(0)
+    var max = float2(0)
+    var color = float4(1)
+    
+    init(min: float2, max: float2) {
+        self.min = min
+        self.max = max
     }
+    
+    func containsPoint(position: float2, radius: Float) -> Bool {
+        if position.x - radius < max.x &&
+            position.x + radius > min.x &&
+            position.y - radius < max.y &&
+            position.y + radius > min.y {
+            return true
+        }
+        return false
+    }
+}
+
+final class Quadtree {
 
     static var maxCapacityPerNode: Int { return 50 }
     static var maxDepth: Int { return 5 }
@@ -162,17 +162,45 @@ final class Quadtree {
     /**
      Returns the neighbour nodes to the input object
      */
-    func getNeighbours(containerOfNodes: inout [[Int]], position: float2, radius: Float) {
+    func getNeighbours(containerOfNodes: inout [Int], collidable: Collidable) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false { sw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
-            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false { se?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
-            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false { nw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
-            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (sw?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+                sw?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
+            }
+            if (se?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+                se?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
+            }
+            if (nw?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+                nw?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
+            }
+            if (ne?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+                ne?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
+            }
             return
         }
 
         if !indices.isEmpty {
-            containerOfNodes.append(indices)
+            containerOfNodes.append(contentsOf: indices)
+        }
+    }
+    
+    /**
+     Draws all the nodes
+     */
+    func getNodesBounds(container: inout [Rect], onlyOccupied: Bool = true) {
+        
+        if hasSplit {
+            sw?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
+            se?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
+            nw?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
+            ne?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
+            return
+        }
+        
+        if !indices.isEmpty && onlyOccupied {
+            container.append(bounds)
+        } else {
+            container.append(bounds)
         }
     }
 

@@ -760,11 +760,11 @@
                                                             </connections>
                                                         </button>
                                                         <box verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="lQm-3m-wDF">
-                                                            <rect key="frame" x="31" y="154" width="130" height="5"/>
+                                                            <rect key="frame" x="30" y="163" width="130" height="5"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         </box>
                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tb7-Ul-V6o">
-                                                            <rect key="frame" x="14" y="13" width="63" height="32"/>
+                                                            <rect key="frame" x="7" y="13" width="77" height="32"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <buttonCell key="cell" type="push" title="Clear" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YEq-bL-qIK">
                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -817,29 +817,20 @@
                                                                 <action selector="particleVerticesStepper:" target="XfG-lQ-9wD" id="UBT-m2-3bf"/>
                                                             </connections>
                                                         </stepper>
-                                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Sfs-tS-ELt">
-                                                            <rect key="frame" x="30" y="96" width="150" height="17"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " placeholderString="Particle: 0" id="PBd-zN-62G">
-                                                                <font key="font" metaFont="system"/>
-                                                                <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
-                                                                <color key="backgroundColor" white="1" alpha="0.0" colorSpace="deviceWhite"/>
-                                                            </textFieldCell>
-                                                        </textField>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mjz-Ac-MgR">
-                                                            <rect key="frame" x="30" y="115" width="123" height="17"/>
+                                                            <rect key="frame" x="28" y="140" width="123" height="17"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Frametime: " placeholderString="Frametime: 0" id="Ul5-OP-ZbP">
-                                                                <font key="font" metaFont="system"/>
+                                                                <font key="font" metaFont="system" size="10"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                             </textFieldCell>
                                                         </textField>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="s28-Sn-G3G">
-                                                            <rect key="frame" x="30" y="131" width="123" height="17"/>
+                                                            <rect key="frame" x="28" y="149" width="123" height="17"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Framerate:" placeholderString="Framerate:" id="WA2-1V-066">
-                                                                <font key="font" metaFont="system"/>
+                                                                <font key="font" metaFont="system" size="10"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                             </textFieldCell>
@@ -903,9 +894,9 @@
                                                             </connections>
                                                         </button>
                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yaM-w5-8pS">
-                                                            <rect key="frame" x="31" y="284" width="129" height="18"/>
+                                                            <rect key="frame" x="31" y="284" width="96" height="18"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <buttonCell key="cell" type="check" title="Optimal Tree Size" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8LB-qO-MhT">
+                                                            <buttonCell key="cell" type="check" title="Draw debug" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8LB-qO-MhT">
                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                 <font key="font" metaFont="system"/>
                                                             </buttonCell>
@@ -914,7 +905,7 @@
                                                             </connections>
                                                         </button>
                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="S94-uY-yfO">
-                                                            <rect key="frame" x="114" y="17" width="76" height="26"/>
+                                                            <rect key="frame" x="107" y="17" width="83" height="26"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <popUpButtonCell key="cell" type="push" title="Spawn" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="5ne-69-swt" id="rXC-hT-cvT">
                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -929,7 +920,7 @@
                                                             </popUpButtonCell>
                                                         </popUpButton>
                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KRH-4N-5QA">
-                                                            <rect key="frame" x="14" y="39" width="63" height="32"/>
+                                                            <rect key="frame" x="7" y="39" width="63" height="32"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <buttonCell key="cell" type="push" title="Pause" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="0MW-sD-7EH">
                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
@@ -975,7 +966,7 @@
                                                             </connections>
                                                         </button>
                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vkM-oN-dRg">
-                                                            <rect key="frame" x="114" y="72" width="76" height="26"/>
+                                                            <rect key="frame" x="11" y="72" width="179" height="26"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <popUpButtonCell key="cell" type="push" title="GPU" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="Wrx-RL-r9t" id="LLn-Eu-4xT">
                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -988,6 +979,29 @@
                                                                 </menu>
                                                             </popUpButtonCell>
                                                         </popUpButton>
+                                                        <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XTj-2N-iHN">
+                                                            <rect key="frame" x="11" y="99" width="180" height="26"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <popUpButtonCell key="cell" type="push" title="Quadtree" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="IaC-E6-km3" id="FdP-oz-pX1">
+                                                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                                                <font key="font" metaFont="menu"/>
+                                                                <menu key="menu" id="5QF-vJ-OTQ">
+                                                                    <items>
+                                                                        <menuItem title="Quadtree" state="on" id="IaC-E6-km3"/>
+                                                                        <menuItem title="No Tree" id="rKL-uW-2jL"/>
+                                                                    </items>
+                                                                </menu>
+                                                            </popUpButtonCell>
+                                                        </popUpButton>
+                                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Sfs-tS-ELt">
+                                                            <rect key="frame" x="28" y="131" width="150" height="17"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Particles: " placeholderString="Particle: 0" id="PBd-zN-62G">
+                                                                <font key="font" metaFont="system" size="10"/>
+                                                                <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" white="1" alpha="0.0" colorSpace="deviceWhite"/>
+                                                            </textFieldCell>
+                                                        </textField>
                                                     </subviews>
                                                     <animations>
                                                         <caTransition key="subviews">
@@ -1032,6 +1046,7 @@ AQQBFgEZAR4AAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAABIA
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="TreeOptionButton" destination="XTj-2N-iHN" id="v29-4i-qHf"/>
                         <outlet property="computeDeviceOptionButton" destination="vkM-oN-dRg" id="9xw-wq-x69"/>
                         <outlet property="framerateLabel" destination="s28-Sn-G3G" id="ndr-Bk-7U0"/>
                         <outlet property="frametimeLabel" destination="mjz-Ac-MgR" id="yrN-bx-PtF"/>
