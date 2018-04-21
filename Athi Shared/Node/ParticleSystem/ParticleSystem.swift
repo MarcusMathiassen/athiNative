@@ -299,7 +299,7 @@ final class ParticleSystem {
             computeParam.computeDeviceOption = gComputeDeviceOption
             computeParam.isMultithreaded = true
             computeParam.preferredThreadCount = 8
-            computeParam.treeOption = .noTree
+            computeParam.treeOption = .quadtree
 
             particles = collisionDetection.runTimeStep(
                 commandBuffer: commandBuffer,

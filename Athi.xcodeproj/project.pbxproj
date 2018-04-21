@@ -130,7 +130,6 @@
 				90D2EF2D207CC4DC00D5913C /* ParticleSystem */,
 				9051D9662076CDCE00E2DB51 /* Quad.swift */,
 				9051D96A2076D17200E2DB51 /* Quad.metal */,
-				9051D9622076905200E2DB51 /* Quadtree.swift */,
 			);
 			path = Node;
 			sourceTree = "<group>";
@@ -140,6 +139,7 @@
 			children = (
 				90D558972086BB040026B18F /* particle_physics.metal */,
 				90146F0820895FE90059F657 /* CollisionDetection.swift */,
+				9051D9622076905200E2DB51 /* Quadtree.swift */,
 			);
 			path = Physics;
 			sourceTree = "<group>";
@@ -679,37 +679,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				INFOPLIST_FILE = "Athi macOS/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_FAST_MATH = NO;
-				MTL_OPTIMIZATION_LEVEL = 0;
-				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
-				PRODUCT_NAME = Athi;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SDKROOT = macosx;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_DISABLE_SAFETY_CHECKS = NO;
-				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = full;
-				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Debug;
-		};
-		900CAD5420729D6500AE60E9 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "Mac Developer";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 6D77ZFXSCS;
-				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				INFOPLIST_FILE = "Athi macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -722,6 +692,37 @@
 				PRODUCT_NAME = Athi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DISABLE_SAFETY_CHECKS = NO;
+				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";
+				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		900CAD5420729D6500AE60E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 6D77ZFXSCS;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				INFOPLIST_FILE = "Athi macOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_FAST_MATH = NO;
+				MTL_OPTIMIZATION_LEVEL = 3;
+				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
+				PRODUCT_NAME = Athi;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";

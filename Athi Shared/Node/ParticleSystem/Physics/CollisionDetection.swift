@@ -192,68 +192,6 @@ final class CollisionDetection <T: Collidable> {
             byteCount: collidablesAllocated * MemoryLayout<T>.stride)
     }
 
-    private func resolveWithTree(treeNodes: [[Int]], range: ClosedRange<Int>) {
-
-        for nodeIndex in range.lowerBound ..< range.upperBound {
-
-            for index in 0 ..< treeNodes[nodeIndex].count {
-
-                // Grab the first collidable
-                var coll1 = collidables[treeNodes[nodeIndex][index]]
-
-                // Check for collisons with all other collidables
-                for otherIndex in 0 ..< treeNodes[nodeIndex].count {
-
-                    // Dont check with self
-                    if index == otherIndex { continue }
-
-                    // Grab the second collidable
-                    let coll2 = collidables[treeNodes[nodeIndex][otherIndex]]
-
-                    // If they collide. Update the first collidable with the new velocity.
-                    // We accumulate it though, so we add it to our grabbed velocity.
-                    if (checkCollision(coll1, coll2)) {
-                        coll1.velocity = resolveCollision(coll1, coll2)
-                    }
-                }
-
-                // Update our local version of the particles position with the new velocity
-                collidables[index].velocity = coll1.velocity
-                collidables[index].position += coll1.velocity
-            }
-        }
-    }
-
-    private func resolveWithoutTree(range: ClosedRange<Int>) {
-
-        // Compute all new positions and velocities
-        for index in range.lowerBound ..< range.upperBound {
-
-            // Grab the first collidable
-            var coll1 = collidables[index]
-
-            // Check for collisons with all other collidables
-            for otherIndex in range.lowerBound ..< range.upperBound {
-
-                // Dont check with self
-                if index == otherIndex { continue }
-
-                // Grab the second collidable
-                let coll2 = collidables[otherIndex]
-
-                // If they collide. Update the first collidable with the new velocity.
-                // We accumulate it though, so we add it to our grabbed velocity.
-                if (checkCollision(coll1, coll2)) {
-                   coll1.velocity = resolveCollision(coll1, coll2)
-                }
-            }
-
-            // Update our local version of the particles position with the new velocity
-            collidables[index].velocity = coll1.velocity
-            collidables[index].position += coll1.velocity
-        }
-    }
-
     private func processRangeCPU(_ range: ClosedRange<Int>) {
 
         switch computeParam.treeOption {
@@ -261,18 +199,77 @@ final class CollisionDetection <T: Collidable> {
         case .quadtree:
 
             let (min, max) = getMinAndMaxPosition(collidables: collidables)
-            let quadtree = Quadtree<T>(min: min, max: max)
+            let quadtree = Quadtree(min: min, max: max)
             quadtree.setInputData(collidables)
             quadtree.inputRange(range: 0 ... collidables.count)
 
             var treeNodes: [[Int]] = []
             quadtree.getNodesOfIndices(containerOfNodes: &treeNodes)
-
-            resolveWithTree(treeNodes: treeNodes, range: range)
+            
+            resolveWithTree(treeNodes)
 
         case .noTree:
 
-            resolveWithoutTree(range: 0 ... collidables.count)
+            resolveWithoutTree(range: range)
+        }
+    }
+    
+    private func resolveWithTree(_ treeNodes: [[Int]]) {
+        
+        for node in treeNodes {
+            for index in node {
+                
+                // Grab the first collidable
+                var coll1 = collidables[index]
+                
+                // Check for collisons with all other collidables
+                for otherIndex in node {
+                    
+                    // Dont check with self
+                    if index == otherIndex { continue }
+                    
+                    // Grab the second collidable
+                    let coll2 = collidables[otherIndex]
+                    
+                    // If they collide. Update the first collidable with the new velocity.
+                    // We accumulate it though, so we add it to our grabbed velocity.
+                    if (checkCollision(coll1, coll2)) {
+                        coll1.velocity = resolveCollision(coll1, coll2)
+                    }
+                }
+                // Update our local version of the particles position with the new velocity
+                collidables[index].velocity = coll1.velocity
+                collidables[index].position += coll1.velocity
+            }
+        }
+    }
+    
+    private func resolveWithoutTree(range: ClosedRange<Int>) {
+        
+        // Compute all new positions and velocities
+        for index in range.lowerBound ..< range.upperBound {
+            
+            // Grab the first collidable
+            var coll1 = collidables[index]
+            
+            // Check for collisons with all other collidables
+            for otherIndex in range.lowerBound ..< range.upperBound {
+                
+                // Dont check with self
+                if index == otherIndex { continue }
+                
+                // Grab the second collidable
+                let coll2 = collidables[otherIndex]
+                
+                // If they collide. Update the first collidable with the new velocity.
+                // We accumulate it though, so we add it to our grabbed velocity.
+                if (checkCollision(coll1, coll2)) {
+                    coll1.velocity = resolveCollision(coll1, coll2)
+                }
+            }
+            // Update our local version of the particles position with the new velocity
+            collidables[index].velocity = coll1.velocity
+            collidables[index].position += coll1.velocity
         }
     }
 

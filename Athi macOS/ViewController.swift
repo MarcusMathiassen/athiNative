@@ -35,10 +35,9 @@ class MACOSViewController: NSViewController {
     override func mouseDragged(with event: NSEvent) {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
         mousePos *= pixelScale
-        
+
         isMouseDragging = true
-        
-        
+
         renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
         renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
         renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
@@ -179,13 +178,12 @@ class MACOSViewController: NSViewController {
                           case 3: gMouseOption = MouseOption.Repel
                           default: break
                           }
-                        
+
                         switch self.computeDeviceOptionButton.indexOfSelectedItem {
                         case 0: gComputeDeviceOption = .GPU
                         case 1: gComputeDeviceOption = .CPU
                         default: break
                         }
-                        
 
         })
 
@@ -194,12 +192,9 @@ class MACOSViewController: NSViewController {
     }
 
     @IBOutlet weak var computeDeviceOptionButton: NSPopUpButton!
-    @IBAction func addParticlesButton(_ sender: NSButton)
-    {
-        for j in stride(from: 0, to: framebufferWidth, by: 10)
-        {
-            for k in stride(from: 0, to: framebufferHeight, by: 10)
-            {
+    @IBAction func addParticlesButton(_ sender: NSButton) {
+        for j in stride(from: 0, to: framebufferWidth, by: 10) {
+            for k in stride(from: 0, to: framebufferHeight, by: 10) {
                 let col = renderer.particleSystem.particleColor
                 let pos = float2(j,k)
                 renderer.particleSystem.addParticleWith(position: pos, color: col, radius: 1.0)
@@ -212,16 +207,16 @@ class MACOSViewController: NSViewController {
         if showMenu { menuView.animator().isHidden = false }
         else { menuView.animator().isHidden = true }
     }
-    
+
     @IBOutlet weak var menuView: NSView!
     override func viewDidLoad() {
         super.viewDidLoad()
 
         startVariableUpdater()
-            
+
         menuView.wantsLayer = true
         menuView.layer?.cornerRadius = 10.0
-        
+
         colorSpace = NSScreen.screens[0].colorSpace!
         pixelScale = Float(NSScreen.screens[0].backingScaleFactor)
 
@@ -230,9 +225,9 @@ class MACOSViewController: NSViewController {
 
         framebufferWidth = Float(view.frame.width) * pixelScale
         framebufferHeight = Float(view.frame.height) * pixelScale
-        
+
         mouseOptionButton.addItem(withTitle: "Repel")
-        
+
         guard let mtkView = self.view as? MTKView else {
             print("View attached to ViewController is not an MTKView")
             return
@@ -243,9 +238,9 @@ class MACOSViewController: NSViewController {
             print("Metal is not supported on this device")
             return
         }
-        
+
         mtkView.device = defaultDevice
-        
+
         guard let newRenderer = Renderer(view: mtkView) else {
             print("Renderer cannot be initialized")
             return

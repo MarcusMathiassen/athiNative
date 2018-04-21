@@ -27,6 +27,7 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     
     PositionIndex,
     RadiusIndex,
+    SizeIndex,
     ColorIndex,
     
     ViewportSizeIndex,

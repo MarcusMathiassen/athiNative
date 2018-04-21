@@ -34,8 +34,8 @@ struct FrameDescriptor {
     var deltaTime: Float = 0.0
 }
 
-final class Renderer: NSObject, MTKViewDelegate
-{
+final class Renderer: NSObject, MTKViewDelegate {
+
     var wireframeMode: Bool = false
     var fillMode: MTLTriangleFillMode = .fill
 
@@ -46,6 +46,7 @@ final class Renderer: NSObject, MTKViewDelegate
     var frametime: Float = 0
     var deltaTime: Float = 0
 
+    var primitiveRenderer: PrimitiveRenderer
     var particleSystem: ParticleSystem
 
     // Tripple buffering
@@ -58,8 +59,12 @@ final class Renderer: NSObject, MTKViewDelegate
     let commandQueues: [MTLCommandQueue?]
 
     init?(view: MTKView) {
+        
         device = view.device!
+        
         particleSystem = ParticleSystem(device: device)
+        primitiveRenderer = PrimitiveRenderer(device: device)
+        
         commandQueues = [device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 
         inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
@@ -90,14 +95,12 @@ final class Renderer: NSObject, MTKViewDelegate
         print("iOS_GPUFamily4_v1: ", device.supportsFeatureSet(.iOS_GPUFamily4_v1))
         #endif
 
-
         view.autoResizeDrawable = true // auto updates the views resolution on resizing
         view.preferredFramesPerSecond = 60
         view.sampleCount = 1
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
         view.colorPixelFormat = .bgra8Unorm_srgb
         view.framebufferOnly = false
-
 
         print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
         print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
@@ -115,7 +118,7 @@ final class Renderer: NSObject, MTKViewDelegate
         let commandBuffer = (commandQueues[currentQueue]?.makeCommandBuffer())!
 
         commandBuffer.label = "MyCommandBuffer"
-
+        
         commandBuffer.addCompletedHandler { (commandBuffer) in
             self.inFlightSemaphore.signal()
         }
@@ -143,9 +146,18 @@ final class Renderer: NSObject, MTKViewDelegate
         updateInput()
 
         updateVariables()
-
+        
         particleSystem.update(commandBuffer: commandBuffer)
         particleSystem.draw(
+            view: view,
+            frameDescriptor: frameDescriptor,
+            commandBuffer: commandBuffer
+        )
+        
+        
+        primitiveRenderer.drawHollowRect(position: mousePos, color: float4(1), size: 100)
+
+        primitiveRenderer.draw(
             view: view,
             frameDescriptor: frameDescriptor,
             commandBuffer: commandBuffer
