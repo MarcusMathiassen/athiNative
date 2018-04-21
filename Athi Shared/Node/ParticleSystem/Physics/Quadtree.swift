@@ -8,20 +8,19 @@
 
 import simd.vector_types // float2, float4
 
-fileprivate var quadtreeData: [Collidable] = []
+final class Quadtree {
 
-final class Quadtree <T: Collidable> {
-    
     struct Rect {
+
         var min = float2(0)
         var max = float2(0)
         var color = float4(1)
-        
+
         init(min: float2, max: float2) {
             self.min = min
             self.max = max
         }
-        
+
         func containsPoint(position: float2, radius: Float) -> Bool {
             if position.x - radius < max.x &&
                 position.x + radius > min.x &&
@@ -32,103 +31,104 @@ final class Quadtree <T: Collidable> {
             return false
         }
     }
-    
+
     static var maxCapacityPerNode: Int { return 50 }
     static var maxDepth: Int { return 5 }
-    
+    static var data: [Collidable] = []
+
     var bounds: Rect
     var depth: Int = 0
-    
+
     var hasSplit: Bool = false
-    
+
     var indices: [Int] = []
-    
-    var sw: Quadtree<T>?
-    var se: Quadtree<T>?
-    var nw: Quadtree<T>?
-    var ne: Quadtree<T>?
-    
+
+    var sw: Quadtree?
+    var se: Quadtree?
+    var nw: Quadtree?
+    var ne: Quadtree?
+
     init(depth: Int, bounds: Rect) {
         self.depth = depth
         self.bounds = bounds
-        
+
         indices.reserveCapacity(Quadtree.maxCapacityPerNode)
     }
-    
+
     init(min: float2, max: float2) {
         bounds = Rect(min: min, max: max)
         indices.reserveCapacity(Quadtree.maxCapacityPerNode)
     }
-    
+
     /**
      Splits this node into four quadrants
      */
     func split() {
         let min: float2 = bounds.min
         let max: float2 = bounds.max
-        
+
         let x: Float = min.x
         let y: Float = min.y
         let width: Float = max.x - min.x
         let height: Float = max.y - min.y
-        
+
         let w: Float = width * 0.5
         let h: Float = height * 0.5
-        
+
         let SW = Rect(min: float2(x, y), max: float2(x + w, y + h))
         let SE = Rect(min: float2(x + w, y), max: float2(x + width, y + h))
         let NW = Rect(min: float2(x, y + h), max: float2(x + w, y + height))
         let NE = Rect(min: float2(x + w, y + h), max: float2(x + width, y + height))
-        
-        sw = Quadtree<T>(depth: depth + 1, bounds: SW)
-        se = Quadtree<T>(depth: depth + 1, bounds: SE)
-        nw = Quadtree<T>(depth: depth + 1, bounds: NW)
-        ne = Quadtree<T>(depth: depth + 1, bounds: NE)
-        
-        
+
+        sw = Quadtree(depth: depth + 1, bounds: SW)
+        se = Quadtree(depth: depth + 1, bounds: SE)
+        nw = Quadtree(depth: depth + 1, bounds: NW)
+        ne = Quadtree(depth: depth + 1, bounds: NE)
+
+
         hasSplit = true
     }
-    
+
     /**
      Inserts all elements into the quadtree
      */
     func inputRange(range: ClosedRange<Int>) {
-        for id in range.lowerBound ..< range.upperBound {
-            insert(id)
+        for index in range.lowerBound ..< range.upperBound {
+            insert(index)
         }
     }
-    func setInputData(_ data: [T]) {
-        quadtreeData = data
+    func setInputData(_ data: [Collidable]) {
+        Quadtree.data = data
     }
-    
+
     /**
      Returns true if this node contains the index
      */
-    func contains(_ id: Int) -> Bool {
-        return bounds.containsPoint(position: quadtreeData[id].position, radius: quadtreeData[id].radius)
+    func contains(_ index: Int) -> Bool {
+        return bounds.containsPoint(position: Quadtree.data[index].position, radius: Quadtree.data[index].radius)
     }
-    
+
     /**
      Inserts an index into the quadtree
      */
-    func insert(_ id: Int) {
+    func insert(_ index: Int) {
         // If this node has split add it to the children instead
         if hasSplit {
-            if sw?.contains(id) ?? false { sw?.insert(id) }
-            if se?.contains(id) ?? false { se?.insert(id) }
-            if nw?.contains(id) ?? false { nw?.insert(id) }
-            if ne?.contains(id) ?? false { ne?.insert(id) }
+            if sw?.contains(index) ?? false { sw?.insert(index) }
+            if se?.contains(index) ?? false { se?.insert(index) }
+            if nw?.contains(index) ?? false { nw?.insert(index) }
+            if ne?.contains(index) ?? false { ne?.insert(index) }
             return
         }
-        
+
         // .. else add it here.
-        indices.append(id)
-        
+        indices.append(index)
+
         // Then if we've reached our max capacity..
         if indices.count > Quadtree.maxCapacityPerNode && depth < Quadtree.maxDepth {
             // ..split..
             split()
-            
+
             //  ..and move the indices from this node to the new ones
             for index in indices {
                 if sw?.contains(index) ?? false { sw?.insert(index) }
@@ -136,12 +136,12 @@ final class Quadtree <T: Collidable> {
                 if nw?.contains(index) ?? false { nw?.insert(index) }
                 if ne?.contains(index) ?? false { ne?.insert(index) }
             }
-            
+
             // .. and clear this one out
             indices.removeAll()
         }
     }
-    
+
     /**
      Returns all nodes that contains objects
      */
@@ -153,12 +153,12 @@ final class Quadtree <T: Collidable> {
             ne?.getNodesOfIndices(containerOfNodes: &containerOfNodes)
             return
         }
-        
+
         if !indices.isEmpty {
             containerOfNodes.append(indices)
         }
     }
-    
+
     /**
      Returns the neighbour nodes to the input object
      */
@@ -170,12 +170,12 @@ final class Quadtree <T: Collidable> {
             if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
             return
         }
-        
+
         if !indices.isEmpty {
             containerOfNodes.append(indices)
         }
     }
-    
+
     /**
      Colors neighbour nodes to the input object
      */
@@ -192,17 +192,17 @@ final class Quadtree <T: Collidable> {
 }
 
 final class QuadtreeSoA {
-    
+
     struct Rect {
         var min = float2(0)
         var max = float2(0)
         var color = float4(1)
-        
+
         init(min: float2, max: float2) {
             self.min = min
             self.max = max
         }
-        
+
         func containsPoint(position: float2, radius: Float) -> Bool {
             if position.x - radius < max.x &&
                 position.x + radius > min.x &&
@@ -213,7 +213,7 @@ final class QuadtreeSoA {
             return false
         }
     }
-    
+
     static var maxCapacityPerNode: Int = 50
     static var maxDepth: Int = 5
     private static var positions: [float2] = []
@@ -221,7 +221,7 @@ final class QuadtreeSoA {
 
     var bounds: Rect
     var depth: Int = 0
-    
+
     var hasSplit: Bool = false
 
     var indices: [Int] = []
@@ -234,7 +234,7 @@ final class QuadtreeSoA {
     init(depth: Int, bounds: Rect) {
         self.depth = depth
         self.bounds = bounds
-        
+
         indices.reserveCapacity(QuadtreeSoA.maxCapacityPerNode)
     }
 
@@ -267,8 +267,8 @@ final class QuadtreeSoA {
         se = QuadtreeSoA(depth: depth + 1, bounds: SE)
         nw = QuadtreeSoA(depth: depth + 1, bounds: NW)
         ne = QuadtreeSoA(depth: depth + 1, bounds: NE)
-        
-        
+
+
         hasSplit = true
     }
 
