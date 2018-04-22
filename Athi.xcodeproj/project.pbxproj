@@ -55,9 +55,6 @@
 		9051D96B2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
 		9051D96C2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
 		9051D96D2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
-		906CE915208C218200ADB2C1 /* ThreadsafeArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 906CE914208C218200ADB2C1 /* ThreadsafeArray.swift */; };
-		906CE916208C218200ADB2C1 /* ThreadsafeArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 906CE914208C218200ADB2C1 /* ThreadsafeArray.swift */; };
-		906CE917208C218200ADB2C1 /* ThreadsafeArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 906CE914208C218200ADB2C1 /* ThreadsafeArray.swift */; };
 		90D558982086BB040026B18F /* particle_physics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D558972086BB040026B18F /* particle_physics.metal */; };
 		90D558992086BB040026B18F /* particle_physics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D558972086BB040026B18F /* particle_physics.metal */; };
 		90D5589A2086BB040026B18F /* particle_physics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D558972086BB040026B18F /* particle_physics.metal */; };
@@ -96,7 +93,6 @@
 		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
-		906CE914208C218200ADB2C1 /* ThreadsafeArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadsafeArray.swift; sourceTree = "<group>"; };
 		90D558972086BB040026B18F /* particle_physics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = particle_physics.metal; sourceTree = "<group>"; };
 		90D5589B2086BB1A0026B18F /* particle_rendering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = particle_rendering.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -169,7 +165,6 @@
 				900AE7EC207657F700465EAD /* Globals.swift */,
 				900CAD0F20729D6500AE60E9 /* Assets.xcassets */,
 				9001438C2072AD5C009FB201 /* Utility.swift */,
-				906CE914208C218200ADB2C1 /* ThreadsafeArray.swift */,
 				90238DF12073912100D25590 /* Math.swift */,
 			);
 			path = "Athi Shared";
@@ -362,7 +357,6 @@
 				9001438D2072AD5C009FB201 /* Utility.swift in Sources */,
 				900AE7EB2076566600465EAD /* ViewController.swift in Sources */,
 				900B3B2120754C9100569776 /* Input.swift in Sources */,
-				906CE915208C218200ADB2C1 /* ThreadsafeArray.swift in Sources */,
 				90027F8820780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8C207811BC00FC6980 /* primitive.metal in Sources */,
 				900CAD4120729D6500AE60E9 /* Renderer.swift in Sources */,
@@ -389,7 +383,6 @@
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
 				90238DF32073912700D25590 /* Math.swift in Sources */,
-				906CE916208C218200ADB2C1 /* ThreadsafeArray.swift in Sources */,
 				900AE7EE207657F700465EAD /* Globals.swift in Sources */,
 				9051D96C2076D17200E2DB51 /* Quad.metal in Sources */,
 				90027F8D207811BC00FC6980 /* primitive.metal in Sources */,
@@ -409,7 +402,6 @@
 				9001438F2072AD5C009FB201 /* Utility.swift in Sources */,
 				9001438B2072ABBC009FB201 /* ViewController.swift in Sources */,
 				900B3B2320754C9100569776 /* Input.swift in Sources */,
-				906CE917208C218200ADB2C1 /* ThreadsafeArray.swift in Sources */,
 				90027F8A20780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8E207811BC00FC6980 /* primitive.metal in Sources */,
 				900CAD4320729D6500AE60E9 /* Renderer.swift in Sources */,
@@ -694,7 +686,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_FAST_MATH = NO;
+				MTL_FAST_MATH = YES;
 				MTL_OPTIMIZATION_LEVEL = 3;
 				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
 				PRODUCT_NAME = Athi;
@@ -724,13 +716,13 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_FAST_MATH = NO;
+				MTL_FAST_MATH = YES;
 				MTL_OPTIMIZATION_LEVEL = 3;
 				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
 				PRODUCT_NAME = Athi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "//:configuration = Release\nSWIFT_ACTIVE_COMPILATION_CONDITIONS = \n\n//:completeSettings = none\n";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";

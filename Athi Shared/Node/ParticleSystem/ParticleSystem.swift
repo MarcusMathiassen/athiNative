@@ -29,7 +29,7 @@ final class ParticleSystem {
 
     // Options
     var shouldRepel: Bool = false
-    var enableMultithreading: Bool = true
+    var enableMultithreading: Bool = false
     var enableBorderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
     var gravityForce: Float = -0.981
@@ -410,26 +410,19 @@ final class ParticleSystem {
     
     
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
-        
-        commandBuffer.pushDebugGroup("Particles Update")
-        
-        commandBuffer.addCompletedHandler { (_) in
-            
-            memcpy(&self.particles, self.particlesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Particle>.stride)
-            
-            self.bufferSemaphore.signal()
-        }
-        
-        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
-        
-        computeEncoder?.setComputePipelineState(computePipelineState!)
-        
-        // Make sure to update the buffers before computing
-        updateGPUBuffers(commandBuffer: commandBuffer)
 
         // We need exclusive access to the buffer to make sure our copy is safe and correct
         _ = self.bufferSemaphore.wait(timeout: DispatchTime.distantFuture)
         
+        commandBuffer.pushDebugGroup("Particles Update")
+        
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+        
+        computeEncoder?.setComputePipelineState(computePipelineState!)
+
+        // Make sure to update the buffers before computing
+        updateGPUBuffers(commandBuffer: commandBuffer)
+
         // Copy the CPU buffers back to the GPU
         particlesBuffer.contents().copyMemory(
             from: &particles,
@@ -469,6 +462,13 @@ final class ParticleSystem {
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
+        
+        commandBuffer.addCompletedHandler { (_) in
+        
+            memcpy(&self.particles, self.particlesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Particle>.stride)
+            
+            self.bufferSemaphore.signal()
+        }
     }
 
     public func eraseParticles() {
@@ -501,7 +501,7 @@ final class ParticleSystem {
         p.position = position
         p.velocity = vel
         p.radius = radius
-        p.mass = Float.pi * radius * radius
+        p.mass = Float.pi * radius * radius * radius
         particles.append(p)
     }
 }

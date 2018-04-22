@@ -80,11 +80,13 @@ void collision_detection_and_resolve(device Collidable*         collidable      
         if (index == otherIndex) continue;
 
         const float2 other_pos = collidable[otherIndex].position;
-        const float2 other_vel = collidable[otherIndex].velocity;
         const float other_radi = collidable[otherIndex].radius;
-        const float other_mass = collidable[otherIndex].mass;
 
         if (collision_check(newPos, other_pos, radi, other_radi)) {
+            
+            const float2 other_vel = collidable[otherIndex].velocity;
+            const float other_mass = collidable[otherIndex].mass;
+            
             newVel = collision_resolve(newPos, newVel, mass, other_pos, other_vel, other_mass);
         }
     }
@@ -121,11 +123,13 @@ void collision_detection_and_resolve_tree(device Collidable*          collidable
         if (index == otherIndex) continue;
         
         const float2 other_pos = collidable[otherIndex].position;
-        const float2 other_vel = collidable[otherIndex].velocity;
         const float other_radi = collidable[otherIndex].radius;
-        const float other_mass = collidable[otherIndex].mass;
         
         if (collision_check(newPos, other_pos, radi, other_radi)) {
+            
+            const float2 other_vel = collidable[otherIndex].velocity;
+            const float other_mass = collidable[otherIndex].mass;
+            
             newVel = collision_resolve(newPos, newVel, mass, other_pos, other_vel, other_mass);
         }
     }

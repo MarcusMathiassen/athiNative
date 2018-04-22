@@ -12,7 +12,7 @@ import simd
 class PrimitiveRenderer {
 
     var indexBuffer: MTLBuffer
-    
+
     var positionsBuffer: MTLBuffer
     var colorsBuffer: MTLBuffer
     var sizesBuffer: MTLBuffer
@@ -40,7 +40,7 @@ class PrimitiveRenderer {
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
         pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        
+
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
         } catch {
@@ -58,8 +58,8 @@ class PrimitiveRenderer {
         colorsBuffer = device.makeBuffer(
             length: MemoryLayout<float4>.stride,
             options: .storageModeShared)!
-        
-        let indices: [UInt16] = [0,1,2, 0,2,3]
+
+        let indices: [UInt16] = [0, 1, 2, 0, 2, 3]
         indexBuffer = device.makeBuffer(
             bytes: indices,
             length: MemoryLayout<UInt16>.stride * 6,
@@ -79,7 +79,7 @@ class PrimitiveRenderer {
 
         let renderPassDesc = view.currentRenderPassDescriptor
         renderPassDesc?.colorAttachments[0].loadAction = .load
-        
+
         if renderPassDesc != nil {
 
             let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc!)!
@@ -186,40 +186,40 @@ class PrimitiveRenderer {
 
         rectCount = positions.count
     }
-    
+
     /**
      Draws a rectangle at the position with the specified color and size.
      */
     public func drawHollowRect(position: float2, color: float4, size: Float, borderWidth: Float = 1.0) {
-        
+
         // Draw a box with 4 rects as borders
-        
+
         let bottomLeft      = float2(position.x - size, position.y - size)
         let bottomRight     = float2(position.x + size, position.y - size)
         let topLeft         = float2(position.x - size, position.y + size)
         let topRight        = float2(position.x + size, position.y + size)
-        
+
         // Bottom
         drawRect(
             min: bottomLeft - float2(borderWidth, borderWidth),
             max: bottomRight + float2(borderWidth, borderWidth),
             color: color
         )
-        
+
         // Left side
         drawRect(
             min: bottomLeft - float2(borderWidth, borderWidth),
             max: topLeft + float2(borderWidth, borderWidth),
             color: color
         )
-        
+
         // Top
         drawRect(
             min: topLeft - float2(borderWidth, borderWidth),
             max: topRight + float2(borderWidth, borderWidth),
             color: color
         )
-        
+
         // Right side
         drawRect(
             min: bottomRight - float2(borderWidth, borderWidth),
@@ -227,40 +227,40 @@ class PrimitiveRenderer {
             color: color
         )
     }
-    
+
     /**
      Draws a rectangle at the position with the specified color and size.
      */
     public func drawHollowRect(min: float2, max: float2, color: float4, borderWidth: Float = 1.0) {
-        
+
         // Draw a box with 4 rects as borders
-        
+
         let bottomLeft      = min
         let bottomRight     = float2(max.x, min.y)
         let topLeft         = float2(min.x, max.y)
         let topRight        = max
-        
+
         // Bottom
         drawRect(
             min: bottomLeft - float2(borderWidth, borderWidth),
             max: bottomRight + float2(borderWidth, borderWidth),
             color: color
         )
-        
+
         // Left side
         drawRect(
             min: bottomLeft - float2(borderWidth, borderWidth),
             max: topLeft + float2(borderWidth, borderWidth),
             color: color
         )
-        
+
         // Top
         drawRect(
             min: topLeft - float2(borderWidth, borderWidth),
             max: topRight + float2(borderWidth, borderWidth),
             color: color
         )
-        
+
         // Right side
         drawRect(
             min: bottomRight - float2(borderWidth, borderWidth),

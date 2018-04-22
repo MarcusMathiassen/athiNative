@@ -51,11 +51,11 @@ final class Renderer: NSObject, MTKViewDelegate {
     // Tripple buffering
     var maxNumInFlightBuffers = 3
     var currentQueue = 0
-    var inFlightSemaphore = DispatchSemaphore(value: 0)
+    var inFlightSemaphore: DispatchSemaphore
     //
 
     var device: MTLDevice
-    let commandQueues: [MTLCommandQueue?]
+    let commandQueues: [MTLCommandQueue]
 
     init?(view: MTKView) {
         
@@ -63,7 +63,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         
         particleSystem = ParticleSystem(device: device)
         
-        commandQueues = [device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
+        commandQueues = [ device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 
         inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
 
@@ -99,6 +99,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
         view.colorPixelFormat = .bgra8Unorm_srgb
         view.framebufferOnly = false
+        view.enableSetNeedsDisplay = false
 
         print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
         print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
@@ -107,17 +108,14 @@ final class Renderer: NSObject, MTKViewDelegate {
 
     func draw(in view: MTKView) {
 
-        inFlightSemaphore.wait()
+        _ = self.inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
         currentQueue = (currentQueue + 1) % maxNumInFlightBuffers
-
-        /// Per frame updates hare
-
-        let commandBuffer = (commandQueues[currentQueue]?.makeCommandBuffer())!
-
-        commandBuffer.label = "MyCommandBuffer"
         
-        commandBuffer.addCompletedHandler { (commandBuffer) in
+        let commandBuffer = commandQueues[currentQueue].makeCommandBuffer()!
+        commandBuffer.label = "CommandBuffer: " + String(currentQueue)
+        
+        commandBuffer.addCompletedHandler { (_) in
             self.inFlightSemaphore.signal()
         }
 
@@ -162,7 +160,9 @@ final class Renderer: NSObject, MTKViewDelegate {
         }
 
         commandBuffer.present(view.currentDrawable!)
+        
         commandBuffer.commit()
+        
         frametime = Float((getTime() - startTime) * 1000.0)
         framerate = Int(1000 / frametime)
     }
