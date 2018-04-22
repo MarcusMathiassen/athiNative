@@ -51,9 +51,21 @@ FragmentOut particle_frag(VertexOut vert [[stage_in]])
 
 kernel
 void particle_update(constant MotionParam&      motionParam               [[buffer(MotionParamIndex)]],
+                     constant float2&           viewportSize              [[buffer(ViewportSizeIndex)]],
                      device Particle*           particles                 [[buffer(ParticlesIndex)]],
                      uint                       gid                       [[thread_position_in_grid]])
 {
+    float2 pos = particles[gid].position;
+    float2 vel = particles[gid].velocity;
+    const float radi = particles[gid].radius;
+    
+    // Border collision
+    if (pos.x < 0 + radi)               { pos.x = 0 + radi;                 vel.x = -vel.x; }
+    if (pos.x > viewportSize.x - radi)  { pos.x = viewportSize.x - radi;    vel.x = -vel.x; }
+    if (pos.y < 0 + radi)               { pos.y = 0 + radi;                 vel.y = -vel.y; }
+    if (pos.y > viewportSize.y - radi)  { pos.y = viewportSize.y - radi;    vel.y = -vel.y; }
+    
     // Update the particle
-    particles[gid].position += particles[gid].velocity;
+    particles[gid].velocity = vel;
+    particles[gid].position = pos + vel;
 }

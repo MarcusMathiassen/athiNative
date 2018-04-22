@@ -55,7 +55,7 @@ final class CollisionDetection <T: Collidable> {
     var collidablesAllocated: Int = 0
 
     var bufferSemaphore = DispatchSemaphore(value: 1)
-    var queue = DispatchQueue(label: "collidablesQueue", attributes: .concurrent)
+    var collidablesSemaphore = DispatchSemaphore(value: 1)
 
     var computePipelineState: MTLComputePipelineState?
     var computePipelineTreeState: MTLComputePipelineState?
@@ -116,50 +116,52 @@ final class CollisionDetection <T: Collidable> {
         if neighbours.count < neighboursAllocated { neighboursAllocated = 0 }
         if neighbourIndices.count < neighboursIndicesAllocated { neighboursIndicesAllocated = 0 }
 
+        // We grab the input collidables
         self.collidables = collidables
 
         // Update our local versions
         self.computeParam = computeParam
         self.motionParam = motionParam
 
-        // Build the neighbours if needed
-        switch computeParam.treeOption {
-        case .quadtree:  fillNeighbours()
-        case .noTree:    break
-        }
-
         // Choose which device to compute on
         switch computeParam.computeDeviceOption {
         case .GPU:
             switch computeParam.treeOption {
-            case .quadtree: resolveOnGPUTree(commandBuffer: commandBuffer)
+            case .quadtree:
+                fillNeighbours()
+                resolveOnGPUTree(commandBuffer: commandBuffer)
             case .noTree: resolveOnGPU(commandBuffer: commandBuffer)
             }
-
         case .CPU:
-
             if computeParam.isMultithreaded {
-
                 switch computeParam.treeOption {
-                case .quadtree: break
-//                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
-//                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
-//                        resolveRangeWithNeighbours(range: begin ... end)
-//                    }
-
-                case .noTree: break
-//                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
-//                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
-//                        resolveWithoutTree(range: begin ... end)
-//                    }
+                case .quadtree:
+                    let (min, max) = getMinAndMaxPosition(collidables: collidables)
+                    quadtree = Quadtree(min: min, max: max)
+                    quadtree?.setInputData(collidables)
+                    quadtree?.inputRange(range: 0 ... collidables.count)
+                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
+                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
+                        resolveRangeWithNeighbours(range: begin ... end)
+                    }
+                case .noTree:
+                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
+                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
+                        resolveRange(range: begin ... end)
+                    }
                 }
-
-
-
             } else {
                 switch computeParam.treeOption {
-                case .quadtree: resolveRangeWithNeighbours(range: 0 ... collidables.count)
-                case .noTree:   resolveWithoutTree(range: 0 ... collidables.count)
+
+                case .quadtree:
+                    let (min, max) = getMinAndMaxPosition(collidables: collidables)
+                    quadtree = Quadtree(min: min, max: max)
+                    quadtree?.setInputData(collidables)
+                    quadtree?.inputRange(range: 0 ... collidables.count)
+                    resolveRangeWithNeighbours(range: 0 ... collidables.count)
+
+                case .noTree:
+                    resolveRange(range: 0 ... collidables.count)
                 }
             }
         }
@@ -187,6 +189,9 @@ final class CollisionDetection <T: Collidable> {
                                  length: MemoryLayout<UInt>.stride,
                                  index: BufferIndex.CollidablesCountIndex.rawValue)
 
+        computeEncoder?.setBytes(&viewportSize,
+                                 length: MemoryLayout<float2>.stride,
+                                 index: BufferIndex.ViewportSizeIndex.rawValue)
         computeEncoder?.setBytes(&motionParam,
                                  length: MemoryLayout<MotionParam>.stride,
                                  index: BufferIndex.MotionParamIndex.rawValue)
@@ -212,11 +217,11 @@ final class CollisionDetection <T: Collidable> {
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
-        
+
         commandBuffer.addCompletedHandler { (_) in
-        
+
             memcpy(&self.collidables, self.collidablesBuffer.contents(), self.collidablesAllocated * MemoryLayout<T>.stride)
-        
+
             self.bufferSemaphore.signal()
         }
     }
@@ -244,6 +249,10 @@ final class CollisionDetection <T: Collidable> {
                                   offset: 0,
                                   index: BufferIndex.NeighboursIndicesIndex.rawValue)
 
+        computeEncoder?.setBytes(&viewportSize,
+                                 length: MemoryLayout<float2>.stride,
+                                 index: BufferIndex.ViewportSizeIndex.rawValue)
+
         computeEncoder?.setBytes(&motionParam,
                                  length: MemoryLayout<MotionParam>.stride,
                                  index: BufferIndex.MotionParamIndex.rawValue)
@@ -269,11 +278,11 @@ final class CollisionDetection <T: Collidable> {
         // Finish
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
-        
+
         commandBuffer.addCompletedHandler { (_) in
-        
+
             memcpy(&self.collidables, self.collidablesBuffer.contents(), self.collidablesAllocated * MemoryLayout<T>.stride)
-        
+
             self.bufferSemaphore.signal()
         }
     }
@@ -285,21 +294,25 @@ final class CollisionDetection <T: Collidable> {
                 neighboursAllocated = neighbours.count
                 neighboursBuffer = device.makeBuffer(
                     length: neighbours.count * MemoryLayout<Neighbours>.stride,
-                    options: .storageModeShared)!
+                    options: .storageModeShared
+                )!
             }
             neighboursBuffer.contents().copyMemory(
                 from: &neighbours,
-                byteCount: neighbours.count * MemoryLayout<Neighbours>.stride)
+                byteCount: neighbours.count * MemoryLayout<Neighbours>.stride
+            )
 
             if neighbourIndices.count > neighboursIndicesAllocated {
                 neighboursIndicesAllocated = neighbourIndices.count
                 neighboursIndicesBuffer = device.makeBuffer(
                     length: neighbourIndices.count * MemoryLayout<Int32>.stride,
-                    options: .storageModeShared)!
+                    options: .storageModeShared
+                )!
             }
             neighboursIndicesBuffer.contents().copyMemory(
                 from: &neighbourIndices,
-                byteCount: neighbourIndices.count * MemoryLayout<Int32>.stride)
+                byteCount: neighbourIndices.count * MemoryLayout<Int32>.stride
+            )
         }
 
         // We need exclusive access to the buffer to make sure our copy is safe and correct
@@ -315,7 +328,8 @@ final class CollisionDetection <T: Collidable> {
             // Resize the buffer with the new size
             collidablesBuffer = device.makeBuffer(
                 length: collidables.count * MemoryLayout<T>.stride,
-                options: MTLResourceOptions.storageModeShared)!
+                options: MTLResourceOptions.storageModeShared
+            )!
 
             collidablesAllocated = collidables.count
         }
@@ -323,11 +337,9 @@ final class CollisionDetection <T: Collidable> {
         // Update the buffer with our collidables
         collidablesBuffer.contents().copyMemory(
             from: &collidables,
-            byteCount: collidables.count * MemoryLayout<T>.stride)
-
-
+            byteCount: collidables.count * MemoryLayout<T>.stride
+        )
     }
-
 
     private func fillNeighbours() {
 
@@ -340,9 +352,9 @@ final class CollisionDetection <T: Collidable> {
         quadtree?.setInputData(collidables)
         quadtree?.inputRange(range: 0 ... collidables.count)
 
-
         var begin = 0
         var end = 0
+        neighbours = [Neighbours](repeating: Neighbours(begin: 0, end: 0), count: collidables.count)
         for index in collidables.indices {
 
             var tempNeighbours: [Int32] = []
@@ -352,8 +364,8 @@ final class CollisionDetection <T: Collidable> {
             begin   = end
             end     = begin + tempNeighbours.count
 
-            let n = Neighbours(begin: Int32(begin), end: Int32(end))
-            neighbours.append(n)
+            let neighbour = Neighbours(begin: Int32(begin), end: Int32(end))
+            neighbours[index] = neighbour
         }
     }
 
@@ -378,7 +390,12 @@ final class CollisionDetection <T: Collidable> {
 
         // Draw collision box around collidables
         for collidable in collidables {
-            primitiveRenderer.drawHollowRect(position: collidable.position, color: color, size: collidable.radius, borderWidth: 0.5)
+            primitiveRenderer.drawHollowRect(
+                position: collidable.position,
+                color: color,
+                size: collidable.radius,
+                borderWidth: 0.5
+            )
         }
 
         primitiveRenderer.draw(
@@ -388,66 +405,24 @@ final class CollisionDetection <T: Collidable> {
         )
     }
 
-    /**
-        Returns the new velocity accumulated from the range.
-    */
-    private func resolveWithRange(collidableIndex: Int, _ range: ClosedRange<Int>) -> float2 {
-        
-        var coll1 = collidables[collidableIndex] // @collidables Read
-        for otherIndex in range.lowerBound ..< range.upperBound {
-
-            // Dont check with self
-            if collidableIndex == otherIndex { continue }
-
-            // Grab the second collidable
-            let coll2 = collidables[otherIndex] // @collidables Read
-
-            // If they collide. Update the first collidable with the new velocity.
-            // We accumulate it though, so we add it to our grabbed velocity.
-            if checkCollision(coll1, coll2) {
-                coll1.velocity = resolveCollision(coll1, coll2)
-            }
-        }
-
-        return coll1.velocity
-    }
-
-    private func dd() {
-        
-        var newVels: [float2] = []
-        newVels.reserveCapacity(collidables.count)
-    
-        for index in collidables.indices {
-                let newVel = self.resolveWithRange(collidableIndex: index, 0 ... self.collidables.count)
-                newVels.append(newVel)
-        }
-        
-        // Update collidables velocities
-        for index in collidables.indices {
-            collidables[index].velocity = newVels[index]
-            collidables[index].position += newVels[index]
-        }
-    }
-
     private func resolveRangeWithNeighbours(range: ClosedRange<Int>) {
 
+        var tempNeighbours: [Int32] = []
         for index in range.lowerBound ..< range.upperBound {
 
             // Grab the first collidable
             var coll1 = collidables[index]
 
-            let begin: Int = Int(neighbours[index].begin)
-            let end: Int = Int(neighbours[index].end)
+            tempNeighbours.removeAll()
+            quadtree?.getNeighbours(containerOfNodes: &tempNeighbours, collidable: coll1)
 
-            for neighbourIndex in begin ..< end {
-
-                let otherIndex = Int(neighbourIndices[neighbourIndex])
+            for otherIndex in tempNeighbours {
 
                 // Dont check with self
                 if index == otherIndex { continue }
 
                 // Grab the second collidable
-                let coll2 = collidables[otherIndex]
+                let coll2 = collidables[Int(otherIndex)]
 
                 // If they collide. Update the first collidable with the new velocity.
                 // We accumulate it though, so we add it to our grabbed velocity.
@@ -455,42 +430,22 @@ final class CollisionDetection <T: Collidable> {
                     coll1.velocity = resolveCollision(coll1, coll2)
                 }
             }
+            self.collidablesSemaphore.wait()
             // Update our local version of the particles position with the new velocity
+
+            // Border collision
+            if coll1.position.x < 0 + coll1.radius { coll1.position.x = 0 + coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
+            if coll1.position.x > viewportSize.x - coll1.radius { coll1.position.x = viewportSize.x - coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
+            if coll1.position.y < 0 + coll1.radius { coll1.position.y = 0 + coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
+            if coll1.position.y > viewportSize.y - coll1.radius { coll1.position.y = viewportSize.y - coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
+
             self.collidables[index].velocity = coll1.velocity
             self.collidables[index].position += coll1.velocity
-        }
-    }
-    private func resolveWithTree(_ treeNodes: [[Int]]) {
-
-        for node in treeNodes {
-            for index in node {
-
-                // Grab the first collidable
-                var coll1 = collidables[index]
-
-                // Check for collisons with all other collidables
-                for otherIndex in node {
-
-                    // Dont check with self
-                    if index == otherIndex { continue }
-
-                    // Grab the second collidable
-                    let coll2 = collidables[otherIndex]
-
-                    // If they collide. Update the first collidable with the new velocity.
-                    // We accumulate it though, so we add it to our grabbed velocity.
-                    if (checkCollision(coll1, coll2)) {
-                        coll1.velocity = resolveCollision(coll1, coll2)
-                    }
-                }
-                // Update our local version of the particles position with the new velocity
-                collidables[index].velocity = coll1.velocity
-                collidables[index].position += coll1.velocity
-            }
+            self.collidablesSemaphore.signal()
         }
     }
 
-    private func resolveWithoutTree(range: ClosedRange<Int>) {
+    private func resolveRange(range: ClosedRange<Int>) {
 
         // Compute all new positions and velocities
         for index in range.lowerBound ..< range.upperBound {
@@ -513,9 +468,18 @@ final class CollisionDetection <T: Collidable> {
                     coll1.velocity = resolveCollision(coll1, coll2)
                 }
             }
+            self.collidablesSemaphore.wait()
             // Update our local version of the particles position with the new velocity
-            collidables[index].velocity = coll1.velocity
-            collidables[index].position += coll1.velocity
+
+            // Border collision
+            if coll1.position.x < 0 + coll1.radius { coll1.position.x = 0 + coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
+            if coll1.position.x > viewportSize.x - coll1.radius { coll1.position.x = viewportSize.x - coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
+            if coll1.position.y < 0 + coll1.radius { coll1.position.y = 0 + coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
+            if coll1.position.y > viewportSize.y - coll1.radius { coll1.position.y = viewportSize.y - coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
+
+            self.collidables[index].velocity = coll1.velocity
+            self.collidables[index].position += coll1.velocity
+            self.collidablesSemaphore.signal()
         }
     }
 

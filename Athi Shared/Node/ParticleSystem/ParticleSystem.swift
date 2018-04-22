@@ -433,6 +433,10 @@ final class ParticleSystem {
                                   offset: 0,
                                   index: BufferIndex.ParticlesIndex.rawValue)
 
+        
+        computeEncoder?.setBytes(&viewportSize,
+                                     length: MemoryLayout<float2>.stride,
+                                     index: BufferIndex.ViewportSizeIndex.rawValue)
 
         var motionParam = MotionParam()
         motionParam.deltaTime = 1/60
