@@ -896,7 +896,7 @@
                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yaM-w5-8pS">
                                                             <rect key="frame" x="31" y="284" width="96" height="18"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <buttonCell key="cell" type="check" title="Draw debug" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8LB-qO-MhT">
+                                                            <buttonCell key="cell" type="check" title="Draw debug" bezelStyle="regularSquare" imagePosition="left" inset="2" id="8LB-qO-MhT">
                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                 <font key="font" metaFont="system"/>
                                                             </buttonCell>

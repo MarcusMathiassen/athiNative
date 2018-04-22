@@ -109,6 +109,9 @@ class IOSViewController: UIViewController {
         }
     }
 
+    @IBAction func gTreeOptionButton(_ sender: UISegmentedControl) {
+        gTreeOption = (sender.selectedSegmentIndex == 0) ? .quadtree : .noTree
+    }
     @IBAction func computeDeviceSegmentedControl(_ sender: UISegmentedControl) {
         gComputeDeviceOption = (sender.selectedSegmentIndex == 0) ? .GPU : .CPU
     }

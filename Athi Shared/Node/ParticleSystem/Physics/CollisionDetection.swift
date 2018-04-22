@@ -39,8 +39,10 @@ protocol Collidable {
 }
 
 final class CollisionDetection <T: Collidable> {
-
+    
     var collidables: [T] = []
+    var neighbours: [Neighbours] = []
+    var neighbourIndices: [Int32] = []
 
     var computeParam: ComputeParam! = nil
     var motionParam: MotionParam! = nil
@@ -53,13 +55,17 @@ final class CollisionDetection <T: Collidable> {
     var collidablesAllocated: Int = 0
 
     var bufferSemaphore = DispatchSemaphore(value: 1)
-
+    var queue = DispatchQueue(label: "collidablesQueue", attributes: .concurrent)
+    
     var computePipelineState: MTLComputePipelineState?
+    var computePipelineTreeState: MTLComputePipelineState?
+    
     var collidablesBuffer: MTLBuffer
+    var neighboursBuffer: MTLBuffer
+    var neighboursIndicesBuffer: MTLBuffer
+    var neighboursAllocated: Int = 0
+    var neighboursIndicesAllocated: Int = 0
 
-    /**
-        @Lightweight
-     */
     init(device: MTLDevice) {
 
         self.device = device
@@ -69,12 +75,27 @@ final class CollisionDetection <T: Collidable> {
         collidablesBuffer = device.makeBuffer(
             length: MemoryLayout<T>.stride,
             options: .storageModeShared)!
+        
+        neighboursBuffer = device.makeBuffer(
+            length: MemoryLayout<Neighbours>.stride,
+            options: .storageModeShared)!
+        
+        neighboursIndicesBuffer = device.makeBuffer(
+            length: MemoryLayout<Int32>.stride,
+            options: .storageModeShared)!
 
         let library = device.makeDefaultLibrary()
+        
         let computeFunc = library?.makeFunction(name: "collision_detection_and_resolve")
-
         do {
             try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
+        } catch {
+            print("Pipeline: Creating pipeline state failed")
+        }
+        
+        let computeTreeFunc = library?.makeFunction(name: "collision_detection_and_resolve_tree")
+        do {
+            try computePipelineTreeState = device.makeComputePipelineState(function: computeTreeFunc!)
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
@@ -92,29 +113,58 @@ final class CollisionDetection <T: Collidable> {
 
         // If the collidables.count between calls change, just reset the collidablesAllocated count
         if collidables.count < collidablesAllocated { collidablesAllocated = 0 }
+        if neighbours.count < neighboursAllocated { neighboursAllocated = 0 }
+        if neighbourIndices.count < neighboursIndicesAllocated { neighboursIndicesAllocated = 0 }
 
         self.collidables = collidables
 
         // Update our local versions
         self.computeParam = computeParam
         self.motionParam = motionParam
-
+        
+        // Build the neighbours if needed
+        switch computeParam.treeOption {
+        case .quadtree:  fillNeighbours()
+        case .noTree:    break
+        }
+        
         // Choose which device to compute on
         switch computeParam.computeDeviceOption {
-        case .CPU: resolveOnCPU()
-        case .GPU: resolveOnGPU(commandBuffer: commandBuffer)
-        }
+        case .GPU:
+            switch computeParam.treeOption {
+            case .quadtree: resolveOnGPUTree(commandBuffer: commandBuffer)
+            case .noTree: resolveOnGPU(commandBuffer: commandBuffer)
+            }
 
+        case .CPU:
+            
+            if computeParam.isMultithreaded {
+                
+                switch computeParam.treeOption {
+                case .quadtree: break
+//                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
+//                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
+//                        resolveRangeWithNeighbours(range: begin ... end)
+//                    }
+
+                case .noTree: break
+//                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
+//                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
+//                        resolveWithoutTree(range: begin ... end)
+//                    }
+                }
+                
+                
+                
+            } else {
+                switch computeParam.treeOption {
+                case .quadtree: resolveRangeWithNeighbours(range: 0 ... collidables.count)
+                case .noTree:   resolveWithoutTree(range: 0 ... collidables.count)
+                }
+            }
+        }
+        
         return self.collidables
-    }
-
-    private func resolveOnCPU() {
-
-        if computeParam.isMultithreaded {
-            processRangeCPU(0 ... collidables.count) // @Temporary
-        } else {
-            processRangeCPU(0 ... collidables.count)
-        }
     }
 
     private func resolveOnGPU(commandBuffer: MTLCommandBuffer) {
@@ -170,56 +220,172 @@ final class CollisionDetection <T: Collidable> {
         computeEncoder?.endEncoding()
         commandBuffer.popDebugGroup()
     }
-
+    
+    private func resolveOnGPUTree(commandBuffer: MTLCommandBuffer) {
+        
+        commandBuffer.pushDebugGroup("Collidables GPU Collision Detection Tree")
+        
+        commandBuffer.addCompletedHandler { (_) in
+            
+            memcpy(&self.collidables, self.collidablesBuffer.contents(), self.collidablesAllocated * MemoryLayout<T>.stride)
+            
+            self.bufferSemaphore.signal()
+        }
+        
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()
+        
+        computeEncoder?.setComputePipelineState(computePipelineTreeState!)
+        
+        // Make sure to update the buffers before computing
+        updateGPUBuffers(commandBuffer: commandBuffer)
+        
+        computeEncoder?.setBuffer(collidablesBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.CollidablesIndex.rawValue)
+        
+        computeEncoder?.setBuffer(neighboursBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.NeighboursIndex.rawValue)
+        
+        computeEncoder?.setBuffer(neighboursIndicesBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.NeighboursIndicesIndex.rawValue)
+        
+        computeEncoder?.setBytes(&motionParam,
+                                 length: MemoryLayout<MotionParam>.stride,
+                                 index: BufferIndex.MotionParamIndex.rawValue)
+        
+        // Compute kernel threadgroup size
+        let threadExecutionWidth = (computePipelineTreeState?.threadExecutionWidth)!
+        
+        // A one dimensional thread group Swift to pass Metal a one dimensional array
+        let threadGroupCount = MTLSize(
+            width: threadExecutionWidth,
+            height: 1,
+            depth: 1)
+        
+        let recommendedThreadGroupWidth = (collidablesAllocated + threadGroupCount.width - 1) / threadGroupCount.width
+        
+        let threadGroups = MTLSize(
+            width: recommendedThreadGroupWidth,
+            height: 1,
+            depth: 1)
+        
+        computeEncoder?.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
+        
+        // Finish
+        computeEncoder?.endEncoding()
+        commandBuffer.popDebugGroup()
+    }
+    
     private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
 
+        if computeParam.treeOption != .noTree {
+            if neighbours.count > neighboursAllocated {
+                neighboursAllocated = neighbours.count
+                neighboursBuffer = device.makeBuffer(
+                    length: neighbours.count * MemoryLayout<Neighbours>.stride,
+                    options: .storageModeShared)!
+            }
+            neighboursBuffer.contents().copyMemory(
+                from: &neighbours,
+                byteCount: neighbours.count * MemoryLayout<Neighbours>.stride)
+            
+            if neighbourIndices.count > neighboursIndicesAllocated {
+                neighboursIndicesAllocated = neighbourIndices.count
+                neighboursIndicesBuffer = device.makeBuffer(
+                    length: neighbourIndices.count * MemoryLayout<Int32>.stride,
+                    options: .storageModeShared)!
+            }
+            neighboursIndicesBuffer.contents().copyMemory(
+                from: &neighbourIndices,
+                byteCount: neighbourIndices.count * MemoryLayout<Int32>.stride)
+        }
+        
         // We need exclusive access to the buffer to make sure our copy is safe and correct
         _ = self.bufferSemaphore.wait(timeout: DispatchTime.distantFuture)
         
         // Resize the buffer if needed
         if collidables.count > collidablesAllocated {
             
-             // We copy back the contents
-             collidables.reserveCapacity(collidablesAllocated)
-             memcpy(&collidables, collidablesBuffer.contents(), collidablesAllocated * MemoryLayout<T>.stride)
-
+            // We copy back the contents
+            collidables.reserveCapacity(collidablesAllocated)
+            memcpy(&collidables, collidablesBuffer.contents(), collidablesAllocated * MemoryLayout<T>.stride)
+            
             // Resize the buffer with the new size
             collidablesBuffer = device.makeBuffer(
                 length: collidables.count * MemoryLayout<T>.stride,
                 options: MTLResourceOptions.storageModeShared)!
-
+            
             collidablesAllocated = collidables.count
         }
         
         // Update the buffer with our collidables
         collidablesBuffer.contents().copyMemory(
             from: &collidables,
-            byteCount: collidablesAllocated * MemoryLayout<T>.stride)
+            byteCount: collidables.count * MemoryLayout<T>.stride)
+        
+        
     }
-
-    private func processRangeCPU(_ range: ClosedRange<Int>) {
-
-        switch computeParam.treeOption {
-
-        case .quadtree:
-
-            let (min, max) = getMinAndMaxPosition(collidables: collidables)
-            quadtree = Quadtree(min: min, max: max)
-            quadtree?.setInputData(collidables)
-            quadtree?.inputRange(range: 0 ... collidables.count)
+    
+    
+    private func fillNeighbours() {
+        
+        // Clear
+        neighbours.removeAll()
+        neighbourIndices.removeAll()
+        
+        let (min, max) = getMinAndMaxPosition(collidables: collidables)
+        quadtree = Quadtree(min: min, max: max)
+        quadtree?.setInputData(collidables)
+        quadtree?.inputRange(range: 0 ... collidables.count)
+        
+        
+        var begin = 0
+        var end = 0
+        for index in collidables.indices {
             
+            var tempNeighbours: [Int32] = []
+            quadtree?.getNeighbours(containerOfNodes: &tempNeighbours, collidable: collidables[index])
+            neighbourIndices.append(contentsOf: tempNeighbours)
             
-            resolveRangeWithNeighbours(range: range)
-
-//            var treeNodes: [[Int]] = []
-//            quadtree?.getNodesOfIndices(containerOfNodes: &treeNodes)
-//
-//            resolveWithTree(treeNodes)
-
-        case .noTree:
-
-            resolveWithoutTree(range: range)
+            begin   = end
+            end     = begin + tempNeighbours.count
+            
+            let n = Neighbours(begin: Int32(begin), end: Int32(end))
+            neighbours.append(n)
         }
+    }
+    
+    public func drawDebug(
+        color: float4,
+        view: MTKView,
+        frameDescriptor: FrameDescriptor,
+        commandBuffer: MTLCommandBuffer
+        ) {
+        
+        if collidables.count == 0 { return }
+        
+        // We only show the quadtree nodes if we're in that mode
+        if computeParam.treeOption != .noTree {
+            // Draw tree nodes
+            var bounds: [Rect] = []
+            quadtree?.getNodesBounds(container: &bounds)
+            for bound in bounds {
+                primitiveRenderer.drawHollowRect(min: bound.min, max: bound.max, color: color)
+            }
+        }
+        
+        // Draw collision box around collidables
+        for collidable in collidables {
+            primitiveRenderer.drawHollowRect(position: collidable.position, color: color, size: collidable.radius, borderWidth: 0.5)
+        }
+        
+        primitiveRenderer.draw(
+            view: view,
+            frameDescriptor: frameDescriptor,
+            commandBuffer: commandBuffer
+        )
     }
     
     private func resolveRangeWithNeighbours(range: ClosedRange<Int>) {
@@ -229,11 +395,13 @@ final class CollisionDetection <T: Collidable> {
             // Grab the first collidable
             var coll1 = collidables[index]
             
-            var neighbours: [Int] = []
-            quadtree?.getNeighbours(containerOfNodes: &neighbours, collidable: coll1)
+            let begin: Int = Int(neighbours[index].begin)
+            let end: Int = Int(neighbours[index].end)
             
-            for otherIndex in neighbours {
+            for neighbourIndex in begin ..< end {
                 
+                let otherIndex = Int(neighbourIndices[neighbourIndex])
+ 
                 // Dont check with self
                 if index == otherIndex { continue }
                 
@@ -242,14 +410,13 @@ final class CollisionDetection <T: Collidable> {
                 
                 // If they collide. Update the first collidable with the new velocity.
                 // We accumulate it though, so we add it to our grabbed velocity.
-                if (checkCollision(coll1, coll2)) {
+                if checkCollision(coll1, coll2) {
                     coll1.velocity = resolveCollision(coll1, coll2)
                 }
             }
-            
             // Update our local version of the particles position with the new velocity
-            collidables[index].velocity = coll1.velocity
-            collidables[index].position += coll1.velocity
+            self.collidables[index].velocity = coll1.velocity
+            self.collidables[index].position += coll1.velocity
         }
     }
     private func resolveWithTree(_ treeNodes: [[Int]]) {
@@ -280,32 +447,6 @@ final class CollisionDetection <T: Collidable> {
                 collidables[index].position += coll1.velocity
             }
         }
-    }
-    
-    public func drawDebug(
-        color: float4,
-        view: MTKView,
-        frameDescriptor: FrameDescriptor,
-        commandBuffer: MTLCommandBuffer
-        ) {
-        
-        // Draw tree nodes
-        var bounds: [Rect] = []
-        quadtree?.getNodesBounds(container: &bounds)
-        for bound in bounds {
-            primitiveRenderer.drawHollowRect(min: bound.min, max: bound.max, color: color)
-        }
-        
-        // Draw collision box around collidables
-        for collidable in collidables {
-            primitiveRenderer.drawHollowRect(position: collidable.position, color: color, size: collidable.radius, borderWidth: 0.5)
-        }
-        
-        primitiveRenderer.draw(
-            view: view,
-            frameDescriptor: frameDescriptor,
-            commandBuffer: commandBuffer
-        )
     }
     
     private func resolveWithoutTree(range: ClosedRange<Int>) {

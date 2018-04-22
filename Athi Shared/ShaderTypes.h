@@ -38,6 +38,9 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     
     ParticlesIndex,
     ParticlesCountIndex,
+    
+    NeighboursIndex,
+    NeighboursIndicesIndex,
 };
 
 typedef struct
@@ -55,6 +58,12 @@ typedef struct
     float           radius;
     float           mass;
 } Collidable;
+
+typedef struct
+{
+    int begin;
+    int end;
+} Neighbours;
 
 typedef struct
 {

@@ -51,9 +51,9 @@ FragmentOut particle_frag(VertexOut vert [[stage_in]])
 
 kernel
 void particle_update(constant MotionParam&      motionParam               [[buffer(MotionParamIndex)]],
-                     device Collidable*         particles                 [[buffer(ParticlesIndex)]],
+                     device Particle*           particles                 [[buffer(ParticlesIndex)]],
                      uint                       gid                       [[thread_position_in_grid]])
 {
     // Update the particle
-    particles[gid].position += particles[gid].velocity * motionParam.deltaTime;
+    particles[gid].position += particles[gid].velocity;
 }

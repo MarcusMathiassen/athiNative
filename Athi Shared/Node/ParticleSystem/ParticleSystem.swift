@@ -197,7 +197,7 @@ final class ParticleSystem {
         renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
 
         // Rebuild arrays
-        for i in 0 ..< particles.count {
+        for i in particles.indices {
             positions[i] = particles[i].position
         }
 
@@ -222,7 +222,7 @@ final class ParticleSystem {
         renderEncoder.setVertexBuffer(colorBuffer,
                                       offset: 0,
                                       index: BufferIndex.ColorIndex.rawValue)
-
+        
         renderEncoder.drawIndexedPrimitives(
             type: .triangle,
             indexCount: indices.count,
@@ -312,7 +312,7 @@ final class ParticleSystem {
 
             var computeParam = ComputeParam()
             computeParam.computeDeviceOption = gComputeDeviceOption
-            computeParam.isMultithreaded = true
+            computeParam.isMultithreaded = enableMultithreading
             computeParam.preferredThreadCount = 8
             computeParam.treeOption = gTreeOption
 
@@ -321,11 +321,10 @@ final class ParticleSystem {
                 collidables: particles,
                 motionParam: motionParam,
                 computeParam: computeParam)
+        } else {
+            // Update particles positions
+            updateParticles(commandBuffer: commandBuffer)
         }
-        
-        
-        // Update particles positions
-//        updateParticles(commandBuffer: commandBuffer)
     }
 
     public func setVerticesPerParticle(num: Int) {
@@ -407,13 +406,19 @@ final class ParticleSystem {
         colorBuffer.contents().copyMemory(
             from: &colors,
             byteCount: particlesAllocatedCount * MemoryLayout<float4>.stride)
-
     }
     
     
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
         
         commandBuffer.pushDebugGroup("Particles Update")
+        
+        commandBuffer.addCompletedHandler { (_) in
+            
+            memcpy(&self.particles, self.particlesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Particle>.stride)
+            
+            self.bufferSemaphore.signal()
+        }
         
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
         
@@ -422,6 +427,9 @@ final class ParticleSystem {
         // Make sure to update the buffers before computing
         updateGPUBuffers(commandBuffer: commandBuffer)
 
+        // We need exclusive access to the buffer to make sure our copy is safe and correct
+        _ = self.bufferSemaphore.wait(timeout: DispatchTime.distantFuture)
+        
         // Copy the CPU buffers back to the GPU
         particlesBuffer.contents().copyMemory(
             from: &particles,

@@ -41,7 +41,7 @@ final class Quadtree {
 
     var hasSplit: Bool = false
 
-    var indices: [Int] = []
+    var indices: [Int32] = []
 
     var sw: Quadtree?
     var se: Quadtree?
@@ -122,7 +122,7 @@ final class Quadtree {
         }
 
         // .. else add it here.
-        indices.append(index)
+        indices.append(Int32(index))
 
         // Then if we've reached our max capacity..
         if indices.count > Quadtree.maxCapacityPerNode && depth < Quadtree.maxDepth {
@@ -131,10 +131,10 @@ final class Quadtree {
 
             //  ..and move the indices from this node to the new ones
             for index in indices {
-                if sw?.contains(index) ?? false { sw?.insert(index) }
-                if se?.contains(index) ?? false { se?.insert(index) }
-                if nw?.contains(index) ?? false { nw?.insert(index) }
-                if ne?.contains(index) ?? false { ne?.insert(index) }
+                if sw?.contains(Int(index)) ?? false { sw?.insert(Int(index)) }
+                if se?.contains(Int(index)) ?? false { se?.insert(Int(index)) }
+                if nw?.contains(Int(index)) ?? false { nw?.insert(Int(index)) }
+                if ne?.contains(Int(index)) ?? false { ne?.insert(Int(index)) }
             }
 
             // .. and clear this one out
@@ -145,7 +145,7 @@ final class Quadtree {
     /**
      Returns all nodes that contains objects
      */
-    func getNodesOfIndices(containerOfNodes: inout [[Int]]) {
+    func getNodesOfIndices(containerOfNodes: inout [[Int32]]) {
         if hasSplit {
             sw?.getNodesOfIndices(containerOfNodes: &containerOfNodes)
             se?.getNodesOfIndices(containerOfNodes: &containerOfNodes)
@@ -158,11 +158,11 @@ final class Quadtree {
             containerOfNodes.append(indices)
         }
     }
-
+    
     /**
      Returns the neighbour nodes to the input object
      */
-    func getNeighbours(containerOfNodes: inout [Int], collidable: Collidable) {
+    func getNeighbours(containerOfNodes: inout [Int32], collidable: Collidable) {
         if hasSplit {
             if (sw?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
                 sw?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
