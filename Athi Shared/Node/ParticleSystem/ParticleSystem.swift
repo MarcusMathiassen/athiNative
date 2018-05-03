@@ -10,25 +10,6 @@ import Metal
 import MetalKit
 import MetalPerformanceShaders
 
-
-private let addParticleFuncString = """
-float2 addParticle(float2 pos,
-                   float2 vel,
-                   float radius,
-                   float4 color
-) {
-    const int newIndex = ++particleCount;
-
-    particles[newIndex].position = pos;
-    particles[newIndex].velocity = vel;
-    particles[newIndex].radius = vel;
-    particles[newIndex].color = color;
-
-    isAlives[newIndex] = true;
-    lifetimes[newIndex] = 1.0;
-}
-"""
-
 private let attractToPointFuncString = """
 float2 attract_to_point(float2 point, float2 p1, float2 v1, float m1)
 {
@@ -136,25 +117,6 @@ enum ParticleOption: String {
         lifetimes[index] = lifetime;
         isAlives[index] = isAlive;
     """
-    
-    case spawnPoint = """
-    
-    //----------------------------------
-    //  spawnPoint
-    //----------------------------------
-    
-    // If the current particle is the last one, and shouldAddParticle is enabled
-    //  set the current index particle to the newParticleValues
-    if (index == particleCount && shouldAddParticle) {
-    
-        particles[index].velocity = simParam.newParticleVelocity;
-        particles[index].position = simParam.newParticlePosition;
-        particles[index].radius = simParam.newParticleRadius;
-        particles[index].mass = simParam.newParticleMass;
-    
-        ++particleCount;
-    }
-    """
 
     case update = """
 
@@ -162,10 +124,10 @@ enum ParticleOption: String {
         //  update
         //----------------------------------
 
-        particles[index].velocity = vel + gravity_force;
-        particles[index].position = pos + vel;
-        particles[index].radius = radi;
-        particles[index].mass = mass;
+        velocities[index] = vel + gravity_force;
+        positions[index] = pos + vel;
+        radii[index] = radi;
+        masses[index] = mass;
     """
 
     case draw = """
@@ -174,7 +136,7 @@ enum ParticleOption: String {
         //  draw
         //----------------------------------
 
-        const float2 ppos = particles[index].position;
+        const float2 ppos = positions[index];
         if (ppos.x > 0 && ppos.x < viewportSize.x &&
             ppos.y > 0 && ppos.y < viewportSize.y) {
 
@@ -207,13 +169,13 @@ enum ParticleOption: String {
 
             if (index == otherIndex) continue;
 
-            const float2 other_pos = particles[otherIndex].position;
-            const float other_radi = particles[otherIndex].radius;
+            const float2 other_pos = positions[otherIndex];
+            const float other_radi = radii[otherIndex];
 
             if (collision_check(pos, other_pos, radi, other_radi)) {
 
-                const float2 other_vel = particles[otherIndex].velocity;
-                const float other_mass = particles[otherIndex].mass;
+                const float2 other_vel = velocities[otherIndex];
+                const float other_mass = masses[otherIndex];
 
                 vel = collision_resolve(pos, vel, mass, other_pos, other_vel, other_mass);
             }
@@ -224,26 +186,23 @@ enum ParticleOption: String {
 
 final class ParticleSystem {
 
-    struct Particle: Collidable {
-
-        var position: float2 = float2(0)
-        var velocity: float2 = float2(0)
-        var radius: Float = 0
-        var mass: Float = 0
-    }
-    
     var maxParticles: Int
     private var particles: [Particle] = []
     var options: [ParticleOption] = [.update]
     var computeDeviceOption: ComputeDeviceOption = .cpu
 
-    var collisionDetection: CollisionDetection<Particle>
-
     public var particleCount: Int = 0 // Amount of particles
-
-    // hasLifetime
+    
+    //----------------------------------
+    //  Particle data
+    //----------------------------------
+    var positions: [float2] = []
+    var velocities: [float2] = []
+    var radii: [Float] = []
+    var masses: [Float] = []
     var isAlives: [Bool] = []
     var lifetimes: [Float] = []
+    var colors: [float4] = []
 
     // Options
     var shouldRepel: Bool = false
@@ -267,14 +226,9 @@ final class ParticleSystem {
     ///////////////////
 
     // Static data uploaded once, and updated when numVerticesPerParticle is changed
-    private var vertices: [float2] = []
-    private var indices: [UInt16] = []
     // Metal stuff
 
     // Rendering stuff
-    var positions: [float2] = []
-    var radii: [Float] = []
-    var colors: [float4] = []
 
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 1
@@ -293,14 +247,15 @@ final class ParticleSystem {
     private var quad: Quad
     private var device: MTLDevice
     
-    private var particlesBuffer: MTLBuffer
-
-    // draw
-    private var colorBuffer: MTLBuffer
-
-    // hasLifetime
-    private var isAliveBuffer: MTLBuffer
-    private var lifetimeBuffer: MTLBuffer
+    
+    // GPU Buffers
+    private var positionsBuffer: MTLBuffer
+    private var velocitiesBuffer: MTLBuffer
+    private var radiiBuffer: MTLBuffer
+    private var massesBuffer: MTLBuffer
+    private var colorsBuffer: MTLBuffer
+    private var isAlivesBuffer: MTLBuffer
+    private var lifetimesBuffer: MTLBuffer
 
     private var pipelineState: MTLRenderPipelineState?
     private var computePipelineState: MTLComputePipelineState?
@@ -321,14 +276,6 @@ final class ParticleSystem {
         rawKernelString = """
         #include <metal_stdlib>
         using namespace metal;
-
-        typedef struct
-        {
-            vector_float2   position;
-            vector_float2   velocity;
-            float           radius;
-            float           mass;
-        } Particle;
 
         typedef struct
         {
@@ -360,27 +307,28 @@ final class ParticleSystem {
 
         kernel
         void big_compute(
-                         device Particle*                   particles                 [[buffer(0)]],
-                         constant uint&                     particleCount             [[buffer(1)]],
-                         constant MotionParam&              motionParam               [[buffer(2)]],
-
-                         constant SimParam&                 simParam                  [[buffer(3)]],
-
-                         device float4*                     colors                    [[buffer(4)]],
+                         device float2*     positions   [[buffer(0)]],
+                         device float2*     velocities  [[buffer(1)]],
+                         device float*      radii       [[buffer(2)]],
+                         device float*      masses      [[buffer(3)]],
+                         device float4*     colors      [[buffer(4)]],
+                         device bool*       isAlives    [[buffer(5)]],
+                         device float*      lifetimes   [[buffer(6)]],
+        
+                         constant uint&                     particleCount             [[buffer(7)]],
+                         constant MotionParam&              motionParam               [[buffer(8)]],
+                         constant SimParam&                 simParam                  [[buffer(9)]],
                          texture2d<float, access::write>    texture                   [[texture(0)]],
-        
-                         device bool*                       isAlives                  [[buffer(5)]],
-                         device float*                      lifetimes                 [[buffer(6)]],
-        
+
                          uint                               gid                       [[thread_position_in_grid]])
         {
 
             // Local variables
             const uint index = gid;
-            float2 pos = particles[index].position;
-            float2 vel = particles[index].velocity;
-            float radi = particles[index].radius;
-            float mass = particles[index].mass;
+            float2 pos = positions[index];
+            float2 vel = velocities[index];
+            float radi = radii[index];
+            float mass = masses[index];
 
             const float2 viewportSize = simParam.viewport_size;
             const float2 gravity_force = simParam.gravity_force;
@@ -397,13 +345,10 @@ final class ParticleSystem {
          options: [ParticleOption] = [.update, .draw],
          maxParticles: Int = 10_000) {
         
-        
         self.maxParticles = maxParticles
 
         self.device = device
         quad = Quad(device: device)
-
-        collisionDetection = CollisionDetection<Particle>(device: device)
 
         let library = device.makeDefaultLibrary()!
         let vertexFunc = library.makeFunction(name: "particle_vert")!
@@ -425,31 +370,45 @@ final class ParticleSystem {
         
         
         // Initalize our CPU buffers
-        particles = [Particle](repeating: Particle(), count: maxParticles)
-        colors = [float4](repeating: float4(1), count: maxParticles)
-        isAlives = [Bool](repeating: true, count: maxParticles)
-        lifetimes = [Float](repeating: 1.0, count: maxParticles)
-        
+//        positions       = [float2](repeating: float2(0), count: maxParticles)
+//        velocities      = [float2](repeating: float2(0), count: maxParticles)
+//        radii           = [Float](repeating: 0, count: maxParticles)
+//        masses          = [Float](repeating: 0, count: maxParticles)
+//        colors          = [float4](repeating: float4(1), count: maxParticles)
+//        isAlives        = [Bool](repeating: true, count: maxParticles)
+//        lifetimes       = [Float](repeating: 1.0, count: maxParticles)
+//
         // Initalize our GPU buffers
-        particlesBuffer = device.makeBuffer(
-            bytes: &particles,
-            length: MemoryLayout<Particle>.stride * maxParticles,
+        positionsBuffer = device.makeBuffer(
+            bytes: &positions,
+            length: MemoryLayout<float2>.stride * maxParticles,
             options: dynamicBufferResourceOption)!
-        colorBuffer = device.makeBuffer(
+        velocitiesBuffer = device.makeBuffer(
+            bytes: &velocities,
+            length: MemoryLayout<float2>.stride * maxParticles,
+            options: dynamicBufferResourceOption)!
+        radiiBuffer = device.makeBuffer(
+            bytes: &radii,
+            length: MemoryLayout<Float>.stride * maxParticles,
+            options: dynamicBufferResourceOption)!
+        massesBuffer = device.makeBuffer(
+            bytes: &masses,
+            length: MemoryLayout<Float>.stride * maxParticles,
+            options: dynamicBufferResourceOption)!
+        colorsBuffer = device.makeBuffer(
             bytes: &colors,
             length: MemoryLayout<float4>.stride * maxParticles,
             options: dynamicBufferResourceOption)!
-        isAliveBuffer = device.makeBuffer(
+        isAlivesBuffer = device.makeBuffer(
             bytes: &isAlives,
             length: MemoryLayout<Bool>.stride * maxParticles,
             options: dynamicBufferResourceOption)!
-        lifetimeBuffer = device.makeBuffer(
+        lifetimesBuffer = device.makeBuffer(
             bytes: &lifetimes,
             length: MemoryLayout<Float>.stride * maxParticles,
             options: dynamicBufferResourceOption)!
         
-        
-        particleCount = maxParticles
+//        particleCount = maxParticles
         
         let textureDesc = MTLTextureDescriptor()
         textureDesc.height = Int(framebufferHeight)
@@ -584,13 +543,6 @@ final class ParticleSystem {
         frameDescriptor: FrameDescriptor,
         commandBuffer: MTLCommandBuffer
         ) {
-
-        collisionDetection.drawDebug(
-            color: color,
-            view: view,
-            frameDescriptor: frameDescriptor,
-            commandBuffer: commandBuffer
-        )
     }
 
     public func update(commandBuffer: MTLCommandBuffer) {
@@ -598,81 +550,90 @@ final class ParticleSystem {
         if isPaused { return }
 
         if shouldUpdate {
-//            buildVertices(numVertices: numVerticesPerParticle)
             shouldUpdate = false
         }
-
-        if enableCollisions && particles.count > 1 {
-
-            var motionParam = MotionParam()
-            motionParam.deltaTime = 1/60
-
-            var computeParam = ComputeParam()
-            computeParam.computeDeviceOption = gComputeDeviceOption
-            computeParam.isMultithreaded = enableMultithreading
-            computeParam.preferredThreadCount = 8
-            computeParam.treeOption = gTreeOption
-
-            particles = collisionDetection.runTimeStep(
-                commandBuffer: commandBuffer,
-                collidables: particles,
-                motionParam: motionParam,
-                computeParam: computeParam)
-        } else {
-            // Update particles positions
-            updateParticles(commandBuffer: commandBuffer)
-        }
+        
+        updateParticles(commandBuffer: commandBuffer)
     }
 
     private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
         
-        // We need exclusive access to the buffer to make sure our copy is safe and correct
-        _ = self.bufferSemaphore.wait(timeout: DispatchTime.distantFuture)
-
         // Reallocate more if needed
         if particleCount > particlesAllocatedCount {
             
-            memcpy(&self.particles, self.particlesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Particle>.stride)
-            memcpy(&self.colors, self.colorBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<float4>.stride)
-            memcpy(&self.isAlives, self.isAliveBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Bool>.stride)
-            memcpy(&self.lifetimes, self.lifetimeBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Float>.stride)
+            // We need exclusive access to the buffer to make sure our copy is safe and correct
+            _ = self.bufferSemaphore.wait(timeout: DispatchTime.distantFuture)
+            
+            memcpy(&self.positions, self.positionsBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<float2>.stride)
+            memcpy(&self.velocities, self.velocitiesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<float2>.stride)
+            memcpy(&self.radii, self.radiiBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Float>.stride)
+            memcpy(&self.masses, self.massesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Float>.stride)
+            memcpy(&self.colors, self.colorsBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<float4>.stride)
+            memcpy(&self.isAlives, self.isAlivesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Bool>.stride)
+            memcpy(&self.lifetimes, self.lifetimesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Float>.stride)
             
             // Update the allocated particle count
             particlesAllocatedCount = particleCount
 
-            colorBuffer = device.makeBuffer(
+            positionsBuffer = device.makeBuffer(
+                length: particlesAllocatedCount * MemoryLayout<float2>.stride,
+                options: dynamicBufferResourceOption)!
+            
+            velocitiesBuffer = device.makeBuffer(
+                length: particlesAllocatedCount * MemoryLayout<float2>.stride,
+                options: dynamicBufferResourceOption)!
+            
+            radiiBuffer = device.makeBuffer(
+                length: particlesAllocatedCount * MemoryLayout<Float>.stride,
+                options: dynamicBufferResourceOption)!
+            
+            massesBuffer = device.makeBuffer(
+                length: particlesAllocatedCount * MemoryLayout<Float>.stride,
+                options: dynamicBufferResourceOption)!
+            
+            colorsBuffer = device.makeBuffer(
                 length: particlesAllocatedCount * MemoryLayout<float4>.stride,
                 options: dynamicBufferResourceOption)!
 
-            isAliveBuffer = device.makeBuffer(
+            isAlivesBuffer = device.makeBuffer(
                 length: particlesAllocatedCount * MemoryLayout<Bool>.stride,
                 options: dynamicBufferResourceOption)!
 
-            lifetimeBuffer = device.makeBuffer(
+            lifetimesBuffer = device.makeBuffer(
                 length: particlesAllocatedCount * MemoryLayout<Float>.stride,
                 options: dynamicBufferResourceOption)!
-
-            particlesBuffer = device.makeBuffer(
-                length: particlesAllocatedCount * MemoryLayout<Particle>.stride,
-                options: dynamicBufferResourceOption)!
             
-            particlesBuffer.contents().copyMemory(
-                from: &particles,
-                byteCount: particlesAllocatedCount * MemoryLayout<Particle>.stride)
+            
 
-            colorBuffer.contents().copyMemory(
+            positionsBuffer.contents().copyMemory(
+                from: &positions,
+                byteCount: particlesAllocatedCount * MemoryLayout<float2>.stride)
+            
+            velocitiesBuffer.contents().copyMemory(
+                from: &velocities,
+                byteCount: particlesAllocatedCount * MemoryLayout<float2>.stride)
+            
+            radiiBuffer.contents().copyMemory(
+                from: &radii,
+                byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
+            
+            massesBuffer.contents().copyMemory(
+                from: &masses,
+                byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
+            
+            colorsBuffer.contents().copyMemory(
                 from: &colors,
                 byteCount: particlesAllocatedCount * MemoryLayout<float4>.stride)
             
-            isAliveBuffer.contents().copyMemory(
+            isAlivesBuffer.contents().copyMemory(
                 from: &isAlives,
                 byteCount: particlesAllocatedCount * MemoryLayout<Bool>.stride)
             
-            lifetimeBuffer.contents().copyMemory(
+            lifetimesBuffer.contents().copyMemory(
                 from: &lifetimes,
                 byteCount: particlesAllocatedCount * MemoryLayout<Float>.stride)
         }
-        }
+    }
 
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
 
@@ -684,27 +645,18 @@ final class ParticleSystem {
 
         // Make sure to update the buffers before computing
         updateGPUBuffers(commandBuffer: commandBuffer)
-
-        computeEncoder?.setBuffer(particlesBuffer,
-                                  offset: 0,
-                                  index: 0)
-
-        computeEncoder?.setBuffer(colorBuffer,
-                                  offset: 0,
-                                  index: 4)
-
-        // hasLifetime
-        computeEncoder?.setBuffer(isAliveBuffer,
-                                  offset: 0,
-                                  index: 5)
-
-        computeEncoder?.setBuffer(lifetimeBuffer,
-                                  offset: 0,
-                                  index: 6)
-
+        
+        computeEncoder?.setBuffer(positionsBuffer,  offset: 0, index: 0)
+        computeEncoder?.setBuffer(velocitiesBuffer, offset: 0, index: 1)
+        computeEncoder?.setBuffer(radiiBuffer,      offset: 0, index: 2)
+        computeEncoder?.setBuffer(massesBuffer,     offset: 0, index: 3)
+        computeEncoder?.setBuffer(colorsBuffer,     offset: 0, index: 4)
+        computeEncoder?.setBuffer(isAlivesBuffer,   offset: 0, index: 5)
+        computeEncoder?.setBuffer(lifetimesBuffer,  offset: 0, index: 6)
+        
         computeEncoder?.setBytes(&particleCount,
                                  length: MemoryLayout<UInt32>.stride,
-                                 index: 1)
+                                 index: 7)
 
         computeEncoder?.setTexture(pTexture, index: 0)
 
@@ -712,7 +664,7 @@ final class ParticleSystem {
         motionParam.deltaTime = 1/60
         computeEncoder?.setBytes(&motionParam,
                                  length: MemoryLayout<MotionParam>.stride,
-                                 index: 2)
+                                 index: 8)
 
         var simParam = SimParam()
         simParam.viewport_size = viewportSize
@@ -723,7 +675,7 @@ final class ParticleSystem {
         simParam.gravity_force = enableGravity ? float2(0, gravityForce) : float2(0)
         computeEncoder?.setBytes(&simParam,
                                  length: MemoryLayout<SimParam>.stride,
-                                 index: 3)
+                                 index: 9)
 
         // Compute kernel threadgroup size
         let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
@@ -734,7 +686,7 @@ final class ParticleSystem {
             height: 1,
             depth: 1)
 
-        let recommendedThreadGroupWidth = (particles.count + threadGroupCount.width - 1) / threadGroupCount.width
+        let recommendedThreadGroupWidth = (particleCount + threadGroupCount.width - 1) / threadGroupCount.width
 
         let threadGroups = MTLSize(
             width: recommendedThreadGroupWidth,
@@ -748,8 +700,8 @@ final class ParticleSystem {
         commandBuffer.popDebugGroup()
 
         commandBuffer.addCompletedHandler { (_) in
-
-            memcpy(&self.particles, self.particlesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Particle>.stride)
+//
+//            memcpy(&self.particles, self.particlesBuffer.contents(), self.particlesAllocatedCount * MemoryLayout<Particle>.stride)
 
             self.bufferSemaphore.signal()
         }
@@ -761,6 +713,9 @@ final class ParticleSystem {
     public func eraseParticles() {
 
         particles.removeAll()
+        velocities.removeAll()
+        radii.removeAll()
+        masses.removeAll()
         colors.removeAll()
         isAlives.removeAll()
         lifetimes.removeAll()
@@ -778,20 +733,13 @@ final class ParticleSystem {
         }
 
         self.positions.append(position)
+        self.velocities.append(vel)
         self.radii.append(radius)
         self.colors.append(color)
-
-
-        isAlives.append(true)
-        lifetimes.append(1)
+        self.masses.append(Float.pi * radius * radius * radius)
+        self.isAlives.append(true)
+        self.lifetimes.append(1.0)
 
         self.particleCount += 1
-
-        var p = Particle()
-        p.position = position
-        p.velocity = vel
-        p.radius = radius
-        p.mass = Float.pi * radius * radius * radius
-        particles.append(p)
     }
 }
