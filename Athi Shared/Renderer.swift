@@ -61,7 +61,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         
         device = view.device!
         
-        particleSystem = ParticleSystem(device: device, options: [.interCollision, .attractedToMouse, .borderBound, .update, .draw])
+        particleSystem = ParticleSystem(device: device, options: [.interCollision, .borderBound, .update, .draw])
         
         commandQueues = [ device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 
@@ -236,7 +236,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         mainTextureDesc.usage = .shaderWrite
         particleSystem.outTexture = device.makeTexture(descriptor: mainTextureDesc)!
         particleSystem.finalTexture = device.makeTexture(descriptor: mainTextureDesc)!
-
+        particleSystem.pTexture = device.makeTexture(descriptor: mainTextureDesc)!
 
         #if os(macOS)
             let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)

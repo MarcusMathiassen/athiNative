@@ -486,42 +486,51 @@ final class ParticleSystem {
         renderPassDesc.colorAttachments[1].texture = finalTexture
         renderPassDesc.colorAttachments[1].loadAction = .clear
         renderPassDesc.colorAttachments[1].storeAction = .store
+        
+        renderPassDesc.colorAttachments[2].clearColor = frameDescriptor.clearColor
+        renderPassDesc.colorAttachments[2].texture = pTexture
+        renderPassDesc.colorAttachments[2].loadAction = .clear
+        renderPassDesc.colorAttachments[2].storeAction = .store
 
         var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
         renderEncoder.pushDebugGroup("Draw particles (off-screen)")
         renderEncoder.setRenderPipelineState(pipelineState!)
-        renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
-
-        // Rebuild arrays
-        for i in particles.indices {
-            positions[i] = particles[i].position
-        }
-
-        updateGPUBuffers(commandBuffer: commandBuffer)
-
-        renderEncoder.setVertexBuffers(
-            [vertexBuffer, positionBuffer, radiusBuffer, colorBuffer],
-            offsets: [0, 0, 0, 0],
-            range: 0 ..< 4
-        )
-
-        renderEncoder.setVertexBytes(&viewportSize,
-                                     length: MemoryLayout<float2>.stride,
-                                     index: BufferIndex.ViewportSizeIndex.rawValue
-                                     )
-
-        renderEncoder.drawIndexedPrimitives(
-            type: .triangle,
-            indexCount: indices.count,
-            indexType: .uint16,
-            indexBuffer: indexBuffer,
-            indexBufferOffset: 0,
-            instanceCount: particleCount
-        )
+//        renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
+//
+//        // Rebuild arrays
+//        for i in particles.indices {
+//            positions[i] = particles[i].position
+//        }
+//
+//        updateGPUBuffers(commandBuffer: commandBuffer)
+//
+//        renderEncoder.setVertexBuffers(
+//            [vertexBuffer, positionBuffer, radiusBuffer, colorBuffer],
+//            offsets: [0, 0, 0, 0],
+//            range: 0 ..< 4
+//        )
+//
+//        renderEncoder.setVertexBytes(&viewportSize,
+//                                     length: MemoryLayout<float2>.stride,
+//                                     index: BufferIndex.ViewportSizeIndex.rawValue
+//                                     )
+//
+//        renderEncoder.drawIndexedPrimitives(
+//            type: .triangle,
+//            indexCount: indices.count,
+//            indexType: .uint16,
+//            indexBuffer: indexBuffer,
+//            indexBufferOffset: 0,
+//            instanceCount: particleCount
+//        )
+        
+        quad.draw(renderEncoder: renderEncoder, texture: inTexture)
+        quad.draw(renderEncoder: renderEncoder, texture: pTexture)
 
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
+        
 
         if enablePostProcessing {
 
@@ -543,25 +552,24 @@ final class ParticleSystem {
                 sigma: 5.0
                 )
 
-            // quad.pixelate(
-            // commandBuffer: commandBuffer,
-            // inputTexture: inTexture,
-            // outputTexture: finalTexture,
-            // sigma: blurStrength
-            // )
+//             quad.pixelate(
+//             commandBuffer: commandBuffer,
+//             inputTexture: inTexture,
+//             outputTexture: finalTexture,
+//             sigma: blurStrength
+//             )
 
             renderEncoder.popDebugGroup()
         }
 
         let viewRenderPassDesc = view.currentRenderPassDescriptor
-
         if viewRenderPassDesc != nil {
 
             renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
 
             renderEncoder.pushDebugGroup("Draw particles (on-screen)")
 
-            quad.draw(renderEncoder: renderEncoder, texture: pTexture)
+            quad.draw(renderEncoder: renderEncoder, texture: finalTexture)
 
             renderEncoder.popDebugGroup()
             renderEncoder.endEncoding()

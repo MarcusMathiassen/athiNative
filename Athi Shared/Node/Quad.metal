@@ -66,6 +66,7 @@ vertex Vertex quadVert(uint vid [[vertex_id]])
 struct FragOut
 {
     float4 color0[[color(0)]];
+    float4 color1[[color(1)]];
 };
 
 
@@ -85,7 +86,10 @@ fragment FragOut quadFrag(Vertex                              vert           [[s
                                       min_filter::linear);
     
     // We return the color of the texture
-    return { colorTexture.sample(textureSampler, vert.uv) };
+    return {
+        colorTexture.sample(textureSampler, vert.uv),
+        colorTexture.sample(textureSampler, vert.uv)
+    };
 }
 
 kernel
