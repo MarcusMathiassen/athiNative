@@ -39,7 +39,7 @@ class PrimitiveRenderer {
         pipelineDesc.label = "PrimitiveRenderer"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm_srgb
+        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm
 
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)

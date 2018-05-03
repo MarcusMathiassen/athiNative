@@ -24,12 +24,11 @@
 typedef NS_ENUM(NSInteger, BufferIndex)
 {
     VertexIndex,
-    
     PositionIndex,
     RadiusIndex,
-    SizeIndex,
     ColorIndex,
     
+    SizeIndex,
     ViewportSizeIndex,
     MotionParamIndex,
     
@@ -69,6 +68,13 @@ typedef struct
 {
     float           deltaTime;       // frame delta time
 } MotionParam;
+
+typedef struct
+{
+    vector_float2 viewport_size;
+    vector_float2 attract_point;
+    vector_float2 gravity_force;
+} SimParam;
 
 #endif /* ShaderTypes_h */
 

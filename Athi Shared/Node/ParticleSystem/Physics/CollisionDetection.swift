@@ -15,8 +15,8 @@ struct MotionParam {
 }
 
 enum ComputeDeviceOption {
-    case CPU
-    case GPU
+    case cpu
+    case gpu
 }
 
 enum TreeOption {
@@ -27,7 +27,7 @@ enum TreeOption {
 struct ComputeParam {
     var isMultithreaded: Bool = true // Application is multithreaded by default.
     var preferredThreadCount: Int = 0// Uses the machines maximum number by default
-    var computeDeviceOption: ComputeDeviceOption = .GPU
+    var computeDeviceOption: ComputeDeviceOption = .gpu
     var treeOption: TreeOption = .quadtree
 }
 
@@ -125,14 +125,14 @@ final class CollisionDetection <T: Collidable> {
 
         // Choose which device to compute on
         switch computeParam.computeDeviceOption {
-        case .GPU:
+        case .gpu:
             switch computeParam.treeOption {
             case .quadtree:
                 fillNeighbours()
                 resolveOnGPUTree(commandBuffer: commandBuffer)
             case .noTree: resolveOnGPU(commandBuffer: commandBuffer)
             }
-        case .CPU:
+        case .cpu:
             if computeParam.isMultithreaded {
                 switch computeParam.treeOption {
                 case .quadtree:

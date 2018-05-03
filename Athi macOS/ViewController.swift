@@ -65,7 +65,6 @@ class MACOSViewController: NSViewController {
     }
 
     @IBAction func particleUpdateSamples(_ sender: NSSliderCell) {
-        renderer.particleSystem.samples = Int(sender.intValue)
     }
 
     @IBAction func particleCollisionButton(_ sender: NSButton) {
@@ -180,8 +179,8 @@ class MACOSViewController: NSViewController {
                           }
 
                         switch self.computeDeviceOptionButton.indexOfSelectedItem {
-                        case 0: gComputeDeviceOption = .GPU
-                        case 1: gComputeDeviceOption = .CPU
+                        case 0: gComputeDeviceOption = .gpu
+                        case 1: gComputeDeviceOption = .cpu
                         default: break
                         }
                         

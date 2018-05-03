@@ -61,7 +61,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         
         device = view.device!
         
-        particleSystem = ParticleSystem(device: device)
+        particleSystem = ParticleSystem(device: device, options: [.interCollision, .attractedToMouse, .borderBound, .update, .draw])
         
         commandQueues = [ device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 
@@ -97,7 +97,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.preferredFramesPerSecond = 60
         view.sampleCount = 1
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
-        view.colorPixelFormat = .bgra8Unorm_srgb
+        view.colorPixelFormat = .bgra8Unorm
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
 

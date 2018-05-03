@@ -113,7 +113,7 @@ class IOSViewController: UIViewController {
         gTreeOption = (sender.selectedSegmentIndex == 0) ? .quadtree : .noTree
     }
     @IBAction func computeDeviceSegmentedControl(_ sender: UISegmentedControl) {
-        gComputeDeviceOption = (sender.selectedSegmentIndex == 0) ? .GPU : .CPU
+        gComputeDeviceOption = (sender.selectedSegmentIndex == 0) ? .gpu : .cpu
     }
     func startGyros() {
         if motion.isGyroAvailable {

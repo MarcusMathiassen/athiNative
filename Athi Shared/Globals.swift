@@ -8,7 +8,7 @@
 
 let kGravitationalConstant = 6.67408e-6
 
-var gComputeDeviceOption: ComputeDeviceOption = .GPU
+var gComputeDeviceOption: ComputeDeviceOption = .gpu
 var gTreeOption: TreeOption = .quadtree
 var gDrawDebug: Bool = false
 

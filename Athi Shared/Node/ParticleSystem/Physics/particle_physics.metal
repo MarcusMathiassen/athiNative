@@ -142,7 +142,7 @@ void collision_detection_and_resolve_tree(device Collidable*          collidable
             newVel = collision_resolve(newPos, newVel, mass, other_pos, other_vel, other_mass);
         }
     }
-
+    
     // Border collision
     if (newPos.x < 0 + radi) { newPos.x = 0 + radi; newVel.x = -newVel.x; }
     if (newPos.x > viewportSize.x - radi) { newPos.x = viewportSize.x - radi; newVel.x = -newVel.x; }

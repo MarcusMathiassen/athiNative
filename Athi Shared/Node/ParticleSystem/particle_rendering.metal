@@ -50,11 +50,13 @@ FragmentOut particle_frag(VertexOut vert [[stage_in]])
 }
 
 kernel
-void particle_update(constant MotionParam&      motionParam               [[buffer(MotionParamIndex)]],
-                     constant float2&           viewportSize              [[buffer(ViewportSizeIndex)]],
-                     device Particle*           particles                 [[buffer(ParticlesIndex)]],
-                     uint                       gid                       [[thread_position_in_grid]])
+void particle_update(constant MotionParam&              motionParam               [[buffer(MotionParamIndex)]],
+                     constant float2&                   viewportSize              [[buffer(ViewportSizeIndex)]],
+                     device Particle*                   particles                 [[buffer(ParticlesIndex)]],
+                     texture2d<half, access::write>     texture                   [[texture(0)]],
+                     uint                               gid                       [[thread_position_in_grid]])
 {
+    // Local variables
     float2 pos = particles[gid].position;
     float2 vel = particles[gid].velocity;
     const float radi = particles[gid].radius;
