@@ -61,7 +61,8 @@ final class Renderer: NSObject, MTKViewDelegate {
         
         device = view.device!
         
-        particleSystem = ParticleSystem(device: device, options: [.interCollision, .borderBound, .update, .draw])
+        let myOptions: [ParticleOption] = [.borderBound, .update, .draw]
+        particleSystem = ParticleSystem(device: device, options: myOptions)
         
         commandQueues = [ device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 

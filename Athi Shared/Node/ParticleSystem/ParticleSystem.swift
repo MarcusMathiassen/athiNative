@@ -486,11 +486,6 @@ final class ParticleSystem {
         renderPassDesc.colorAttachments[1].texture = finalTexture
         renderPassDesc.colorAttachments[1].loadAction = .clear
         renderPassDesc.colorAttachments[1].storeAction = .store
-        
-        renderPassDesc.colorAttachments[2].clearColor = frameDescriptor.clearColor
-        renderPassDesc.colorAttachments[2].texture = pTexture
-        renderPassDesc.colorAttachments[2].loadAction = .clear
-        renderPassDesc.colorAttachments[2].storeAction = .store
 
         var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
@@ -525,7 +520,6 @@ final class ParticleSystem {
 //            instanceCount: particleCount
 //        )
         
-        quad.draw(renderEncoder: renderEncoder, texture: inTexture)
         quad.draw(renderEncoder: renderEncoder, texture: pTexture)
 
         renderEncoder.popDebugGroup()
@@ -551,7 +545,7 @@ final class ParticleSystem {
                 outTexture: finalTexture,
                 sigma: 5.0
                 )
-
+//
 //             quad.pixelate(
 //             commandBuffer: commandBuffer,
 //             inputTexture: inTexture,
@@ -560,11 +554,24 @@ final class ParticleSystem {
 //             )
 
             renderEncoder.popDebugGroup()
+        } else {
+            quad.mix(
+                commandBuffer: commandBuffer,
+                inputTexture1: inTexture,
+                inputTexture2: outTexture,
+                outTexture: finalTexture,
+                sigma: 5.0
+            )
         }
 
         let viewRenderPassDesc = view.currentRenderPassDescriptor
+        
         if viewRenderPassDesc != nil {
 
+            viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
+            viewRenderPassDesc?.colorAttachments[1].texture = pTexture
+            viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
+            viewRenderPassDesc?.colorAttachments[1].storeAction = .store
             renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
 
             renderEncoder.pushDebugGroup("Draw particles (on-screen)")
