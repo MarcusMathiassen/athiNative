@@ -30,7 +30,7 @@ struct FrameDescriptor {
     var viewportSize: float2 = float2(0)
 
     var clearColor: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
-    var pixelFormat: MTLPixelFormat = .bgra8Unorm
+    var pixelFormat: MTLPixelFormat = .bgra8Unorm_srgb
     var deltaTime: Float = 0.0
 }
 
@@ -40,7 +40,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     var fillMode: MTLTriangleFillMode = .fill
 
     static var clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
-    static var pixelFormat = MTLPixelFormat.bgra8Unorm
+    static var pixelFormat = MTLPixelFormat.bgra8Unorm_srgb
 
     var framerate: Int = 0
     var frametime: Float = 0
@@ -61,8 +61,15 @@ final class Renderer: NSObject, MTKViewDelegate {
         
         device = view.device!
         
-        let myOptions: [ParticleOption] = [.borderBound, .update, .draw]
-        particleSystem = ParticleSystem(device: device, options: myOptions)
+        let myParticleOptions: [ParticleOption] = [
+//            .hasLifetime,
+//            .attractedToMouse,
+            .interCollision,
+            .borderBound,
+            .update,
+            .draw
+        ]
+        particleSystem = ParticleSystem(device: device, options: myParticleOptions)
         
         commandQueues = [ device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
 
@@ -98,7 +105,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.preferredFramesPerSecond = 60
         view.sampleCount = 1
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
-        view.colorPixelFormat = .bgra8Unorm
+        view.colorPixelFormat = .bgra8Unorm_srgb
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
 
@@ -230,7 +237,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         mainTextureDesc.width = Int(framebufferWidth)
         mainTextureDesc.sampleCount = 1
         mainTextureDesc.textureType = .type2D
-        mainTextureDesc.pixelFormat = Renderer.pixelFormat
+        mainTextureDesc.pixelFormat = .bgra8Unorm
         mainTextureDesc.resourceOptions = .storageModePrivate
         mainTextureDesc.usage = .shaderRead
         particleSystem.inTexture = device.makeTexture(descriptor: mainTextureDesc)!

@@ -74,6 +74,15 @@ typedef struct
     vector_float2 viewport_size;
     vector_float2 attract_point;
     vector_float2 gravity_force;
+    
+    vector_float2 mouse_pos;
+    float current_time;
+    
+    bool shouldAddParticle;
+    vector_float2 newParticlePosition;
+    vector_float2 newParticleVelocity;
+    float newParticleRadius;
+    float newParticleMass;
 } SimParam;
 
 #endif /* ShaderTypes_h */

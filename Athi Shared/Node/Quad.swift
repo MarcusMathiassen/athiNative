@@ -30,7 +30,7 @@ final class Quad
         pipelineDesc.label = "Quad"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
 
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
         pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
@@ -52,7 +52,7 @@ final class Quad
         blurPipelineDesc.label = "GaussianBlur"
         blurPipelineDesc.vertexFunction = vertexFunc
         blurPipelineDesc.fragmentFunction = blurfragFunc
-        blurPipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        blurPipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
 
         do {
             try gaussianBlurPipelineState = device.makeRenderPipelineState(descriptor: blurPipelineDesc)

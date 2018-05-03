@@ -785,7 +785,7 @@
                                                         <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q2u-3e-CaE">
                                                             <rect key="frame" x="31" y="171" width="19" height="88"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <sliderCell key="cell" state="on" alignment="left" maxValue="5" doubleValue="1" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
+                                                            <sliderCell key="cell" state="on" alignment="left" minValue="1" maxValue="100" doubleValue="10" tickMarkPosition="right" sliderType="linear" id="NIT-ss-ffR"/>
                                                             <connections>
                                                                 <action selector="particleSizeSlider:" target="XfG-lQ-9wD" id="2jj-R0-Xhg"/>
                                                             </connections>

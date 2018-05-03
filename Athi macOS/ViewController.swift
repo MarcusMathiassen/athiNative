@@ -142,7 +142,7 @@ class MACOSViewController: NSViewController {
 
     @IBAction func particleVerticesStepper(_ sender: NSStepper) {
         let val = Int(sender.intValue)
-        renderer.particleSystem.setVerticesPerParticle(num: val)
+//        renderer.particleSystem.setVerticesPerParticle(num: val)
     }
 
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
