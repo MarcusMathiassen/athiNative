@@ -71,18 +71,21 @@ typedef struct
 
 typedef struct
 {
-    vector_float2 viewport_size;
-    vector_float2 attract_point;
-    vector_float2 gravity_force;
+    vector_float2 viewportSize;
+    vector_float2 attractPoint;
+    vector_float2 gravityForce;
     
-    vector_float2 mouse_pos;
-    float current_time;
+    vector_float2 mousePos;
+    float currentTime;
     
+    uint particleCount;
     bool shouldAddParticle;
     vector_float2 newParticlePosition;
     vector_float2 newParticleVelocity;
     float newParticleRadius;
     float newParticleMass;
+    vector_float4 newParticleColor;
+    float newParticleLifetime;
 } SimParam;
 
 #endif /* ShaderTypes_h */

@@ -64,8 +64,8 @@ final class Renderer: NSObject, MTKViewDelegate {
         let myParticleOptions: [ParticleOption] = [
 //            .hasLifetime,
 //            .attractedToMouse,
-//            .interCollision,
-//            .borderBound,
+            .interCollision,
+            .borderBound,
             .update,
             .draw
         ]
