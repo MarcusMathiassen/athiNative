@@ -36,7 +36,7 @@ private let randFuncString = """
 private let attractToPointFuncString = """
     float2 attract_to_point(float2 point, float2 p1, float2 v1, float m1)
     {
-        return m1 * normalize(point - p1) + v1;
+        return normalize(point - p1) + v1;
     }
 
     float2 homingMissile(float2 target,
@@ -160,9 +160,11 @@ enum ParticleOption: String {
 
         // Respawn the particle if dead
         if (!isAlives[index] && !simParam.shouldAddParticle) {
-
+    
+                const float2 randVel = rand2(simParam.newParticleVelocity.x, simParam.newParticleVelocity.y, index, simParam.particleCount/3, 34);
+    
                 positions[index] = simParam.newParticlePosition;
-                velocities[index] = rand2(-5, 5, index, simParam.particleCount/3, 34);
+                velocities[index] = randVel;
                 isAlives[index] = true;
                 lifetimes[index] = simParam.newParticleLifetime;
         }
@@ -201,12 +203,14 @@ enum ParticleOption: String {
             const int amount =  simParam.particleCount - gpuParticleCount;
             gpuParticleCount += amount;
     
+            const float2 initalVelocity = simParam.newParticleVelocity;
+    
             // Each new particle gets the same position but different velocities
             for (int i = 0; i < amount; ++i) {
     
                 const int newIndex = index+i;
     
-                const float2 randVel = rand2(-5, 5, newIndex, simParam.particleCount/3, 34);
+                const float2 randVel = rand2(initalVelocity.x, initalVelocity.y, newIndex, simParam.particleCount/3, 34);
     
                 positions[newIndex] = simParam.newParticlePosition;
                 velocities[newIndex] = randVel;
@@ -313,13 +317,62 @@ enum ParticleOption: String {
     """
 }
 
-final class ParticleSystem {
 
+enum MissileOptions {
+    case homing
+}
+
+enum EmitterOptions {
+    case hasInterCollision
+    case isBorderBound
+    case createWithMouse
+    case hasLifetime
+}
+
+/**
+ Emmits particles.
+ */
+struct Emitter {
+    
+    /**
+     The position to spawn from.
+    */
+    var spawnPoint: float2 = float2(0)
+    
+    /**
+     The Emmit direction. Normalized.
+    */
+    var spawnDirection: float2 = float2(0)
+    
+    /**
+     The initial velocity of each particle emmited
+     */
+    var spawnSpeed: Float = 0
+    
+    /**
+     The amount of particles this emitter emmits.
+    */
+    private var particleCount: Int = 0
+    
+    /**
+     The maximum amount of particles this emitter can emmit.
+    */
+    var maxParticleCount: Int = 0
+    
+    var options: [EmitterOptions] = []
+    var missleOptions: [MissileOptions] = []
+}
+
+final class ParticleSystem {
+    
+    // Each emitter gets a piece of the total particleCount to use.
+    var emitters: [Emitter] = []
+    var maxParticles: Int
+    
     var options: [ParticleOption] = [.update]
     var computeDeviceOption: ComputeDeviceOption = .cpu
 
     public var particleCount: Int = 0 // Amount of particles
-    var maxParticles: Int
 
     var simParam: SimParam = SimParam()
 
@@ -367,7 +420,8 @@ final class ParticleSystem {
     private var quad: Quad
     private var device: MTLDevice
 
-    // GPU Buffers
+    // Buffers are shared between all Emitters in a ParticleSystem.
+    //  Their size never changes, and must be set at compile time.
     private var positionsBuffer: MTLBuffer
     private var velocitiesBuffer: MTLBuffer
     private var radiiBuffer: MTLBuffer
@@ -375,7 +429,6 @@ final class ParticleSystem {
     private var colorsBuffer: MTLBuffer
     private var isAlivesBuffer: MTLBuffer
     private var lifetimesBuffer: MTLBuffer
-    
     
     private var vertices: [float2] = []
     private var indices: [UInt16] = []
@@ -428,6 +481,7 @@ final class ParticleSystem {
             vector_float4 newParticleColor;
             float newParticleLifetime;
             bool clearParticles;
+            float initialVelocity;
         } SimParam;
         """
 
@@ -511,7 +565,6 @@ final class ParticleSystem {
             let constVals = MTLFunctionConstantValues()
             var has_lifetime = options.contains(.hasLifetime)
             constVals.setConstantValue(&has_lifetime, type: MTLDataType.bool, withName: "has_lifetime")
-            
             let vertexFunc = try library.makeFunction(name: "particle_vert", constantValues: constVals)
             let fragFunc = library.makeFunction(name: "particle_frag")!
             
@@ -602,6 +655,36 @@ final class ParticleSystem {
             let compOp = MTLCompileOptions()
             compOp.fastMathEnabled = true
             compOp.languageVersion = .version2_0
+//
+//            let vs: [String : NSObject]? = [
+//                "HAS_DRAW" : 0 as NSObject,
+//                "HAS_LIFETIME" : 0 as NSObject,
+//            ]
+//
+//            for option in options {
+//                switch option {
+//                case .update:
+//                    vs add ["HAS_DRAW" : 0 as NSObject]
+//                case .hasLifetime:
+//                    rawKernelString += "\n#define HAS_LIFETIME\n"
+//                case .interCollision:
+//                    rawKernelString += "\n#define HAS_INTERCOLLISION\n"
+//                case .attractedToMouse:
+//                    rawKernelString += "\n#define HAS_ATTRACTED_TO_MOUSE\n"
+//                case .draw:
+//                    rawKernelString += "\n#define HAS_DRAW\n"
+//                case .borderBound:
+//                    rawKernelString += "\n#define HAS_BORDERBOUND\n"
+//                case .turbulence:
+//                    break
+//                case .variableSize:
+//                    break
+//                case .isHoming:
+//                    break
+//                }
+//            }
+//
+//            compOp.preprocessorMacros = vs
 
             print(rawKernelString)
             let libraryC = try device.makeLibrary(source: rawKernelString, options: compOp)
@@ -618,6 +701,10 @@ final class ParticleSystem {
         buildVertices(numVertices: numVerticesPerParticle)
     }
 
+    public func addEmitter(_ emitter: Emitter) {
+        emitters.append(emitter)
+    }
+    
     public func draw(
         view: MTKView,
         frameDescriptor: FrameDescriptor,
@@ -846,7 +933,7 @@ final class ParticleSystem {
 
         self.simParam.shouldAddParticle = true
         self.simParam.newParticlePosition = position
-        self.simParam.newParticleVelocity = hasInitialVelocity ? randFloat2(-5, 5) : float2(0)
+        self.simParam.newParticleVelocity = hasInitialVelocity ? float2(-5,5) : float2(0)
         self.simParam.newParticleRadius = radius
         self.simParam.newParticleMass = Float.pi * radius * radius * radius
         self.simParam.newParticleColor = color

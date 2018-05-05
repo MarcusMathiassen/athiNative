@@ -153,7 +153,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         updateInput()
 
         updateVariables()
-        
+
         particleSystem.update(commandBuffer: commandBuffer)
         particleSystem.draw(
             view: view,
@@ -190,16 +190,10 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         switch gMouseOption {
         case MouseOption.Spawn:
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
-            particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            
+            for _ in 0 ..< 10 {
+                particleSystem.addParticleWith(position: mousePos, color: particleSystem.particleColor, radius: particleSize)
+            }
 
         case MouseOption.Drag:
              break

@@ -89,6 +89,7 @@ typedef struct
     vector_float4 newParticleColor;
     float newParticleLifetime;
     bool clearParticles;
+    float initialVelocity;
 } SimParam;
 
 #endif /* ShaderTypes_h */

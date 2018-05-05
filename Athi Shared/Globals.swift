@@ -14,7 +14,7 @@ var gDrawDebug: Bool = false
 
 var pixelScale: Float = 0
 
-var particleSize: Float = 5
+var particleSize: Float = 4
 
 var particleColorCycle: Bool = true
 

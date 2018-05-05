@@ -38,16 +38,16 @@ class MACOSViewController: NSViewController {
 
         isMouseDragging = true
 
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
 
     }
 
