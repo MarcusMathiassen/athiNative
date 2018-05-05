@@ -40,6 +40,8 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     
     NeighboursIndex,
     NeighboursIndicesIndex,
+    
+    lifetimesIndex,
 };
 
 typedef struct
@@ -86,6 +88,7 @@ typedef struct
     float newParticleMass;
     vector_float4 newParticleColor;
     float newParticleLifetime;
+    bool clearParticles;
 } SimParam;
 
 #endif /* ShaderTypes_h */

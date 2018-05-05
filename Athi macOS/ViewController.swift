@@ -56,7 +56,8 @@ class MACOSViewController: NSViewController {
     }
 
     override func rightMouseDown(with _: NSEvent) {
-        renderer.particleSystem.addParticleWith(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
+        renderer.particleSystem.attractPoint = mousePos
+//        renderer.particleSystem.addParticleWith(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
     }
 
     override func mouseUp(with _: NSEvent) {
@@ -142,7 +143,7 @@ class MACOSViewController: NSViewController {
 
     @IBAction func particleVerticesStepper(_ sender: NSStepper) {
         let val = Int(sender.intValue)
-//        renderer.particleSystem.setVerticesPerParticle(num: val)
+        renderer.particleSystem.setVerticesPerParticle(num: val)
     }
 
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
