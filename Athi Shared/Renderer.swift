@@ -154,7 +154,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         updateVariables()
 
-        particleSystem.update(commandBuffer: commandBuffer)
+//        particleSystem.update(commandBuffer: commandBuffer, computeDevice: gComputeDeviceOption)
         particleSystem.draw(
             view: view,
             frameDescriptor: frameDescriptor,
@@ -176,6 +176,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         
         frametime = Float((getTime() - startTime) * 1000.0)
         framerate = Int(1000 / frametime)
+        
     }
 
     func updateVariables() {
@@ -183,7 +184,6 @@ final class Renderer: NSObject, MTKViewDelegate {
 
     func updateInput() {
         if !isMouseDown {
-//            particleSystem.shouldRepel = false
             gmouseAttachedToIDs.removeAll()
             return
         }
@@ -197,29 +197,19 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         case MouseOption.Drag:
              break
-//            particleSystem.shouldRepel = false
-//            let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
-//            if gmouseAttachedToIDs.isEmpty {
-//                for id in particleIDsToDrag {
-//                    gmouseAttachedToIDs.append(id)
-//                }
-//            }
-//
-//            particleSystem.goTowardsPoint(mousePos, particleIDs: gmouseAttachedToIDs)
-
+            
         case MouseOption.Color:
              break
-//            let particleIDsToDrag = particleSystem.getParticlesInCircle(position: mousePos, radius: mouseSize)
-//            particleSystem.colorParticles(IDs: particleIDsToDrag, color: particleSystem.particleColor)
-
+            
         case MouseOption.Repel:
             particleSystem.shouldRepel = true
         }
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        
         /// Respond to drawable size or orientation changes here
-
+        
         screenWidth = Float(size.width)
         screenHeight = Float(size.height)
 
@@ -234,17 +224,21 @@ final class Renderer: NSObject, MTKViewDelegate {
         mainTextureDesc.width = Int(framebufferWidth)
         mainTextureDesc.sampleCount = 1
         mainTextureDesc.textureType = .type2D
-        mainTextureDesc.pixelFormat = .bgra8Unorm
+        mainTextureDesc.pixelFormat = .bgra8Unorm_srgb
         mainTextureDesc.resourceOptions = .storageModePrivate
-        mainTextureDesc.usage = .shaderRead
+        mainTextureDesc.usage = [.shaderRead, .renderTarget]
         particleSystem.inTexture = device.makeTexture(descriptor: mainTextureDesc)!
-        mainTextureDesc.usage = .shaderWrite
+        mainTextureDesc.usage = [.shaderWrite, .renderTarget]
         particleSystem.outTexture = device.makeTexture(descriptor: mainTextureDesc)!
         particleSystem.finalTexture = device.makeTexture(descriptor: mainTextureDesc)!
         particleSystem.pTexture = device.makeTexture(descriptor: mainTextureDesc)!
 
         #if os(macOS)
-            let area = NSTrackingArea(rect: view.bounds, options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag], owner: view, userInfo: nil)
+            let area = NSTrackingArea(
+                rect: view.bounds,
+                options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag],
+                owner: view,
+                userInfo: nil)
             view.addTrackingArea(area)
         #endif
     }

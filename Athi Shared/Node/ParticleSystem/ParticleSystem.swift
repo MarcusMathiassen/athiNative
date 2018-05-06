@@ -365,14 +365,16 @@ struct Emitter {
 
 final class ParticleSystem {
     
-    // Each emitter gets a piece of the total particleCount to use.
     var emitters: [Emitter] = []
+    
+    
+    
     var maxParticles: Int
     
     var options: [ParticleOption] = [.update]
     var computeDeviceOption: ComputeDeviceOption = .cpu
 
-    public var particleCount: Int = 0 // Amount of particles
+    public var particleCount: Int = 0
 
     var simParam: SimParam = SimParam()
 
@@ -396,11 +398,6 @@ final class ParticleSystem {
     ///////////////////
     // Rendering
     ///////////////////
-
-    // Static data uploaded once, and updated when numVerticesPerParticle is changed
-    // Metal stuff
-
-    // Rendering stuff
 
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 1
@@ -483,6 +480,15 @@ final class ParticleSystem {
             bool clearParticles;
             float initialVelocity;
         } SimParam;
+        
+        typedef struct
+        {
+            uint particleCount;
+            bool shouldAddParticle;
+            vector_float2 spawnPoint;
+            vector_float2 spawnDirection;
+            float spawnSpeed;
+        } EmitterParam;
         """
 
         for option in options {
@@ -572,8 +578,8 @@ final class ParticleSystem {
             pipelineDesc.label = "pipelineDesc"
             pipelineDesc.vertexFunction = vertexFunc
             pipelineDesc.fragmentFunction = fragFunc
-            pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
-            pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
+            pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
+            pipelineDesc.colorAttachments[1].pixelFormat = .bgra8Unorm_srgb
             
             pipelineDesc.colorAttachments[0].isBlendingEnabled = true
             pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
@@ -587,9 +593,9 @@ final class ParticleSystem {
                 descriptor: pipelineDesc)
 
         } catch {
-            print("ParticleSystem Pipeline: Creating pipeline state failed")
+            print("ParticleSystem Pipeline: Creating pipeline state failed",
+                  error.localizedDescription)
         }
-
 
         // Initalize our GPU buffers
         positionsBuffer = device.makeBuffer(
@@ -613,7 +619,6 @@ final class ParticleSystem {
         lifetimesBuffer = device.makeBuffer(
             length: MemoryLayout<Float>.stride * maxParticles,
             options: dynamicBufferResourceOption)!
-        
         gpuParticleCountBuffer = device.makeBuffer(
             length: MemoryLayout<UInt32>.stride,
             options: dynamicBufferResourceOption)!
@@ -648,53 +653,21 @@ final class ParticleSystem {
         computeHelperFunctions.append(collisionCheckFuncString)
         computeHelperFunctions.append(collisionResolveFuncString)
 
-
         setOptions(options, helperFunctions: computeHelperFunctions)
 
         do {
             let compOp = MTLCompileOptions()
             compOp.fastMathEnabled = true
             compOp.languageVersion = .version2_0
-//
-//            let vs: [String : NSObject]? = [
-//                "HAS_DRAW" : 0 as NSObject,
-//                "HAS_LIFETIME" : 0 as NSObject,
-//            ]
-//
-//            for option in options {
-//                switch option {
-//                case .update:
-//                    vs add ["HAS_DRAW" : 0 as NSObject]
-//                case .hasLifetime:
-//                    rawKernelString += "\n#define HAS_LIFETIME\n"
-//                case .interCollision:
-//                    rawKernelString += "\n#define HAS_INTERCOLLISION\n"
-//                case .attractedToMouse:
-//                    rawKernelString += "\n#define HAS_ATTRACTED_TO_MOUSE\n"
-//                case .draw:
-//                    rawKernelString += "\n#define HAS_DRAW\n"
-//                case .borderBound:
-//                    rawKernelString += "\n#define HAS_BORDERBOUND\n"
-//                case .turbulence:
-//                    break
-//                case .variableSize:
-//                    break
-//                case .isHoming:
-//                    break
-//                }
-//            }
-//
-//            compOp.preprocessorMacros = vs
-
-            print(rawKernelString)
+            
             let libraryC = try device.makeLibrary(source: rawKernelString, options: compOp)
             let computeFunc = libraryC.makeFunction(name: "big_compute")
 
             try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
 
         } catch {
-            print("Cant compile ParticleSystem options", error.localizedDescription)
-            exit(0)
+            print("Cant compile rawKernelString", error.localizedDescription)
+            abort()
         }
         
         
@@ -778,7 +751,6 @@ final class ParticleSystem {
             renderEncoder.pushDebugGroup("Apply Post Processing")
 
             let blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
-
             blurKernel.encode(
                 commandBuffer: commandBuffer,
                 sourceTexture: inTexture,
@@ -834,15 +806,19 @@ final class ParticleSystem {
         ) {
     }
 
-    public func update(commandBuffer: MTLCommandBuffer) {
+    public func update(
+        commandBuffer: MTLCommandBuffer,
+        computeDevice: ComputeDeviceOption
+        ) {
 
         if isPaused { return }
-
-        if shouldUpdate {
-            shouldUpdate = false
+        
+        switch computeDevice {
+        case .cpu:
+            break
+        case .gpu:
+            updateParticles(commandBuffer: commandBuffer)
         }
-
-        updateParticles(commandBuffer: commandBuffer)
     }
 
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
@@ -926,7 +902,7 @@ final class ParticleSystem {
     }
 
     public func addParticleWith(position: float2, color: float4, radius: Float) {
-
+        
         if self.particleCount == self.maxParticles { return }
 
         self.particleCount += 1

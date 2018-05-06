@@ -42,7 +42,7 @@ VertexOut particle_vert(constant float2&    viewport_size   [[buffer(ViewportSiz
     vOut.position = float4(fpos, 0, 1);
     
     constexpr bool has_lifetime = false;
-    if constexpr (has_lifetime)
+    if (has_lifetime)
         vOut.color = float4(color[iid].rgb, lifetimes[iid]);
     else
         vOut.color = color[iid];

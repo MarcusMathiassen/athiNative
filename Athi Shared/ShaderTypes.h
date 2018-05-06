@@ -92,5 +92,14 @@ typedef struct
     float initialVelocity;
 } SimParam;
 
+typedef struct
+{
+    uint particleCount;
+    bool shouldAddParticle;
+    vector_float2 spawnPoint;
+    vector_float2 spawnDirection;
+    float spawnSpeed;
+} EmitterParam;
+
 #endif /* ShaderTypes_h */
 

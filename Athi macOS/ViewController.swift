@@ -37,18 +37,6 @@ class MACOSViewController: NSViewController {
         mousePos *= pixelScale
 
         isMouseDragging = true
-
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: renderer.particleSystem.particleColor, radius: particleSize)
-
     }
 
     override func mouseDown(with _: NSEvent) {
@@ -57,7 +45,6 @@ class MACOSViewController: NSViewController {
 
     override func rightMouseDown(with _: NSEvent) {
         renderer.particleSystem.attractPoint = mousePos
-//        renderer.particleSystem.addParticleWith(position: mousePos, color: colorOverTime(getTime()), radius: particleSize)
     }
 
     override func mouseUp(with _: NSEvent) {
@@ -216,6 +203,7 @@ class MACOSViewController: NSViewController {
     }
 
     @IBOutlet weak var menuView: NSView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -246,8 +234,20 @@ class MACOSViewController: NSViewController {
             return
         }
 
+        let devices = MTLCopyAllDevices()
+        
+        print("Available devices:")
+        for device in devices {
+            print(" ", device.name)
+        }
+        
         mtkView.device = defaultDevice
-
+        
+        print("argumentBuffersSupport:", mtkView.device!.argumentBuffersSupport.rawValue)
+        print("isHeadless:", mtkView.device!.isHeadless)
+        print("isLowPower:", mtkView.device!.isLowPower)
+        print("isRemovable:", mtkView.device!.isRemovable)
+        
         guard let newRenderer = Renderer(view: mtkView) else {
             print("Renderer cannot be initialized")
             return
