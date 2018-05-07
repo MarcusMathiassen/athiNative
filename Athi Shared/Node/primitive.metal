@@ -1,7 +1,7 @@
 
 #include <metal_stdlib>
 using namespace metal;
-#include "../ShaderTypes.h"
+#include "../../Resources/Shaders/ShaderTypes.h"
 
 struct Vertex {
     float4 position[[position]];

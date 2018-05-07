@@ -8,6 +8,16 @@
 
 let kGravitationalConstant = 6.67408e-6
 
+enum ComputeDeviceOption {
+    case cpu
+    case gpu
+}
+
+enum TreeOption {
+    case quadtree
+    case noTree
+}
+
 var gComputeDeviceOption: ComputeDeviceOption = .cpu
 var gTreeOption: TreeOption = .quadtree
 var gDrawDebug: Bool = false

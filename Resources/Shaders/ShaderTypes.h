@@ -9,6 +9,7 @@
 //
 //  Header containing types and enum constants shared between Metal shaders and Swift/ObjC source
 //
+
 #ifndef ShaderTypes_h
 #define ShaderTypes_h
 
@@ -20,6 +21,16 @@
 #import <Foundation/Foundation.h>
 #import <simd/simd.h>
 #endif
+
+typedef NS_ENUM(NSInteger, FunctionConstantIndex)
+{
+    fc_has_borderBound_index,
+    fc_has_intercollision_index,
+    fc_has_drawToTexture_index,
+    fc_has_lifetime_index,
+    fc_has_attractedToMouse_index,
+    fc_has_homing_index,
+};
 
 typedef NS_ENUM(NSInteger, BufferIndex)
 {

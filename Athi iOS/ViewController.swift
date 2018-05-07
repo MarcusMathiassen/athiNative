@@ -55,29 +55,13 @@ class IOSViewController: UIViewController {
             point *= 2
             point.y -= screenHeight
             point.y *= -1
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
 
-            
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-            renderer.particleSystem.addParticleWith(position: point, color: renderer.particleSystem.particleColor, radius: particleSize)
-
+            for _ in 0 ..< 10 {
+                renderer.particleSystem.addParticleWith(
+                    position: point,
+                    color: renderer.particleSystem.particleColor,
+                    radius: particleSize)
+            }
         }
     }
 
@@ -95,12 +79,10 @@ class IOSViewController: UIViewController {
                           repeats: true, block: { _ in
                               // Get the accelerometer data.
                               if let data = self.motion.accelerometerData {
-                                  let x = data.acceleration.x
-                                  let y = data.acceleration.y
-                                  let z = data.acceleration.z
+                                  let acc = float3(data.acceleration)
 
                                   // Use the accelerometer data in your app.
-                                  accelerometer = float3(Float(x), Float(y), Float(z))
+                                  accelerometer = acc
                               }
             })
 
@@ -125,14 +107,12 @@ class IOSViewController: UIViewController {
                           repeats: true, block: { _ in
                               // Get the gyro data.
                               if let data = self.motion.gyroData {
-                                  let x = data.rotationRate.x
-                                  let y = data.rotationRate.y
-                                  let z = data.rotationRate.z
+                                let rotationRate = float3(data.rotationRate)
 
                                   // Use the gyroscope data in your app.
-                                  gyroRotation = float3(Float(x), Float(y), Float(z))
+                                  gyroRotation = rotationRate
                               }
-   
+
             })
 
             // Add the timer to the current run loop.
@@ -162,7 +142,7 @@ class IOSViewController: UIViewController {
 
         startAccelerometers()
         startGyros()
-        
+
         view.isMultipleTouchEnabled = true
 
         guard let mtkView = self.view as? MTKView else {

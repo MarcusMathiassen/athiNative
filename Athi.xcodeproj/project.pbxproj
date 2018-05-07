@@ -40,27 +40,21 @@
 		900CAD4720729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4820729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
 		900CAD4920729D6500AE60E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 900CAD0F20729D6500AE60E9 /* Assets.xcassets */; };
-		90146F0920895FE90059F657 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90146F0820895FE90059F657 /* CollisionDetection.swift */; };
-		90146F0A20895FE90059F657 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90146F0820895FE90059F657 /* CollisionDetection.swift */; };
-		90146F0B20895FE90059F657 /* CollisionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90146F0820895FE90059F657 /* CollisionDetection.swift */; };
+		9017362820A0BEC000CB9D68 /* ParticleSystemUberShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362720A0BEC000CB9D68 /* ParticleSystemUberShader.metal */; };
+		9017362920A0BEC000CB9D68 /* ParticleSystemUberShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362720A0BEC000CB9D68 /* ParticleSystemUberShader.metal */; };
+		9017362A20A0BEC000CB9D68 /* ParticleSystemUberShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362720A0BEC000CB9D68 /* ParticleSystemUberShader.metal */; };
+		9017362C20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */; };
+		9017362D20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */; };
+		9017362E20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */; };
 		90238DF22073912100D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF32073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF42073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
-		9051D9632076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
-		9051D9642076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
-		9051D9652076905200E2DB51 /* Quadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9622076905200E2DB51 /* Quadtree.swift */; };
 		9051D9672076CDCE00E2DB51 /* Quad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9662076CDCE00E2DB51 /* Quad.swift */; };
 		9051D9682076CDCE00E2DB51 /* Quad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9662076CDCE00E2DB51 /* Quad.swift */; };
 		9051D9692076CDCE00E2DB51 /* Quad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051D9662076CDCE00E2DB51 /* Quad.swift */; };
 		9051D96B2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
 		9051D96C2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
 		9051D96D2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
-		90D558982086BB040026B18F /* particle_physics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D558972086BB040026B18F /* particle_physics.metal */; };
-		90D558992086BB040026B18F /* particle_physics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D558972086BB040026B18F /* particle_physics.metal */; };
-		90D5589A2086BB040026B18F /* particle_physics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D558972086BB040026B18F /* particle_physics.metal */; };
-		90D5589C2086BB1A0026B18F /* particle_rendering.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D5589B2086BB1A0026B18F /* particle_rendering.metal */; };
-		90D5589D2086BB1A0026B18F /* particle_rendering.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D5589B2086BB1A0026B18F /* particle_rendering.metal */; };
-		90D5589E2086BB1A0026B18F /* particle_rendering.metal in Sources */ = {isa = PBXBuildFile; fileRef = 90D5589B2086BB1A0026B18F /* particle_rendering.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -87,14 +81,13 @@
 		900CAD3620729D6500AE60E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		900CAD3B20729D6500AE60E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		900CAD3D20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		90146F0720891FE30059F657 /* ShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ShaderTypes.h; path = "Athi Shared/ShaderTypes.h"; sourceTree = SOURCE_ROOT; };
-		90146F0820895FE90059F657 /* CollisionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollisionDetection.swift; sourceTree = "<group>"; };
+		90146F0720891FE30059F657 /* ShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ShaderTypes.h; path = Resources/Shaders/ShaderTypes.h; sourceTree = SOURCE_ROOT; };
+		9017362720A0BEC000CB9D68 /* ParticleSystemUberShader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ParticleSystemUberShader.metal; sourceTree = "<group>"; };
+		9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = UtilityFunctions.metal; sourceTree = "<group>"; };
+		9017362F20A0CD4E00CB9D68 /* UtilityFunctions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UtilityFunctions.h; sourceTree = "<group>"; };
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
-		9051D9622076905200E2DB51 /* Quadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quadtree.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
-		90D558972086BB040026B18F /* particle_physics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = particle_physics.metal; sourceTree = "<group>"; };
-		90D5589B2086BB1A0026B18F /* particle_rendering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = particle_rendering.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,19 +127,10 @@
 			path = Node;
 			sourceTree = "<group>";
 		};
-		900553A1208ADB85009CE84C /* Physics */ = {
-			isa = PBXGroup;
-			children = (
-				90D558972086BB040026B18F /* particle_physics.metal */,
-				90146F0820895FE90059F657 /* CollisionDetection.swift */,
-				9051D9622076905200E2DB51 /* Quadtree.swift */,
-			);
-			path = Physics;
-			sourceTree = "<group>";
-		};
 		900CAD0620729D6300AE60E9 = {
 			isa = PBXGroup;
 			children = (
+				9017362520A0BEA500CB9D68 /* Resources */,
 				900CAD0B20729D6300AE60E9 /* Athi Shared */,
 				900CAD1620729D6500AE60E9 /* Athi iOS */,
 				900CAD2720729D6500AE60E9 /* Athi tvOS */,
@@ -160,7 +144,6 @@
 			children = (
 				9000A0642075315C00EA056B /* Node */,
 				900CAD0D20729D6300AE60E9 /* Renderer.swift */,
-				90146F0720891FE30059F657 /* ShaderTypes.h */,
 				900B3B2020754C9000569776 /* Input.swift */,
 				900AE7EC207657F700465EAD /* Globals.swift */,
 				900CAD0F20729D6500AE60E9 /* Assets.xcassets */,
@@ -213,12 +196,29 @@
 			path = "Athi macOS";
 			sourceTree = "<group>";
 		};
+		9017362520A0BEA500CB9D68 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9017362620A0BEAC00CB9D68 /* Shaders */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		9017362620A0BEAC00CB9D68 /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				90146F0720891FE30059F657 /* ShaderTypes.h */,
+				9017362720A0BEC000CB9D68 /* ParticleSystemUberShader.metal */,
+				9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */,
+				9017362F20A0CD4E00CB9D68 /* UtilityFunctions.h */,
+			);
+			path = Shaders;
+			sourceTree = "<group>";
+		};
 		90D2EF2D207CC4DC00D5913C /* ParticleSystem */ = {
 			isa = PBXGroup;
 			children = (
-				90D5589B2086BB1A0026B18F /* particle_rendering.metal */,
 				900B3B1C2075490900569776 /* ParticleSystem.swift */,
-				900553A1208ADB85009CE84C /* Physics */,
 			);
 			path = ParticleSystem;
 			sourceTree = "<group>";
@@ -267,6 +267,7 @@
 				900CAD3020729D6500AE60E9 /* Sources */,
 				900CAD3120729D6500AE60E9 /* Frameworks */,
 				900CAD3220729D6500AE60E9 /* Resources */,
+				90406E68209F4734009AA049 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -349,6 +350,22 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		90406E68209F4734009AA049 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n    swiftlint\nelse\necho \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		900CAD1020729D6500AE60E9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -362,12 +379,10 @@
 				900CAD4120729D6500AE60E9 /* Renderer.swift in Sources */,
 				90238DF22073912100D25590 /* Math.swift in Sources */,
 				9051D96B2076D17200E2DB51 /* Quad.metal in Sources */,
+				9017362C20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */,
 				900B3B1D2075490900569776 /* ParticleSystem.swift in Sources */,
-				90D5589C2086BB1A0026B18F /* particle_rendering.metal in Sources */,
-				90146F0920895FE90059F657 /* CollisionDetection.swift in Sources */,
+				9017362820A0BEC000CB9D68 /* ParticleSystemUberShader.metal in Sources */,
 				900CAD1820729D6500AE60E9 /* AppDelegate.swift in Sources */,
-				9051D9632076905200E2DB51 /* Quadtree.swift in Sources */,
-				90D558982086BB040026B18F /* particle_physics.metal in Sources */,
 				9051D9672076CDCE00E2DB51 /* Quad.swift in Sources */,
 				900AE7ED207657F700465EAD /* Globals.swift in Sources */,
 			);
@@ -377,20 +392,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9051D9642076905200E2DB51 /* Quadtree.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
-				90D558992086BB040026B18F /* particle_physics.metal in Sources */,
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
+				9017362D20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */,
 				90238DF32073912700D25590 /* Math.swift in Sources */,
 				900AE7EE207657F700465EAD /* Globals.swift in Sources */,
 				9051D96C2076D17200E2DB51 /* Quad.metal in Sources */,
 				90027F8D207811BC00FC6980 /* primitive.metal in Sources */,
-				90D5589D2086BB1A0026B18F /* particle_rendering.metal in Sources */,
 				9051D9682076CDCE00E2DB51 /* Quad.swift in Sources */,
 				900B3B1E2075490900569776 /* ParticleSystem.swift in Sources */,
 				900CAD2920729D6500AE60E9 /* AppDelegate.swift in Sources */,
-				90146F0A20895FE90059F657 /* CollisionDetection.swift in Sources */,
+				9017362920A0BEC000CB9D68 /* ParticleSystemUberShader.metal in Sources */,
 				90027F8920780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -407,12 +420,10 @@
 				900CAD4320729D6500AE60E9 /* Renderer.swift in Sources */,
 				90238DF42073912700D25590 /* Math.swift in Sources */,
 				9051D96D2076D17200E2DB51 /* Quad.metal in Sources */,
+				9017362E20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */,
 				900B3B1F2075490900569776 /* ParticleSystem.swift in Sources */,
-				90D5589E2086BB1A0026B18F /* particle_rendering.metal in Sources */,
-				90146F0B20895FE90059F657 /* CollisionDetection.swift in Sources */,
+				9017362A20A0BEC000CB9D68 /* ParticleSystemUberShader.metal in Sources */,
 				900CAD3720729D6500AE60E9 /* AppDelegate.swift in Sources */,
-				9051D9652076905200E2DB51 /* Quadtree.swift in Sources */,
-				90D5589A2086BB040026B18F /* particle_physics.metal in Sources */,
 				9051D9692076CDCE00E2DB51 /* Quad.swift in Sources */,
 				900AE7EF207657F700465EAD /* Globals.swift in Sources */,
 			);
@@ -680,24 +691,24 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 6D77ZFXSCS;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "Athi macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_FAST_MATH = YES;
-				MTL_OPTIMIZATION_LEVEL = 3;
+				MTL_FAST_MATH = NO;
+				MTL_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_BUNDLE_IDENTIFIER = MM.Athi;
 				PRODUCT_NAME = Athi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
-				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_DISABLE_SAFETY_CHECKS = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = full;
-				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_OBJC_BRIDGING_HEADER = Resources/Shaders/ShaderTypes.h;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -728,7 +739,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "compile-time";
-				SWIFT_OBJC_BRIDGING_HEADER = "Athi Shared/ShaderTypes.h";
+				SWIFT_OBJC_BRIDGING_HEADER = Resources/Shaders/ShaderTypes.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 4.0;
 			};

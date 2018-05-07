@@ -13,6 +13,8 @@
 import Darwin // arc4random
 import simd // float2, float3, float4, etc
 
+// swiftlint:disable identifier_name
+
 /**
  High resolution clock: return the current time in milliseconds
  */
@@ -49,12 +51,12 @@ func getBeginAndEnd(i: Int, containerSize: Int, segments: Int) -> (Int, Int) {
  Returns the minimum and maximum position found
  */
 func getMinAndMaxPosition(collidables: [Collidable]) -> (float2, float2) {
-    
+
     var max = float2(Float((-INT_MAX)), Float(-INT_MAX))
     var min = float2(Float(INT_MAX), Float(INT_MAX))
-    
+
     for i in 0 ..< collidables.count {
-        
+
         let pos = collidables[i].position
         
         max.x = (pos.x > max.x) ? pos.x : max.x
@@ -62,7 +64,7 @@ func getMinAndMaxPosition(collidables: [Collidable]) -> (float2, float2) {
         min.x = (pos.x < min.x) ? pos.x : min.x
         min.y = (pos.y < min.y) ? pos.y : min.y
     }
-    
+
     return (min, max)
 }
 
@@ -70,20 +72,20 @@ func getMinAndMaxPosition(collidables: [Collidable]) -> (float2, float2) {
  Returns the minimum and maximum position found
  */
 func getMinAndMaxPosition(positions: [float2], count: Int) -> (float2, float2) {
-    
+
     var max = float2(Float((-INT_MAX)), Float(-INT_MAX))
     var min = float2(Float(INT_MAX), Float(INT_MAX))
-    
+
     for i in 0 ..< count {
-        
+
         let pos = positions[i]
-        
+
         max.x = (pos.x > max.x) ? pos.x : max.x
         max.y = (pos.y > max.y) ? pos.y : max.y
         min.x = (pos.x < min.x) ? pos.x : min.x
         min.y = (pos.y < min.y) ? pos.y : min.y
     }
-    
+
     return (min, max)
 }
 
@@ -134,18 +136,12 @@ func hsv2rgb(_ h: Int, _ s: Float, _ v: Float, _ a: Float) -> float4 {
     let t = v * (1 - (1 - f) * s)
 
     switch i % 6 {
-    case 0: r = v; g = t; b = p; break
-
-    case 1: r = q; g = v; b = p; break
-
-    case 2: r = p; g = v; b = t; break
-
-    case 3: r = p; g = q; b = v; break
-
-    case 4: r = t; g = p; b = v; break
-
-    case 5: r = v; g = p; b = q; break
-
+    case 0: r = v; g = t; b = p
+    case 1: r = q; g = v; b = p
+    case 2: r = p; g = v; b = t
+    case 3: r = p; g = q; b = v
+    case 4: r = t; g = p; b = v
+    case 5: r = v; g = p; b = q
     default: r = v; g = t; b = p
     }
 
@@ -248,7 +244,7 @@ func lerpHSV(a: float4, b: float4, t: Float) -> float4 {
     }
 
     if d > 0.5 { // 180deg
-        A.x = A.x + 1 // 360deg
+        A.x += 1 // 360deg
         h = (A.x + T * (B.x - A.x)) // 360deg
     }
     if d <= 0.5 { // 180deg

@@ -8,6 +8,8 @@
 
 import simd
 
+// swiftlint:disable identifier_name
+
 /**
  Returns projection matrix
  */
@@ -102,47 +104,42 @@ func makeTranslate(_ v: float3) -> float4x4 {
 /**
  Return the translation matrix
  */
-func makeTranslate(_ v: float2) -> float3x3
-{
+func makeTranslate(_ v: float2) -> float3x3 {
     let X = float3(1, 0, 0)
     let Y = float3(0, 1, 0)
-    let Z = float3(v.x, v.y,   1)
+    let Z = float3(v.x, v.y, 1)
 
-    return float3x3(X,Y,Z)
+    return float3x3(X, Y, Z)
 }
 
 /**
  Return the rotation matrix
  */
-func makeRotate(theta: Float) -> float3x3
-{
+func makeRotate(theta: Float) -> float3x3 {
     let X = float3(cos(theta), sin(theta), 0)
-    let Y = float3(-sin(theta),  cos(theta), 0)
+    let Y = float3(-sin(theta), cos(theta), 0)
     let Z = float3(0, 0, 1)
 
-    return float3x3(X,Y,Z)
+    return float3x3(X, Y, Z)
 }
 
 /**
  Return the scale matrix
  */
-func makeScale(_ v: float2) -> float3x3
-{
-    let X = float3(v.x, 0,    0)
-    let Y = float3(0,   v.y,  0)
-    let Z = float3(0,   0,    1)
+func makeScale(_ v: float2) -> float3x3 {
+    let X = float3(v.x, 0, 0)
+    let Y = float3(0, v.y, 0)
+    let Z = float3(0, 0, 1)
 
-    return float3x3(X,Y,Z)
+    return float3x3(X, Y, Z)
 }
 
-struct Transform
-{
+struct Transform {
     var pos     = float2(0)
     var rot     = Float(0)
     var scale   = float2(1)
 
-    func getModel() -> float3x3
-    {
+    func getModel() -> float3x3 {
         let posMatrix = makeTranslate(pos)
         let rotMatrix = makeRotate(theta: rot)
         let scaleMatrix = makeScale(scale)

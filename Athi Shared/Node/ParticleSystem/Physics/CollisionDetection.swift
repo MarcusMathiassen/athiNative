@@ -6,6 +6,8 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
+// swiftlint:disable identifier_name
+
 import Metal
 import MetalKit
 import simd
@@ -140,13 +142,19 @@ final class CollisionDetection <T: Collidable> {
                     quadtree = Quadtree(min: min, max: max)
                     quadtree?.setInputData(collidables)
                     quadtree?.inputRange(range: 0 ... collidables.count)
-                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
-                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
+                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (index) in
+                        let (begin, end) = getBeginAndEnd(
+                            i: index,
+                            containerSize: collidables.count,
+                            segments: computeParam.preferredThreadCount)
                         resolveRangeWithNeighbours(range: begin ... end)
                     }
                 case .noTree:
-                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (i) in
-                        let (begin, end) = getBeginAndEnd(i: i, containerSize: collidables.count, segments: computeParam.preferredThreadCount)
+                    DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (index) in
+                        let (begin, end) = getBeginAndEnd(
+                            i: index,
+                            containerSize: collidables.count,
+                            segments: computeParam.preferredThreadCount)
                         resolveRange(range: begin ... end)
                     }
                 }
@@ -220,7 +228,9 @@ final class CollisionDetection <T: Collidable> {
 
         commandBuffer.addCompletedHandler { (_) in
 
-            memcpy(&self.collidables, self.collidablesBuffer.contents(), self.collidablesAllocated * MemoryLayout<T>.stride)
+            memcpy(&self.collidables,
+                   self.collidablesBuffer.contents(),
+                   self.collidablesAllocated * MemoryLayout<T>.stride)
 
             self.bufferSemaphore.signal()
         }
@@ -281,7 +291,9 @@ final class CollisionDetection <T: Collidable> {
 
         commandBuffer.addCompletedHandler { (_) in
 
-            memcpy(&self.collidables, self.collidablesBuffer.contents(), self.collidablesAllocated * MemoryLayout<T>.stride)
+            memcpy(&self.collidables,
+                   self.collidablesBuffer.contents(),
+                   self.collidablesAllocated * MemoryLayout<T>.stride)
 
             self.bufferSemaphore.signal()
         }
@@ -434,11 +446,22 @@ final class CollisionDetection <T: Collidable> {
             // Update our local version of the particles position with the new velocity
 
             // Border collision
-            if coll1.position.x < 0 + coll1.radius { coll1.position.x = 0 + coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
-            if coll1.position.x > viewportSize.x - coll1.radius { coll1.position.x = viewportSize.x - coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
-            if coll1.position.y < 0 + coll1.radius { coll1.position.y = 0 + coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
-            if coll1.position.y > viewportSize.y - coll1.radius { coll1.position.y = viewportSize.y - coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
-
+            if coll1.position.x < 0 + coll1.radius {
+                coll1.position.x = 0 + coll1.radius
+                coll1.velocity.x = -coll1.velocity.x
+            }
+            if coll1.position.x > viewportSize.x - coll1.radius {
+                coll1.position.x = viewportSize.x - coll1.radius
+                coll1.velocity.x = -coll1.velocity.x
+            }
+            if coll1.position.y < 0 + coll1.radius {
+                coll1.position.y = 0 + coll1.radius
+                coll1.velocity.y = -coll1.velocity.y
+            }
+            if coll1.position.y > viewportSize.y - coll1.radius {
+                coll1.position.y = viewportSize.y - coll1.radius
+                coll1.velocity.y = -coll1.velocity.y
+            }
             self.collidables[index].velocity = coll1.velocity
             self.collidables[index].position += coll1.velocity
             self.collidablesSemaphore.signal()
@@ -472,10 +495,22 @@ final class CollisionDetection <T: Collidable> {
             // Update our local version of the particles position with the new velocity
 
             // Border collision
-            if coll1.position.x < 0 + coll1.radius { coll1.position.x = 0 + coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
-            if coll1.position.x > viewportSize.x - coll1.radius { coll1.position.x = viewportSize.x - coll1.radius; coll1.velocity.x = -coll1.velocity.x; }
-            if coll1.position.y < 0 + coll1.radius { coll1.position.y = 0 + coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
-            if coll1.position.y > viewportSize.y - coll1.radius { coll1.position.y = viewportSize.y - coll1.radius; coll1.velocity.y = -coll1.velocity.y; }
+            if coll1.position.x < 0 + coll1.radius {
+                coll1.position.x = 0 + coll1.radius
+                coll1.velocity.x = -coll1.velocity.x
+            }
+            if coll1.position.x > viewportSize.x - coll1.radius {
+                coll1.position.x = viewportSize.x - coll1.radius
+                coll1.velocity.x = -coll1.velocity.x
+            }
+            if coll1.position.y < 0 + coll1.radius {
+                coll1.position.y = 0 + coll1.radius
+                coll1.velocity.y = -coll1.velocity.y
+            }
+            if coll1.position.y > viewportSize.y - coll1.radius {
+                coll1.position.y = viewportSize.y - coll1.radius
+                coll1.velocity.y = -coll1.velocity.y
+            }
 
             self.collidables[index].velocity = coll1.velocity
             self.collidables[index].position += coll1.velocity

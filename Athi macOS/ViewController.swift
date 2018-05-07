@@ -68,7 +68,12 @@ class MACOSViewController: NSViewController {
     @IBAction func particleColorWell(_ sender: NSColorWell) {
         let color = sender.color.usingColorSpace(colorSpace!)!
 
-        renderer.particleSystem.particleColor = float4(Float(color.redComponent), Float(color.greenComponent), Float(color.blueComponent), Float(color.alphaComponent))
+        renderer.particleSystem.particleColor = float4(
+            Float(color.redComponent),
+            Float(color.greenComponent),
+            Float(color.blueComponent),
+            Float(color.alphaComponent)
+        )
     }
 
     @IBAction func backgroundColorWell(_ sender: NSColorWell) {
@@ -142,27 +147,28 @@ class MACOSViewController: NSViewController {
         timer = Timer(fire: Date(), interval: (1.0 / 60.0),
                       repeats: true, block: { _ in
 
-                          self.particleCountLabel?.stringValue = "Particles: " + String(self.renderer.particleSystem.particleCount)
+                          self.particleCountLabel?.stringValue =
+                            "Particles: " + String(self.renderer.particleSystem.particleCount)
 
                           self.frametimeLabel?.stringValue = "Frametime: " + String(self.renderer.frametime)
 
                           self.framerateLabel?.stringValue = "Framerate: " + String(self.renderer.framerate)
 
-                          let pc = NSColor(
+                          let particleColor = NSColor(
                               red: CGFloat(self.renderer.particleSystem.particleColor.x),
                               green: CGFloat(self.renderer.particleSystem.particleColor.y),
                               blue: CGFloat(self.renderer.particleSystem.particleColor.z),
                               alpha: CGFloat(self.renderer.particleSystem.particleColor.w)
                           )
 
-                          self.particleColorWellOutlet.color = pc
+                          self.particleColorWellOutlet.color = particleColor
 
                           let mouseVal = self.mouseOptionButton.indexOfSelectedItem
                           switch mouseVal {
-                          case 0: gMouseOption = MouseOption.Spawn
-                          case 1: gMouseOption = MouseOption.Color
-                          case 2: gMouseOption = MouseOption.Drag
-                          case 3: gMouseOption = MouseOption.Repel
+                          case 0: gMouseOption = MouseOption.spawn
+                          case 1: gMouseOption = MouseOption.color
+                          case 2: gMouseOption = MouseOption.drag
+                          case 3: gMouseOption = MouseOption.repel
                           default: break
                           }
 
@@ -171,7 +177,7 @@ class MACOSViewController: NSViewController {
                         case 1: gComputeDeviceOption = .cpu
                         default: break
                         }
-                        
+
                         switch self.treeOptionButton.indexOfSelectedItem {
                         case 0: gTreeOption = .quadtree
                         case 1: gTreeOption = .noTree
@@ -187,23 +193,24 @@ class MACOSViewController: NSViewController {
     @IBOutlet weak var treeOptionButton: NSPopUpButton!
     @IBOutlet weak var computeDeviceOptionButton: NSPopUpButton!
     @IBAction func addParticlesButton(_ sender: NSButton) {
-        for j in stride(from: 0, to: framebufferWidth, by: 10) {
-            for k in stride(from: 0, to: framebufferHeight, by: 10) {
-                let col = renderer.particleSystem.particleColor
-                let pos = float2(j,k)
-                renderer.particleSystem.addParticleWith(position: pos, color: col, radius: 1.0)
+        for col in stride(from: 0, to: framebufferWidth, by: 10) {
+            for row in stride(from: 0, to: framebufferHeight, by: 10) {
+                let color = renderer.particleSystem.particleColor
+                let pos = float2(col, row)
+                renderer.particleSystem.addParticleWith(position: pos, color: color, radius: 1.0)
             }
         }
 
     }
     @IBAction func showMenuView(_ sender: NSButton) {
         let showMenu = (sender.intValue == 0) ? false : true
-        if showMenu { menuView.animator().isHidden = false }
-        else { menuView.animator().isHidden = true }
+        if showMenu {
+            menuView.animator().isHidden = false
+        } else { menuView.animator().isHidden = true }
     }
 
     @IBOutlet weak var menuView: NSView!
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -235,19 +242,19 @@ class MACOSViewController: NSViewController {
         }
 
         let devices = MTLCopyAllDevices()
-        
+
         print("Available devices:")
         for device in devices {
             print(" ", device.name)
         }
-        
+
         mtkView.device = defaultDevice
-        
+
         print("argumentBuffersSupport:", mtkView.device!.argumentBuffersSupport.rawValue)
         print("isHeadless:", mtkView.device!.isHeadless)
         print("isLowPower:", mtkView.device!.isLowPower)
         print("isRemovable:", mtkView.device!.isRemovable)
-        
+
         guard let newRenderer = Renderer(view: mtkView) else {
             print("Renderer cannot be initialized")
             return

@@ -8,18 +8,16 @@
 
 import MetalKit
 
-final class Quad
-{
+final class Quad {
     var device: MTLDevice
     var pipelineState: MTLRenderPipelineState?
     var gaussianBlurPipelineState: MTLRenderPipelineState?
-    
+
     // Compute
     var pixelateComputePipelineState: MTLComputePipelineState?
     var mixComputePipelineState: MTLComputePipelineState?
 
-    init(device: MTLDevice)
-    {
+    init(device: MTLDevice) {
         self.device = device
 
         let library = device.makeDefaultLibrary()!
@@ -30,7 +28,7 @@ final class Quad
         pipelineDesc.label = "Quad"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
 
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
         pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
@@ -52,15 +50,14 @@ final class Quad
         blurPipelineDesc.label = "GaussianBlur"
         blurPipelineDesc.vertexFunction = vertexFunc
         blurPipelineDesc.fragmentFunction = blurfragFunc
-        blurPipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
+        blurPipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
 
         do {
             try gaussianBlurPipelineState = device.makeRenderPipelineState(descriptor: blurPipelineDesc)
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
-        
-        
+
         // Load the kernel function from the library
         let pixelateComputeFunc = library.makeFunction(name: "pixelate")
 
@@ -70,10 +67,10 @@ final class Quad
         } catch {
             print("Pipeline: Creating pipeline state failed")
         }
-        
+
         // Load the kernel function from the library
         let mixComputeFunc = library.makeFunction(name: "mix")
-        
+
         // Create a compute pipeline state
         do {
             try mixComputePipelineState = device.makeComputePipelineState(function: mixComputeFunc!)
@@ -81,31 +78,34 @@ final class Quad
             print("Pipeline: Creating pipeline state failed")
         }
     }
-    
+
     func mix(
         commandBuffer: MTLCommandBuffer,
         inputTexture1: MTLTexture,
         inputTexture2: MTLTexture,
         outTexture: MTLTexture,
-        sigma: Float)
-    {
-        
+        sigma: Float) {
+
         // Compute kernel threadgroup size
-        let w = (mixComputePipelineState?.threadExecutionWidth)!
-        let h = (mixComputePipelineState?.maxTotalThreadsPerThreadgroup)! / w
+        let threadExecutionWidth = (mixComputePipelineState?.threadExecutionWidth)!
+        let maxTotalThreadsPerThreadgroup =
+            (mixComputePipelineState?.maxTotalThreadsPerThreadgroup)! / threadExecutionWidth
 
         // Make the encoder
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
-        
+
         // Set the pipelinestate
         computeEncoder?.setComputePipelineState(mixComputePipelineState!)
-        
+
 //         Set the textures
         computeEncoder?.setTextures([inputTexture1, inputTexture2, outTexture], range: 0 ..< 3)
-        
+
         // Set thread groups
         #if os(macOS)
-        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadsPerThreadGroup = MTLSize(
+            width: threadExecutionWidth,
+            height: maxTotalThreadsPerThreadgroup,
+            depth: 1)
         let threadPerGrid = MTLSize(width: inputTexture1.width, height: inputTexture1.height, depth: 1)
         computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
         #else
@@ -116,11 +116,11 @@ final class Quad
             depth: 1)
         computeEncoder?.dispatchThreadgroups(tCount, threadsPerThreadgroup: tSize)
         #endif
-        
+
         // Finish
         computeEncoder?.endEncoding()
     }
-    
+
     func pixelate(
         commandBuffer: MTLCommandBuffer,
         inputTexture: MTLTexture,
@@ -128,24 +128,28 @@ final class Quad
         sigma: Float)
     {
         // Compute kernel threadgroup size
-        let w = (pixelateComputePipelineState?.threadExecutionWidth)!
-        let h = (pixelateComputePipelineState?.maxTotalThreadsPerThreadgroup)! / w
+        let threadExecutionWidth = (pixelateComputePipelineState?.threadExecutionWidth)!
+        let maxTotalThreadsPerThreadgroup =
+            (pixelateComputePipelineState?.maxTotalThreadsPerThreadgroup)! / threadExecutionWidth
 
         // Make the encoder
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()
-        
+
         // Set the pipelinestate
         computeEncoder?.setComputePipelineState(pixelateComputePipelineState!)
-        
+
         // Set the textures
         computeEncoder?.setTextures([inputTexture, outputTexture], range: 0 ..< 2)
-        
-        var s = sigma
-        computeEncoder?.setBytes(&s, length: MemoryLayout<Float>.stride, index: 0)
-        
+
+        var pixSigma = sigma
+        computeEncoder?.setBytes(&pixSigma, length: MemoryLayout<Float>.stride, index: 0)
+
         // Set thread groups
         #if os(macOS)
-        let threadsPerThreadGroup = MTLSize(width: w, height: h, depth: 1)
+        let threadsPerThreadGroup = MTLSize(
+            width: threadExecutionWidth,
+            height: maxTotalThreadsPerThreadgroup,
+            depth: 1)
         let threadPerGrid = MTLSize(width: inputTexture.width, height: inputTexture.height, depth: 1)
         computeEncoder?.dispatchThreads(threadPerGrid, threadsPerThreadgroup: threadsPerThreadGroup)
         #else
@@ -159,27 +163,24 @@ final class Quad
         // Finish
         computeEncoder?.endEncoding()
     }
-    
+
     func gaussianBlur(
         renderEncoder: MTLRenderCommandEncoder,
         texture: MTLTexture,
         sigma: Float,
         samples: Int)
     {
-        
         var dir: float2
         renderEncoder.pushDebugGroup("Gauassian Blur")
         renderEncoder.setTriangleFillMode(.fill)
         renderEncoder.setRenderPipelineState(gaussianBlurPipelineState!)
-        
+
         renderEncoder.setFragmentBytes(&viewportSize, length: MemoryLayout<float2>.stride, index: 0)
         renderEncoder.setFragmentTexture(texture, index: 0)
 
-        
         for iter in 0 ..< samples {
-            
             renderEncoder.pushDebugGroup("Sample: " + String(iter))
-            
+
             dir = float2(sigma, 0)
             renderEncoder.pushDebugGroup("Horizontal")
             renderEncoder.setFragmentBytes(&dir, length: MemoryLayout<float2>.stride, index: 1)
@@ -200,15 +201,14 @@ final class Quad
                 vertexCount: 6
             )
             renderEncoder.popDebugGroup()
-        
+
             renderEncoder.popDebugGroup()
         }
 
         renderEncoder.popDebugGroup()
     }
 
-    func draw(renderEncoder: MTLRenderCommandEncoder, texture: MTLTexture)
-    {
+    func draw(renderEncoder: MTLRenderCommandEncoder, texture: MTLTexture) {
         renderEncoder.pushDebugGroup("Draw Fullscreen Quad")
         renderEncoder.setRenderPipelineState(pipelineState!)
         renderEncoder.setTriangleFillMode(.fill)

@@ -6,6 +6,8 @@
 //  Copyright © 2018 Marcus Mathiassen. All rights reserved.
 //
 
+// swiftlint:disable identifier_name
+
 import simd.vector_types // float2, float4
 
 struct Rect {
@@ -13,12 +15,12 @@ struct Rect {
     var min = float2(0)
     var max = float2(0)
     var color = float4(1)
-    
+
     init(min: float2, max: float2) {
         self.min = min
         self.max = max
     }
-    
+
     func containsPoint(position: float2, radius: Float) -> Bool {
         if position.x - radius < max.x &&
             position.x + radius > min.x &&
@@ -84,7 +86,6 @@ final class Quadtree {
         se = Quadtree(depth: depth + 1, bounds: SE)
         nw = Quadtree(depth: depth + 1, bounds: NW)
         ne = Quadtree(depth: depth + 1, bounds: NE)
-
 
         hasSplit = true
     }
@@ -183,12 +184,12 @@ final class Quadtree {
             containerOfNodes.append(contentsOf: indices)
         }
     }
-    
+
     /**
      Draws all the nodes
      */
     func getNodesBounds(container: inout [Rect], onlyOccupied: Bool = true) {
-        
+
         if hasSplit {
             sw?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
             se?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
@@ -196,7 +197,7 @@ final class Quadtree {
             ne?.getNodesBounds(container: &container, onlyOccupied: onlyOccupied)
             return
         }
-        
+
         if !indices.isEmpty && onlyOccupied {
             container.append(bounds)
         } else {
@@ -209,10 +210,14 @@ final class Quadtree {
      */
     func colorNeighbours(position: float2, radius: Float, color: float4) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false { sw?.colorNeighbours(position: position, radius: radius, color: color) }
-            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false { se?.colorNeighbours(position: position, radius: radius, color: color) }
-            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false { nw?.colorNeighbours(position: position, radius: radius, color: color) }
-            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                sw?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                se?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                nw?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                ne?.colorNeighbours(position: position, radius: radius, color: color) }
             return
         }
         bounds.color = color
@@ -296,7 +301,6 @@ final class QuadtreeSoA {
         nw = QuadtreeSoA(depth: depth + 1, bounds: NW)
         ne = QuadtreeSoA(depth: depth + 1, bounds: NE)
 
-
         hasSplit = true
     }
 
@@ -376,10 +380,14 @@ final class QuadtreeSoA {
      */
     func getNeighbours(containerOfNodes: inout [[Int]], position: float2, radius: Float) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false { sw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
-            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false { se?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
-            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false { nw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
-            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                sw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                se?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                nw?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
+            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                ne?.getNeighbours(containerOfNodes: &containerOfNodes, position: position, radius: radius) }
             return
         }
 
@@ -393,10 +401,14 @@ final class QuadtreeSoA {
      */
     func colorNeighbours(position: float2, radius: Float, color: float4) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false { sw?.colorNeighbours(position: position, radius: radius, color: color) }
-            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false { se?.colorNeighbours(position: position, radius: radius, color: color) }
-            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false { nw?.colorNeighbours(position: position, radius: radius, color: color) }
-            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false { ne?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (sw?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                sw?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (se?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                se?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (nw?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                nw?.colorNeighbours(position: position, radius: radius, color: color) }
+            if (ne?.bounds.containsPoint(position: position, radius: radius)) ?? false {
+                ne?.colorNeighbours(position: position, radius: radius, color: color) }
             return
         }
         bounds.color = color

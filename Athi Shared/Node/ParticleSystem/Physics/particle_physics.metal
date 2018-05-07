@@ -8,7 +8,7 @@
 
 #include <metal_stdlib>
 using namespace metal;
-#include "../../../ShaderTypes.h"
+#include "../../../../Resources/Shaders/ShaderTypes.h"
 
 bool collision_check(float2 ap, float2 bp, float ar, float br)
 {
