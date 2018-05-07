@@ -16,17 +16,14 @@ constexpr constant float2 vertices [] =
     float2(-1, -1),
 };
 
-vertex Vertex basicVert(constant float2*        position        [[buffer(PositionIndex)]],
-                        constant float4*        color           [[buffer(ColorIndex)]],
-                        constant float2*        size            [[buffer(SizeIndex)]],
-                        constant float2&        viewport_size   [[buffer(ViewportSizeIndex)]],
+vertex Vertex basicVert(constant float2*        position        [[buffer(bf_positions_index)]],
+                        constant float4*        color           [[buffer(bf_colors_index)]],
+                        constant float2*        radii           [[buffer(bf_radii_index)]],
+                        constant float2&        viewport_size   [[buffer(bf_viewportSize_index)]],
                         uint                    vid             [[vertex_id]],
                         uint                    iid             [[instance_id]])
 {
-    const float fposx = -1.0 + (size[iid].x * vertices[vid].x + position[iid].x) / (viewport_size.x / 2.0);
-    const float fposy = -1.0 + (size[iid].y * vertices[vid].y + position[iid].y) / (viewport_size.y / 2.0);
-    
-    const float2 fpos = { fposx, fposy };
+    const float2 fpos = -1.0 + (radii[iid] * vertices[vid] + position[iid]) / (viewport_size / 2.0);
     
     Vertex vert;
     vert.color = color[iid];

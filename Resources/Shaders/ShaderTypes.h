@@ -34,48 +34,23 @@ typedef NS_ENUM(NSInteger, FunctionConstantIndex)
 
 typedef NS_ENUM(NSInteger, BufferIndex)
 {
-    VertexIndex,
-    PositionIndex,
-    RadiusIndex,
-    ColorIndex,
-    
-    SizeIndex,
-    ViewportSizeIndex,
-    MotionParamIndex,
-    
-    CollidablesIndex,
-    CollidablesCountIndex,
-    
-    ParticlesIndex,
-    ParticlesCountIndex,
-    
-    NeighboursIndex,
-    NeighboursIndicesIndex,
-    
-    lifetimesIndex,
+    bf_positions_index,
+    bf_velocities_index,
+    bf_gpuParticleCount_index,
+
+    bf_radii_index,
+    bf_masses_index,
+
+    bf_colors_index,
+
+    bf_isAlives_index,
+    bf_lifetimes_index,
+
+    bf_vertices_index,
+    bf_viewportSize_index,
+    bf_motionParam_index,
+    bf_simParam_index,
 };
-
-typedef struct
-{
-    vector_float2   position;
-    vector_float2   velocity;
-    float           radius;
-    float           mass;
-} Particle;
-
-typedef struct
-{
-    vector_float2   position;
-    vector_float2   velocity;
-    float           radius;
-    float           mass;
-} Collidable;
-
-typedef struct
-{
-    int begin;
-    int end;
-} Neighbours;
 
 typedef struct
 {

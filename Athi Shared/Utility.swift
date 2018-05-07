@@ -50,27 +50,6 @@ func getBeginAndEnd(i: Int, containerSize: Int, segments: Int) -> (Int, Int) {
 /**
  Returns the minimum and maximum position found
  */
-func getMinAndMaxPosition(collidables: [Collidable]) -> (float2, float2) {
-
-    var max = float2(Float((-INT_MAX)), Float(-INT_MAX))
-    var min = float2(Float(INT_MAX), Float(INT_MAX))
-
-    for i in 0 ..< collidables.count {
-
-        let pos = collidables[i].position
-        
-        max.x = (pos.x > max.x) ? pos.x : max.x
-        max.y = (pos.y > max.y) ? pos.y : max.y
-        min.x = (pos.x < min.x) ? pos.x : min.x
-        min.y = (pos.y < min.y) ? pos.y : min.y
-    }
-
-    return (min, max)
-}
-
-/**
- Returns the minimum and maximum position found
- */
 func getMinAndMaxPosition(positions: [float2], count: Int) -> (float2, float2) {
 
     var max = float2(Float((-INT_MAX)), Float(-INT_MAX))

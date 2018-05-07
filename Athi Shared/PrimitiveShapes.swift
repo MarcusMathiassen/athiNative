@@ -94,13 +94,13 @@ class PrimitiveRenderer {
 
             renderEncoder.setVertexBytes(&viewportSize,
                                          length: MemoryLayout<float2>.stride,
-                                         index: BufferIndex.ViewportSizeIndex.rawValue)
+                                         index: BufferIndex.bf_viewportSize_index.rawValue)
 
             updateGPUBuffers(commandBuffer: commandBuffer)
 
-            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.PositionIndex.rawValue)
-            renderEncoder.setVertexBuffer(sizesBuffer, offset: 0, index: BufferIndex.SizeIndex.rawValue)
-            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.ColorIndex.rawValue)
+            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
+            renderEncoder.setVertexBuffer(sizesBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
 
             renderEncoder.drawIndexedPrimitives(
                 type: .triangle,

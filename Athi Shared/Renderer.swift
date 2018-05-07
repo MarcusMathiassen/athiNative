@@ -63,7 +63,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         let myParticleOptions: [ParticleOption] = [
             .lifetime,
-//            .homing,
+            .homing,
 //            .turbulence,
 //            .attractedToMouse,
             .intercollision,
@@ -88,6 +88,10 @@ final class Renderer: NSObject, MTKViewDelegate {
         print("isHeadless:", device.isHeadless)
         print("isLowPower:", device.isLowPower)
         print("isRemovable:", device.isRemovable)
+
+        print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
+        print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
+        print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
 
         // CrossPlatform stuff
         #if os(macOS)
@@ -120,10 +124,6 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.colorPixelFormat = .bgra8Unorm
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
-
-        print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
-        print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
-        print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
     }
 
     func draw(in view: MTKView) {

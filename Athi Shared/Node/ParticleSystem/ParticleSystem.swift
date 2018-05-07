@@ -105,13 +105,10 @@ final class ParticleSystem {
     var blurStrength: Float = 10
     var preAllocatedParticles = 1
     private var particlesAllocatedCount: Int = 0
-    #if os(macOS)
-    private var dynamicBufferResourceOption: MTLResourceOptions = .storageModePrivate
+
+    private var gpuOnlyResourceOption: MTLResourceOptions = .storageModePrivate
     private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
-    #else
-    private var dynamicBufferResourceOption: MTLResourceOptions = .cpuCacheModeWriteCombined
-    private var staticBufferResourceOption: MTLResourceOptions = .storageModeShared
-    #endif
+
     var particleColor = float4(1)
     var numVerticesPerParticle = 36
     var attractPoint = float2(0)
@@ -120,6 +117,7 @@ final class ParticleSystem {
 
     // Buffers are shared between all Emitters in a ParticleSystem.
     //  Their size never changes, and must be set at compile time.
+
     private var positionsBuffer: MTLBuffer
     private var velocitiesBuffer: MTLBuffer
     private var radiiBuffer: MTLBuffer
@@ -224,30 +222,28 @@ final class ParticleSystem {
         // Initalize our GPU buffers
         positionsBuffer = device.makeBuffer(
             length: MemoryLayout<float2>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         velocitiesBuffer = device.makeBuffer(
             length: MemoryLayout<float2>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         radiiBuffer = device.makeBuffer(
             length: MemoryLayout<Float>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         massesBuffer = device.makeBuffer(
             length: MemoryLayout<Float>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         colorsBuffer = device.makeBuffer(
             length: MemoryLayout<float4>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         isAlivesBuffer = device.makeBuffer(
             length: MemoryLayout<Bool>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         lifetimesBuffer = device.makeBuffer(
             length: MemoryLayout<Float>.stride * maxParticles,
-            options: dynamicBufferResourceOption)!
+            options: gpuOnlyResourceOption)!
         gpuParticleCountBuffer = device.makeBuffer(
             length: MemoryLayout<UInt32>.stride,
-            options: dynamicBufferResourceOption)!
-
-        particlesAllocatedCount = maxParticles
+            options: gpuOnlyResourceOption)!
 
         vertexBuffer = device.makeBuffer(
             length: MemoryLayout<float2>.stride * numVerticesPerParticle,
@@ -255,6 +251,8 @@ final class ParticleSystem {
         indexBuffer = device.makeBuffer(
             length: MemoryLayout<UInt16>.stride * numVerticesPerParticle * 3,
             options: staticBufferResourceOption)!
+
+        particlesAllocatedCount = maxParticles
 
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .bgra8Unorm,
@@ -277,11 +275,9 @@ final class ParticleSystem {
         emitters.append(emitter)
     }
 
-    public func draw(
-        view: MTKView,
-        frameDescriptor: FrameDescriptor,
-        commandBuffer: MTLCommandBuffer
-        ) {
+    public func draw(view: MTKView,
+                     frameDescriptor: FrameDescriptor,
+                     commandBuffer: MTLCommandBuffer) {
 
         if particleCount == 0 { return }
 
@@ -303,31 +299,35 @@ final class ParticleSystem {
         renderEncoder.pushDebugGroup("Draw particles (off-screen)")
         renderEncoder.setRenderPipelineState(pipelineState!)
 
-        if !options.contains(.drawToTexture) {
+        if options.contains(.drawToTexture) {
+            quad.draw(renderEncoder: renderEncoder, texture: pTexture)
+        } else {
 
             renderEncoder.setVertexBytes(&viewportSize,
                                          length: MemoryLayout<float2>.stride,
-                                         index: BufferIndex.ViewportSizeIndex.rawValue)
+                                         index: BufferIndex.bf_viewportSize_index.rawValue)
 
             renderEncoder.setVertexBuffer(vertexBuffer,
                                           offset: 0,
-                                          index: BufferIndex.VertexIndex.rawValue)
+                                          index: BufferIndex.bf_vertices_index.rawValue)
 
             renderEncoder.setVertexBuffer(positionsBuffer,
                                           offset: 0,
-                                          index: BufferIndex.PositionIndex.rawValue)
+                                          index: BufferIndex.bf_positions_index.rawValue)
 
             renderEncoder.setVertexBuffer(radiiBuffer,
                                           offset: 0,
-                                          index: BufferIndex.RadiusIndex.rawValue)
+                                          index: BufferIndex.bf_radii_index.rawValue)
 
             renderEncoder.setVertexBuffer(colorsBuffer,
                                           offset: 0,
-                                          index: BufferIndex.ColorIndex.rawValue)
+                                          index: BufferIndex.bf_colors_index.rawValue)
 
-            renderEncoder.setVertexBuffer(lifetimesBuffer,
-                                          offset: 0,
-                                          index: BufferIndex.lifetimesIndex.rawValue)
+            if options.contains(.lifetime) {
+                renderEncoder.setVertexBuffer(lifetimesBuffer,
+                                              offset: 0,
+                                              index: BufferIndex.bf_lifetimes_index.rawValue)
+            }
 
             renderEncoder.drawIndexedPrimitives(
                 type: .triangle,
@@ -336,9 +336,6 @@ final class ParticleSystem {
                 indexBuffer: indexBuffer,
                 indexBufferOffset: 0,
                 instanceCount: particleCount)
-
-        } else {
-            quad.draw(renderEncoder: renderEncoder, texture: pTexture)
         }
 
         renderEncoder.popDebugGroup()
@@ -377,11 +374,11 @@ final class ParticleSystem {
         let viewRenderPassDesc = view.currentRenderPassDescriptor
 
         if viewRenderPassDesc != nil {
-//
-//            viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
-//            viewRenderPassDesc?.colorAttachments[1].texture = pTexture
-//            viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
-//            viewRenderPassDesc?.colorAttachments[1].storeAction = .store
+
+            viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
+            viewRenderPassDesc?.colorAttachments[1].texture = pTexture
+            viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
+            viewRenderPassDesc?.colorAttachments[1].storeAction = .store
 
             renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
 
@@ -396,18 +393,14 @@ final class ParticleSystem {
         }
     }
 
-    public func drawDebug(
-        color: float4,
-        view: MTKView,
-        frameDescriptor: FrameDescriptor,
-        commandBuffer: MTLCommandBuffer
-        ) {
+    public func drawDebug(color: float4,
+                          view: MTKView,
+                          frameDescriptor: FrameDescriptor,
+                          commandBuffer: MTLCommandBuffer) {
     }
 
-    public func update(
-        commandBuffer: MTLCommandBuffer,
-        computeDevice: ComputeDeviceOption
-        ) {
+    public func update(commandBuffer: MTLCommandBuffer,
+                       computeDevice: ComputeDeviceOption) {
 
         if isPaused { return }
 
@@ -421,7 +414,7 @@ final class ParticleSystem {
 
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
 
-        if particleCount == 0 { return }
+//        if particleCount == 0 { return }
 
         commandBuffer.pushDebugGroup("Particles Update")
 
@@ -429,28 +422,48 @@ final class ParticleSystem {
 
         computeEncoder?.setComputePipelineState(computePipelineState!)
 
-        computeEncoder?.setBuffer(positionsBuffer, offset: 0, index: 0)
-        computeEncoder?.setBuffer(velocitiesBuffer, offset: 0, index: 1)
-        computeEncoder?.setBuffer(gpuParticleCountBuffer, offset: 0, index: 7)
+        // Buffers that are always set
+        computeEncoder?.setBuffer(positionsBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.bf_positions_index.rawValue)
+        computeEncoder?.setBuffer(velocitiesBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.bf_velocities_index.rawValue)
+        computeEncoder?.setBuffer(gpuParticleCountBuffer,
+                                  offset: 0,
+                                  index: BufferIndex.bf_gpuParticleCount_index.rawValue)
 
-//        if options.contains(.intercollision) || options.contains(.hasLifetime) {
-            computeEncoder?.setBuffer(radiiBuffer, offset: 0, index: 2)
-            computeEncoder?.setBuffer(massesBuffer, offset: 0, index: 3)
-//        }
+        let usesRadii = (options.contains(.intercollision) || options.contains(.borderBound))
+        let usesMasses = (options.contains(.intercollision) || options.contains(.attractedToMouse))
+        let usesColors = (options.contains(.drawToTexture))
+        let usesisAlives = (options.contains(.lifetime))
+        let usesLifetimes = usesisAlives
+        let usesTexture = usesColors
 
-//        if options.contains(.draw) {
-            computeEncoder?.setBuffer(colorsBuffer, offset: 0, index: 4)
+        if usesRadii {
+            computeEncoder?.setBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+        }
+        if usesMasses {
+            computeEncoder?.setBuffer(massesBuffer, offset: 0, index: BufferIndex.bf_masses_index.rawValue)
+        }
+        if usesColors {
+            computeEncoder?.setBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
+        }
+        if usesisAlives {
+            computeEncoder?.setBuffer(isAlivesBuffer, offset: 0, index: BufferIndex.bf_isAlives_index.rawValue)
+        }
+        if usesLifetimes {
+            computeEncoder?.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
+        }
+        if usesTexture {
             computeEncoder?.setTexture(pTexture, index: 0)
-//        }
-
-//        if options.contains(.hasLifetime) {
-            computeEncoder?.setBuffer(isAlivesBuffer, offset: 0, index: 5)
-            computeEncoder?.setBuffer(lifetimesBuffer, offset: 0, index: 6)
-//        }
+        }
 
         var motionParam = MotionParam()
         motionParam.deltaTime = 1/60
-        computeEncoder?.setBytes(&motionParam, length: MemoryLayout<MotionParam>.stride, index: 8)
+        computeEncoder?.setBytes(&motionParam,
+                                 length: MemoryLayout<MotionParam>.stride,
+                                 index: BufferIndex.bf_motionParam_index.rawValue)
 
         simParam.particleCount = UInt32(particleCount)
         simParam.viewportSize = viewportSize
@@ -458,7 +471,9 @@ final class ParticleSystem {
         simParam.mousePos = mousePos
         simParam.currentTime = Float(getTime())
         simParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
-        computeEncoder?.setBytes(&simParam, length: MemoryLayout<SimParam>.stride, index: 9)
+        computeEncoder?.setBytes(&simParam,
+                                 length: MemoryLayout<SimParam>.stride,
+                                 index: BufferIndex.bf_simParam_index.rawValue)
 
         // Reset simParams
         simParam.clearParticles = particleCount > 0 ? false : true
@@ -505,7 +520,6 @@ final class ParticleSystem {
     }
 
     public func setVerticesPerParticle(num: Int) {
-
         numVerticesPerParticle = num
         shouldUpdate = true
     }

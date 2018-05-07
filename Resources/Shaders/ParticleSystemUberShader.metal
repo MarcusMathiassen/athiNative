@@ -15,7 +15,7 @@
 using namespace metal;
 
 #include "ShaderTypes.h"
-#include "UtilityFunctions.h"
+#include "UtilityFunctions.h" // rand2, homingMissile, attracted_to_point, collision_check, collision_resolve
 
 // ----------Function constants---------------
 constant bool fc_has_borderBound         [[function_constant(fc_has_borderBound_index)]];
@@ -38,19 +38,24 @@ constant bool fc_uses_lifetimes = fc_has_lifetime;
 
 kernel
 void uber_compute(
-   device float2*                     positions           [[buffer(0)]],
-   device float2*                     velocities          [[buffer(1)]],
-   device float*                      radii               [[buffer(2), function_constant(fc_uses_radii)]],
-   device float*                      masses              [[buffer(3), function_constant(fc_uses_masses)]],
-   device float4*                     colors              [[buffer(4), function_constant(fc_uses_colors)]],
-   texture2d<float, access::write>    texture             [[texture(0), function_constant(fc_uses_texture)]],
-   device bool*                       isAlives            [[buffer(5), function_constant(fc_uses_isAlives)]],
-   device float*                      lifetimes           [[buffer(6), function_constant(fc_uses_lifetimes)]],
+   device float2*   positions     [[ buffer(bf_positions_index) ]],
+   device float2*   velocities    [[ buffer(bf_velocities_index) ]],
 
-   device uint&                       gpuParticleCount    [[buffer(7)]],
-   constant MotionParam&              motionParam         [[buffer(8)]],
-   constant SimParam&                 simParam            [[buffer(9)]],
-   uint                               gid                 [[thread_position_in_grid]])
+   device float*    radii         [[ buffer(bf_radii_index),       function_constant(fc_uses_radii) ]],
+   device float*    masses        [[ buffer(bf_masses_index),      function_constant(fc_uses_masses) ]],
+
+   device float4*   colors        [[ buffer(bf_colors_index),      function_constant(fc_uses_colors) ]],
+   texture2d<float, access::write>  texture  [[ texture(0), function_constant(fc_uses_texture) ]],
+
+   device bool*     isAlives      [[ buffer(bf_isAlives_index),    function_constant(fc_uses_isAlives) ]],
+   device float*    lifetimes     [[ buffer(bf_lifetimes_index),   function_constant(fc_uses_lifetimes) ]],
+
+   device uint&     gpuParticleCount  [[ buffer(bf_gpuParticleCount_index) ]],
+
+   constant MotionParam&  motionParam       [[ buffer(bf_motionParam_index) ]],
+   constant SimParam&     simParam          [[ buffer(bf_simParam_index) ]],
+   uint gid [[ thread_position_in_grid ]]
+)
 {
     // If the particles have been cleared or deleted
     if (simParam.clearParticles) {
@@ -236,15 +241,16 @@ struct FragmentOut
 };
 
 vertex
-VertexOut particle_vert(constant float2&    viewport_size   [[buffer(ViewportSizeIndex)]],
-                        constant float2*    positions       [[buffer(PositionIndex)]],
-                        constant float*     radii           [[buffer(RadiusIndex)]],
-                        constant float4*    colors          [[buffer(ColorIndex)]],
-                        constant float*     lifetimes       [[buffer(lifetimesIndex)]],
-                        constant float2*    vertices        [[buffer(VertexIndex)]],
-                        uint vid                            [[vertex_id]],
-                        uint iid                            [[instance_id]]
-                        )
+VertexOut particle_vert(
+          constant float2&    viewport_size   [[buffer(bf_viewportSize_index)]],
+          constant float2*    positions       [[buffer(bf_positions_index)]],
+          constant float*     radii           [[buffer(bf_radii_index)]],
+          constant float4*    colors          [[buffer(bf_colors_index)]],
+          constant float*     lifetimes       [[buffer(bf_lifetimes_index), function_constant(fc_uses_lifetimes)]],
+          constant float2*    vertices        [[buffer(bf_vertices_index)]],
+          uint vid                            [[vertex_id]],
+          uint iid                            [[instance_id]]
+)
 {
     // The viewspace position of our vertex.
     // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
