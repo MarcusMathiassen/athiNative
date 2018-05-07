@@ -12,310 +12,13 @@ import Metal
 import MetalKit
 import MetalPerformanceShaders
 
-private let randFuncString = """
-    // Generate a random float in the range [0.0f, 1.0f] using x, y, and z (based on the xor128 algorithm)
-    float rand(int x, int y, int z)
-    {
-        int seed = x + y * 57 + z * 241;
-        seed= (seed<< 13) ^ seed;
-        return (( 1.0 - ( (seed * (seed * seed * 15731 + 789221) + 1376312589) & 2147483647) / 1073741824.0f) + 1.0f) / 2.0f;
-    }
-
-    float2 rand2(float min, float max, int x, int y, int z)
-    {
-        const float inputX = rand(x,y,z);
-        const float inputY = rand(z,x,y);
-
-        // Map to range
-        const float slope = 1.0 * (max - min);
-        const float xr = min + slope * (inputX);
-        const float yr = min + slope * (inputY);
-
-        return float2(xr, yr);
-    }
-"""
-
-private let attractToPointFuncString = """
-    float2 attract_to_point(float2 point, float2 p1, float2 v1, float m1)
-    {
-        return normalize(point - p1) + v1;
-    }
-
-    float2 homingMissile(float2 target,
-                         float strength,
-                         float2 p1,
-                         float2 v1
-    ){
-        return strength * normalize(target - p1) + v1;
-    }
-"""
-
-private let collisionCheckFuncString = """
-bool collision_check(float2 ap, float2 bp, float ar, float br)
-{
-    const float ax = ap.x;
-    const float ay = ap.y;
-    const float bx = bp.x;
-    const float by = bp.y;
-
-    // square collision check
-    if (ax - ar < bx + br && ax + ar > bx - br && ay - ar < by + br &&
-    ay + ar > by - br) {
-        // Particle collision check
-        const float dx = bx - ax;
-        const float dy = by - ay;
-
-        const float sum_radius = ar + br;
-        const float sqr_radius = sum_radius * sum_radius;
-
-        const float distance_sqr = (dx * dx) + (dy * dy);
-
-        if (distance_sqr <= sqr_radius) return true;
-    }
-
-    return false;
-}
-"""
-
-private let collisionResolveFuncString = """
-float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, float m2)
-{
-    // local variables
-    const float2 dp = p2 - p1;
-    const float2 dv = v2 - v1;
-    const float d = dp.x * dv.x + dp.y * dv.y;
-
-    // We skip any two particles moving away from eachother
-    if (d < 0) {
-        const float2 norm = normalize(dp);
-        const float2 tang = float2(norm.y * -1.0f, norm.x);
-
-        const float scal_norm_1 = dot(norm, v1);
-        const float scal_norm_2 = dot(norm, v2);
-        const float scal_tang_1 = dot(tang, v1);
-        const float scal_norm_1_after = (scal_norm_1 * (m1 - m2) + 2.0f * m2 * scal_norm_2) / (m1 + m2);
-        const float2 scal_norm_1_after_vec = norm * scal_norm_1_after;
-        const float2 scal_norm_1_vec = tang * scal_tang_1;
-
-        return (scal_norm_1_vec + scal_norm_1_after_vec) * 0.98;
-    }
-    return v1;
-}
-"""
-
-enum ParticleOption: String {
-
-    case variableSize = ""
-
-    case isHoming = """
-    \n
-        {
-            //----------------------------------
-            //  isHoming
-            //----------------------------------
-
-            // Local variables
-            const auto pos = positions[index];
-            const auto vel = velocities[index];
-
-            velocities[index] = homingMissile(simParam.attractPoint, 1.0, pos, vel);
-
-        }
-    \n
-    """
-
-    case turbulence = """
-    \n
-        {
-            //----------------------------------
-            //  turbulence
-            //----------------------------------
-
-
-        }
-    \n
-    """
-
-    case attractedToMouse = """
-    \n
-        {
-            //----------------------------------
-            //  attractedToMouse
-            //----------------------------------
-
-            // Local variables
-            const auto pos = positions[index];
-            const auto vel = velocities[index];
-            const auto mass = masses[index];
-
-            velocities[index] = attract_to_point(simParam.mousePos, pos, vel, mass);
-        }
-    \n
-    """
-
-    case hasLifetime = """
-    \n
-    {
-        //----------------------------------
-        //  hasLifetime
-        //----------------------------------
-
-        // Respawn the particle if dead
-        if (!isAlives[index] && !simParam.shouldAddParticle) {
-
-                const float2 randVel = rand2(simParam.newParticleVelocity.x, simParam.newParticleVelocity.y, index, simParam.particleCount/3, 34);
-
-                positions[index] = simParam.newParticlePosition;
-                velocities[index] = randVel;
-                isAlives[index] = true;
-                lifetimes[index] = simParam.newParticleLifetime;
-        }
-
-        // Local variables
-        bool isAlive = isAlives[index];
-        float lifetime = lifetimes[index];
-
-        // Decrease the lifetime
-        lifetime -= motionParam.deltaTime;
-
-        // If the lifetime of this particle has come to an end. Dont update it, dont draw it.
-        if (lifetime <= 0) isAlive = false;
-
-        // Fade the particle out until it's dead
-        colors[index] = float4(colors[index].rgb, lifetime);
-
-        // Update
-        lifetimes[index] = lifetime;
-        isAlives[index] = isAlive;
-    }
-    \n
-    """
-
-    case update = """
-    \n
-    {
-        //----------------------------------
-        //  update
-        //----------------------------------
-
-        // The last thread is responsible for adding the new particle
-        if (index == gpuParticleCount && simParam.shouldAddParticle) {
-
-            // how many particles to add?
-            const int amount =  simParam.particleCount - gpuParticleCount;
-            gpuParticleCount += amount;
-
-            const float2 initalVelocity = simParam.newParticleVelocity;
-
-            // Each new particle gets the same position but different velocities
-            for (int i = 0; i < amount; ++i) {
-
-                const int newIndex = index+i;
-
-                const float2 randVel = rand2(initalVelocity.x, initalVelocity.y, newIndex, simParam.particleCount/3, 34);
-
-                positions[newIndex] = simParam.newParticlePosition;
-                velocities[newIndex] = randVel;
-                radii[newIndex] = simParam.newParticleRadius;
-                masses[newIndex] = simParam.newParticleMass;
-
-    #ifdef HAS_DRAW
-                colors[newIndex] = simParam.newParticleColor;
-    #endif
-
-    #ifdef HAS_LIFETIME
-                isAlives[newIndex] = true;
-                lifetimes[newIndex] = simParam.newParticleLifetime;
-    #endif
-            }
-        }
-
-        // Update
-        velocities[index] += simParam.gravityForce;
-        positions[index] += velocities[index];
-    }
-    \n
-    """
-
-    case draw = """
-    \n
-    {
-        //----------------------------------
-        //  draw
-        //----------------------------------
-        const float2 viewportSize = simParam.viewportSize;
-        const float2 ppos = positions[index];
-        if (ppos.x > 0 && ppos.x < viewportSize.x &&
-            ppos.y > 0 && ppos.y < viewportSize.y) {
-
-            const ushort2 fpos = ushort2(ppos.x, viewportSize.y - ppos.y);
-            texture.write(colors[gid], fpos);
-        }
-    }
-    \n
-    """
-
-    case borderBound = """
-    \n
-        {
-            //----------------------------------
-            //  borderBound
-            //----------------------------------
-
-            // Local variables
-            auto pos = positions[index];
-            auto vel = velocities[index];
-            const auto radi = radii[index];
-            const auto viewportSize = simParam.viewportSize;
-
-            if (pos.x < 0 + radi)               { pos.x = 0 + radi;                 vel.x = -vel.x; }
-            if (pos.x > viewportSize.x - radi)  { pos.x = viewportSize.x - radi;    vel.x = -vel.x; }
-            if (pos.y < 0 + radi)               { pos.y = 0 + radi;                 vel.y = -vel.y; }
-            if (pos.y > viewportSize.y - radi)  { pos.y = viewportSize.y - radi;    vel.y = -vel.y; }
-
-            positions[index] = pos;
-            velocities[index] = vel;
-        }
-    \n
-    """
-
-    case interCollision = """
-    \n
-    {
-        //----------------------------------
-        //  interCollision
-        //----------------------------------
-
-        // Local variables
-        auto pos = positions[index];
-        auto vel = velocities[index];
-        const auto radi = radii[index];
-        const auto mass = masses[index];
-
-        for (uint otherIndex = 0; otherIndex < simParam.particleCount; ++otherIndex) {
-
-    #ifdef HAS_LIFETIME
-            if (!isAlives[otherIndex]) continue;
-    #endif
-
-            if (index == otherIndex) continue;
-
-            const float2 other_pos = positions[otherIndex];
-            const float other_radi = radii[otherIndex];
-
-            if (collision_check(pos, other_pos, radi, other_radi)) {
-
-                const float2 other_vel = velocities[otherIndex];
-                const float other_mass = masses[otherIndex];
-
-                vel = collision_resolve(pos, vel, mass, other_pos, other_vel, other_mass);
-            }
-        }
-        positions[index] = pos;
-        velocities[index] = vel;
-    }
-    \n
-    """
+enum ParticleOption: Int {
+    case borderBound
+    case intercollision
+    case drawToTexture
+    case lifetime
+    case attractedToMouse
+    case homing
 }
 
 enum MissileOptions {
@@ -369,7 +72,7 @@ final class ParticleSystem {
 
     var maxParticles: Int
 
-    var options: [ParticleOption] = [.update]
+    var options: [ParticleOption] = []
     var computeDeviceOption: ComputeDeviceOption = .cpu
 
     public var particleCount: Int = 0
@@ -447,124 +150,8 @@ final class ParticleSystem {
     var computeHelperFunctions: [String] = []
     var rawKernelString: String = ""
 
-    func setOptions(_ options: [ParticleOption], helperFunctions: [String]) {
-
-        rawKernelString = """
-        #include <metal_stdlib>
-        using namespace metal;
-
-        typedef struct
-        {
-            float           deltaTime;       // frame delta time
-        } MotionParam;
-
-        typedef struct
-        {
-            vector_float2 viewportSize;
-            vector_float2 attractPoint;
-            vector_float2 gravityForce;
-
-            vector_float2 mousePos;
-            float currentTime;
-
-            uint particleCount;
-            bool shouldAddParticle;
-            vector_float2 newParticlePosition;
-            vector_float2 newParticleVelocity;
-            float newParticleRadius;
-            float newParticleMass;
-            vector_float4 newParticleColor;
-            float newParticleLifetime;
-            bool clearParticles;
-            float initialVelocity;
-        } SimParam;
-
-        typedef struct
-        {
-            uint particleCount;
-            bool shouldAddParticle;
-            vector_float2 spawnPoint;
-            vector_float2 spawnDirection;
-            float spawnSpeed;
-        } EmitterParam;
-        """
-
-        for option in options {
-            switch option {
-            case .update:
-                rawKernelString += "\n#define HAS_UPDATE\n"
-            case .hasLifetime:
-                rawKernelString += "\n#define HAS_LIFETIME\n"
-            case .interCollision:
-                rawKernelString += "\n#define HAS_INTERCOLLISION\n"
-            case .attractedToMouse:
-                rawKernelString += "\n#define HAS_ATTRACTED_TO_MOUSE\n"
-            case .draw:
-                rawKernelString += "\n#define HAS_DRAW\n"
-            case .borderBound:
-                rawKernelString += "\n#define HAS_BORDERBOUND\n"
-            case .turbulence:
-                break
-            case .variableSize:
-                break
-            case .isHoming:
-                break
-            }
-        }
-
-
-        for function in helperFunctions {
-            rawKernelString += function
-        }
-
-        rawKernelString += """
-
-        kernel
-        void big_compute(
-                         device float2*                     positions   [[buffer(0)]],
-                         device float2*                     velocities  [[buffer(1)]],
-
-        #ifdef HAS_INTERCOLLISION || HAS_BORDERBOUND || HAS_LIFETIME
-                         device float*                      radii       [[buffer(2)]],
-        #endif
-        #ifdef HAS_INTERCOLLISION || HAS_LIFETIME
-                         device float*                      masses      [[buffer(3)]],
-        #endif
-
-                         device float4*                     colors      [[buffer(4)]],
-                         texture2d<float, access::write>    texture     [[texture(0)]],
-
-        #ifdef HAS_LIFETIME
-                         device bool*                       isAlives    [[buffer(5)]],
-                         device float*                      lifetimes   [[buffer(6)]],
-        #endif
-
-                         device uint&                       gpuParticleCount          [[buffer(7)]],
-                         constant MotionParam&              motionParam               [[buffer(8)]],
-                         constant SimParam&                 simParam                  [[buffer(9)]],
-                         uint                               gid                       [[thread_position_in_grid]])
-        {
-
-
-
-            // If the particles have been cleared or deleted
-            if (simParam.clearParticles) {
-                gpuParticleCount = simParam.particleCount;
-            }
-
-            // Local variables
-            const uint index = gid;
-        """
-
-        for option in options {
-            rawKernelString += option.rawValue
-        }
-
-        rawKernelString += "}\n"
-    }
-
     init(device: MTLDevice,
-         options: [ParticleOption] = [.update, .draw],
+         options: [ParticleOption] = [],
          maxParticles: Int = 100_000) {
 
         self.maxParticles = maxParticles
@@ -573,39 +160,65 @@ final class ParticleSystem {
         self.device = device
         quad = Quad(device: device)
 
+        let constVals = MTLFunctionConstantValues()
+
+        // Set all values to false first
+        var falseVal = false
+        constVals.setConstantValue(&falseVal, type: .bool, index: ParticleOption.attractedToMouse.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, index: ParticleOption.intercollision.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, index: ParticleOption.borderBound.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, index: ParticleOption.homing.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, index: ParticleOption.lifetime.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, index: ParticleOption.drawToTexture.rawValue)
+
+        // Then set all found in options to true
+        var trueVal = true
+        for option in options {
+            constVals.setConstantValue(&trueVal, type: .bool, index: option.rawValue)
+        }
+
         let library = device.makeDefaultLibrary()!
+        var vertexFunc: MTLFunction! = nil
         do {
-            let constVals = MTLFunctionConstantValues()
+            try vertexFunc = library.makeFunction(name: "particle_vert", constantValues: constVals)
+        } catch let error {
+            print("Error: \(error)")
+        }
 
-            var hasLifetime = options.contains(.hasLifetime)
-            constVals.setConstantValue(&hasLifetime,
-                                       type: MTLDataType.bool,
-                                       index: FunctionConstantIndex.fc_has_lifetime_index.rawValue)
+        let fragFunc = library.makeFunction(name: "particle_frag")!
 
-            let vertexFunc = try library.makeFunction(name: "particle_vert", constantValues: constVals)
-            let fragFunc = library.makeFunction(name: "particle_frag")!
+        let pipelineDesc = MTLRenderPipelineDescriptor()
+        pipelineDesc.label = "pipelineDesc"
+        pipelineDesc.vertexFunction = vertexFunc
+        pipelineDesc.fragmentFunction = fragFunc
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[1].pixelFormat = .bgra8Unorm
 
-            let pipelineDesc = MTLRenderPipelineDescriptor()
-            pipelineDesc.label = "pipelineDesc"
-            pipelineDesc.vertexFunction = vertexFunc
-            pipelineDesc.fragmentFunction = fragFunc
-            pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
-            pipelineDesc.colorAttachments[1].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
+        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
+        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
-            pipelineDesc.colorAttachments[0].isBlendingEnabled = true
-            pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
-            pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-            pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-            pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-            pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-            pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+        do {
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
+        } catch let error {
+            print("Error: \(error)")
+        }
 
-            try pipelineState = device.makeRenderPipelineState(
-                descriptor: pipelineDesc)
-
-        } catch {
-            print("ParticleSystem Pipeline: Creating pipeline state failed",
-                  error.localizedDescription)
+        var computeFunc: MTLFunction! = nil
+        do {
+            try computeFunc = library.makeFunction(name: "uber_compute", constantValues: constVals)
+            computeFunc.label = "uber_compute"
+        } catch let error {
+            print("Error: \(error)")
+        }
+        do {
+            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
+        } catch let error {
+            print("Error: \(error)")
         }
 
         // Initalize our GPU buffers
@@ -645,8 +258,8 @@ final class ParticleSystem {
 
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .bgra8Unorm,
-            width: 1920,
-            height: 1080,
+            width: Int(framebufferWidth),
+            height: Int(framebufferHeight),
             mipmapped: false)
 
         textureDesc.usage = .shaderRead
@@ -654,31 +267,8 @@ final class ParticleSystem {
 
         textureDesc.usage = .shaderWrite
         outTexture = device.makeTexture(descriptor: textureDesc)!
-
-        pTexture = device.makeTexture(descriptor: textureDesc)!
         finalTexture = device.makeTexture(descriptor: textureDesc)!
-
-        computeHelperFunctions.append(randFuncString)
-        computeHelperFunctions.append(attractToPointFuncString)
-        computeHelperFunctions.append(collisionCheckFuncString)
-        computeHelperFunctions.append(collisionResolveFuncString)
-
-        setOptions(options, helperFunctions: computeHelperFunctions)
-
-        do {
-            let compOp = MTLCompileOptions()
-            compOp.fastMathEnabled = true
-            compOp.languageVersion = .version2_0
-
-            let libraryC = try device.makeLibrary(source: rawKernelString, options: compOp)
-            let computeFunc = libraryC.makeFunction(name: "big_compute")
-
-            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
-
-        } catch {
-            print("Cant compile rawKernelString", error.localizedDescription)
-            abort()
-        }
+        pTexture = device.makeTexture(descriptor: textureDesc)!
 
         buildVertices(numVertices: numVerticesPerParticle)
     }
@@ -713,7 +303,7 @@ final class ParticleSystem {
         renderEncoder.pushDebugGroup("Draw particles (off-screen)")
         renderEncoder.setRenderPipelineState(pipelineState!)
 
-        if options.contains(.variableSize) {
+        if !options.contains(.drawToTexture) {
 
             renderEncoder.setVertexBytes(&viewportSize,
                                          length: MemoryLayout<float2>.stride,
@@ -774,7 +364,7 @@ final class ParticleSystem {
                 )
 
             renderEncoder.popDebugGroup()
-        } else if !options.contains(.variableSize) {
+        } else if options.contains(.drawToTexture) {
             quad.mix(
                 commandBuffer: commandBuffer,
                 inputTexture1: inTexture,
@@ -787,7 +377,7 @@ final class ParticleSystem {
         let viewRenderPassDesc = view.currentRenderPassDescriptor
 
         if viewRenderPassDesc != nil {
-
+//
 //            viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
 //            viewRenderPassDesc?.colorAttachments[1].texture = pTexture
 //            viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
@@ -843,20 +433,20 @@ final class ParticleSystem {
         computeEncoder?.setBuffer(velocitiesBuffer, offset: 0, index: 1)
         computeEncoder?.setBuffer(gpuParticleCountBuffer, offset: 0, index: 7)
 
-        if options.contains(.interCollision) || options.contains(.hasLifetime) {
+//        if options.contains(.intercollision) || options.contains(.hasLifetime) {
             computeEncoder?.setBuffer(radiiBuffer, offset: 0, index: 2)
             computeEncoder?.setBuffer(massesBuffer, offset: 0, index: 3)
-        }
+//        }
 
-        if options.contains(.draw) {
+//        if options.contains(.draw) {
             computeEncoder?.setBuffer(colorsBuffer, offset: 0, index: 4)
             computeEncoder?.setTexture(pTexture, index: 0)
-        }
+//        }
 
-        if options.contains(.hasLifetime) {
+//        if options.contains(.hasLifetime) {
             computeEncoder?.setBuffer(isAlivesBuffer, offset: 0, index: 5)
             computeEncoder?.setBuffer(lifetimesBuffer, offset: 0, index: 6)
-        }
+//        }
 
         var motionParam = MotionParam()
         motionParam.deltaTime = 1/60

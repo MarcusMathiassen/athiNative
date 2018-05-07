@@ -40,13 +40,10 @@ kernel
 void uber_compute(
    device float2*                     positions           [[buffer(0)]],
    device float2*                     velocities          [[buffer(1)]],
-
    device float*                      radii               [[buffer(2), function_constant(fc_uses_radii)]],
    device float*                      masses              [[buffer(3), function_constant(fc_uses_masses)]],
-
    device float4*                     colors              [[buffer(4), function_constant(fc_uses_colors)]],
    texture2d<float, access::write>    texture             [[texture(0), function_constant(fc_uses_texture)]],
-
    device bool*                       isAlives            [[buffer(5), function_constant(fc_uses_isAlives)]],
    device float*                      lifetimes           [[buffer(6), function_constant(fc_uses_lifetimes)]],
 
@@ -55,6 +52,10 @@ void uber_compute(
    constant SimParam&                 simParam            [[buffer(9)]],
    uint                               gid                 [[thread_position_in_grid]])
 {
+    // If the particles have been cleared or deleted
+    if (simParam.clearParticles) {
+        gpuParticleCount = simParam.particleCount;
+    }
 
     // Local variables
     const uint index = gid;
@@ -204,12 +205,6 @@ void uber_compute(
     // Update
     velocities[index] += simParam.gravityForce;
     positions[index] += velocities[index];
-
-    // If the particles have been cleared or deleted
-    if (simParam.clearParticles) {
-        gpuParticleCount = 0;
-    }
-
 
     if (fc_has_drawToTexture)
     {

@@ -241,20 +241,8 @@ class MACOSViewController: NSViewController {
             return
         }
 
-        let devices = MTLCopyAllDevices()
-
-        print("Available devices:")
-        for device in devices {
-            print(" ", device.name)
-        }
-
         mtkView.device = defaultDevice
-
-        print("argumentBuffersSupport:", mtkView.device!.argumentBuffersSupport.rawValue)
-        print("isHeadless:", mtkView.device!.isHeadless)
-        print("isLowPower:", mtkView.device!.isLowPower)
-        print("isRemovable:", mtkView.device!.isRemovable)
-
+        
         guard let newRenderer = Renderer(view: mtkView) else {
             print("Renderer cannot be initialized")
             return

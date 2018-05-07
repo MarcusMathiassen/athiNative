@@ -62,15 +62,13 @@ final class Renderer: NSObject, MTKViewDelegate {
         device = view.device!
 
         let myParticleOptions: [ParticleOption] = [
-//            .hasLifetime,
-//            .isHoming,
+            .lifetime,
+//            .homing,
 //            .turbulence,
 //            .attractedToMouse,
-            .interCollision,
+            .intercollision,
             .borderBound,
-            .update,
-            .draw,
-            .variableSize
+            .drawToTexture
         ]
         particleSystem = ParticleSystem(device: device, options: myParticleOptions)
 
@@ -79,6 +77,17 @@ final class Renderer: NSObject, MTKViewDelegate {
         inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
 
         super.init()
+
+        let devices = MTLCopyAllDevices()
+        print("Available devices:")
+        for device in devices {
+            print((device.name == self.device.name) ? "*" : " ", device.name)
+        }
+
+        print("argumentBuffersSupport:", device.argumentBuffersSupport.rawValue)
+        print("isHeadless:", device.isHeadless)
+        print("isLowPower:", device.isLowPower)
+        print("isRemovable:", device.isRemovable)
 
         // CrossPlatform stuff
         #if os(macOS)
