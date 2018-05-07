@@ -63,12 +63,12 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         let myParticleOptions: [ParticleOption] = [
             .lifetime,
-            .homing,
+//            .homing,
 //            .turbulence,
 //            .attractedToMouse,
             .intercollision,
             .borderBound,
-            .drawToTexture
+//            .drawToTexture
         ]
         particleSystem = ParticleSystem(device: device, options: myParticleOptions)
 
@@ -204,7 +204,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         switch gMouseOption {
         case MouseOption.spawn:
 
-            for _ in 0 ..< 10 {
+            for _ in 0 ..< 100 {
                 particleSystem.addParticleWith(
                     position: mousePos,
                     color: particleSystem.particleColor,

@@ -150,10 +150,13 @@ final class ParticleSystem {
 
     init(device: MTLDevice,
          options: [ParticleOption] = [],
-         maxParticles: Int = 100_000) {
+         maxParticles: Int = 10_000_000) {
 
         self.maxParticles = maxParticles
         self.options = options
+
+        // We tell the GPU to clear the particles at the start to set the gpuParticleCount to 0
+        simParam.clearParticles = true
 
         self.device = device
         quad = Quad(device: device)
@@ -375,10 +378,12 @@ final class ParticleSystem {
 
         if viewRenderPassDesc != nil {
 
-            viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
-            viewRenderPassDesc?.colorAttachments[1].texture = pTexture
-            viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
-            viewRenderPassDesc?.colorAttachments[1].storeAction = .store
+            if options.contains(.drawToTexture) {
+                viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
+                viewRenderPassDesc?.colorAttachments[1].texture = pTexture
+                viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
+                viewRenderPassDesc?.colorAttachments[1].storeAction = .store
+            }
 
             renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
 
@@ -414,7 +419,7 @@ final class ParticleSystem {
 
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
 
-//        if particleCount == 0 { return }
+        if particleCount == 0 { return }
 
         commandBuffer.pushDebugGroup("Particles Update")
 
@@ -435,7 +440,7 @@ final class ParticleSystem {
 
         let usesRadii = (options.contains(.intercollision) || options.contains(.borderBound))
         let usesMasses = (options.contains(.intercollision) || options.contains(.attractedToMouse))
-        let usesColors = (options.contains(.drawToTexture))
+        let usesColors = true // we use color always
         let usesisAlives = (options.contains(.lifetime))
         let usesLifetimes = usesisAlives
         let usesTexture = usesColors
@@ -476,7 +481,7 @@ final class ParticleSystem {
                                  index: BufferIndex.bf_simParam_index.rawValue)
 
         // Reset simParams
-        simParam.clearParticles = particleCount > 0 ? false : true
+        simParam.clearParticles = false
         simParam.shouldAddParticle = false
         simParam.newParticlePosition = mousePos
 
