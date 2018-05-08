@@ -40,7 +40,7 @@ float2 homingMissile(float2 target,
                      float2 p1,
                      float2 v1
                      ){
-    return strength * normalize(target - p1) + v1;
+    return 0.3 * normalize(target - p1) + v1;
 }
 
 
@@ -88,7 +88,7 @@ float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, f
         const float2 scal_norm_1_after_vec = norm * scal_norm_1_after;
         const float2 scal_norm_1_vec = tang * scal_tang_1;
 
-        return (scal_norm_1_vec + scal_norm_1_after_vec) * 0.98;
+        return (scal_norm_1_vec + scal_norm_1_after_vec);
     }
     return v1;
 }

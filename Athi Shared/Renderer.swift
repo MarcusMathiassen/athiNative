@@ -49,13 +49,14 @@ final class Renderer: NSObject, MTKViewDelegate {
     var particleSystem: ParticleSystem
 
     // Tripple buffering
-    var maxNumInFlightBuffers = 3
+//    var maxNumInFlightBuffers = 3
     var currentQueue = 0
-    var inFlightSemaphore: DispatchSemaphore
+//    var inFlightSemaphore: DispatchSemaphore
     //
 
     var device: MTLDevice
-    let commandQueues: [MTLCommandQueue]
+//    let commandQueues: [MTLCommandQueue]
+    let commandQueue: MTLCommandQueue
 
     init?(view: MTKView) {
         
@@ -72,9 +73,9 @@ final class Renderer: NSObject, MTKViewDelegate {
         ]
         particleSystem = ParticleSystem(device: device, options: myParticleOptions)
 
-        commandQueues = [ device.makeCommandQueue()!, device.makeCommandQueue()!, device.makeCommandQueue()!]
+        commandQueue = device.makeCommandQueue()!
 
-        inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
+//        inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
 
         super.init()
 
@@ -128,16 +129,16 @@ final class Renderer: NSObject, MTKViewDelegate {
 
     func draw(in view: MTKView) {
 
-        _ = self.inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
+//        _ = self.inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
-        currentQueue = (currentQueue + 1) % maxNumInFlightBuffers
+//        currentQueue = (currentQueue + 1) % maxNumInFlightBuffers
 
-        let commandBuffer = commandQueues[currentQueue].makeCommandBuffer()!
+        let commandBuffer = commandQueue.makeCommandBuffer()!
         commandBuffer.label = "CommandBuffer: " + String(currentQueue)
 
-        commandBuffer.addCompletedHandler { (_) in
-            self.inFlightSemaphore.signal()
-        }
+//        commandBuffer.addCompletedHandler { (_) in
+//            self.inFlightSemaphore.signal()
+//        }
 
         var frameDescriptor = FrameDescriptor()
         frameDescriptor.fillMode = fillMode
@@ -184,8 +185,8 @@ final class Renderer: NSObject, MTKViewDelegate {
         }
 
         commandBuffer.present(view.currentDrawable!)
-
         commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
 
         frametime = Float((getTime() - startTime) * 1000.0)
         framerate = Int(1000 / frametime)

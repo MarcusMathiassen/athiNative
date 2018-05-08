@@ -76,7 +76,7 @@
 		900CAD2620729D6500AE60E9 /* Athi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Athi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		900CAD2820729D6500AE60E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		900CAD2D20729D6500AE60E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		900CAD2F20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		900CAD2F20729D6500AE60E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "../Athi tvOS/Info.plist"; sourceTree = "<group>"; };
 		900CAD3420729D6500AE60E9 /* Athi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Athi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		900CAD3620729D6500AE60E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		900CAD3B20729D6500AE60E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -180,7 +180,6 @@
 			children = (
 				900CAD2820729D6500AE60E9 /* AppDelegate.swift */,
 				900CAD2C20729D6500AE60E9 /* Main.storyboard */,
-				900CAD2F20729D6500AE60E9 /* Info.plist */,
 			);
 			path = "Athi tvOS";
 			sourceTree = "<group>";
@@ -188,6 +187,7 @@
 		900CAD3520729D6500AE60E9 /* Athi macOS */ = {
 			isa = PBXGroup;
 			children = (
+				900CAD2F20729D6500AE60E9 /* Info.plist */,
 				900143882072ABBB009FB201 /* ViewController.swift */,
 				900CAD3620729D6500AE60E9 /* AppDelegate.swift */,
 				900CAD3A20729D6500AE60E9 /* Main.storyboard */,
