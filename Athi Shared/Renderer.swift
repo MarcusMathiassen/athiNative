@@ -63,13 +63,14 @@ final class Renderer: NSObject, MTKViewDelegate {
         device = view.device!
 
         let myParticleOptions: [ParticleOption] = [
-//            .lifetime,
+            .lifetime,
             .homing,
 //            .turbulence,
 //            .attractedToMouse,
-//            .intercollision,
+            .intercollision,
 //            .borderBound,
-//            .drawToTexture
+//            .drawToTexture,
+            .canAddParticles,
         ]
         particleSystem = ParticleSystem(device: device, options: myParticleOptions)
 

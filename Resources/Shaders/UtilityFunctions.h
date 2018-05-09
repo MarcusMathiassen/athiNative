@@ -18,6 +18,8 @@
 #import <simd/simd.h>
 #endif
 
+float2 to_viewspace(float2 point, float2 viewport);
+
 float rand(int x, int y, int z);
 float2 rand2(float min, float max, int x, int y, int z);
 
@@ -26,5 +28,12 @@ float2 homingMissile(float2 target, float strength, float2 p1, float2 v1);
 
 bool collision_check(float2 ap, float2 bp, float ar, float br);
 float2 collision_resolve(float2 p1, float2 v1, float m1, float2 p2, float2 v2, float m2);
+
+// Angle functions
+float2 float2_from_angle(float angle);
+
+// Noise functions
+float noise(device int32_t *p, float x, float y, float z);
+void reseed(device int32_t *p, int seed);
 
 #endif /* UtilityFunctions_h */

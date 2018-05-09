@@ -78,7 +78,6 @@ fragment FragOut gaussianBlurFrag(Vertex                              vert      
     return { blur13(texIn, vert.uv, *resolution, *direction)};
 }
 
-
 fragment FragOut quadFrag(Vertex                              vert           [[stage_in]],
                           texture2d<float, access::sample>    colorTexture   [[texture(0)]])
 {

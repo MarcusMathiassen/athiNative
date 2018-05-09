@@ -24,6 +24,8 @@ constant bool fc_has_intercollision      [[function_constant(2)]];
 constant bool fc_has_lifetime            [[function_constant(3)]];
 constant bool fc_has_attractedToMouse    [[function_constant(4)]];
 constant bool fc_has_homing              [[function_constant(5)]];
+constant bool fc_has_turbulence          [[function_constant(6)]];
+constant bool fc_has_canAddParticles     [[function_constant(7)]];
 
 constant bool fc_uses_radii     = true;
 constant bool fc_uses_masses    = fc_has_intercollision || fc_has_attractedToMouse;
@@ -33,25 +35,36 @@ constant bool fc_uses_colors    = true;
 
 constant bool fc_uses_isAlives  = fc_has_lifetime;
 constant bool fc_uses_lifetimes = fc_has_lifetime;
+
+constant bool fc_uses_seed_buffer = fc_has_turbulence;
+constant bool  fc_uses_field_nodes = fc_has_turbulence;
 // -------------------------
 
 kernel
-void uber_compute(device float2*   positions                [[ buffer(bf_positions_index) ]],
-                  device float2*   velocities               [[ buffer(bf_velocities_index) ]],
-                  device uint&     gpuParticleCount         [[ buffer(bf_gpuParticleCount_index) ]],
+void uber_compute(
+  device float2*   positions                [[ buffer(bf_positions_index) ]],
+  device float2*   velocities               [[ buffer(bf_velocities_index) ]],
+  device uint&     gpuParticleCount         [[ buffer(bf_gpuParticleCount_index) ]],
 
-                  device float*   radii      [[ buffer(bf_radii_index), function_constant(fc_uses_radii) ]],
-                  device float*   masses     [[ buffer(bf_masses_index), function_constant(fc_uses_masses) ]],
-                  device float4*  colors     [[ buffer(bf_colors_index), function_constant(fc_uses_colors) ]],
-                  device bool*    isAlives   [[ buffer(bf_isAlives_index), function_constant(fc_uses_isAlives) ]],
-                  device float*   lifetimes  [[ buffer(bf_lifetimes_index), function_constant(fc_uses_lifetimes) ]],
+  device float*   radii      [[ buffer(bf_radii_index), function_constant(fc_uses_radii) ]],
+  device float*   masses     [[ buffer(bf_masses_index), function_constant(fc_uses_masses) ]],
+  device float4*  colors     [[ buffer(bf_colors_index), function_constant(fc_uses_colors) ]],
+  device bool*    isAlives   [[ buffer(bf_isAlives_index), function_constant(fc_uses_isAlives) ]],
+  device float*   lifetimes  [[ buffer(bf_lifetimes_index), function_constant(fc_uses_lifetimes) ]],
 
-                  constant MotionParam&  motionParam  [[ buffer(bf_motionParam_index) ]],
-                  constant SimParam&     simParam     [[ buffer(bf_simParam_index) ]],
 
-                  uint particleIndex [[ thread_position_in_grid ]],
+  //----------------------------------
+  //  Turbulence
+  //----------------------------------
+  device int32_t* seed_buffer [[ buffer(bf_seed_buffer_index), function_constant(fc_uses_seed_buffer) ]],
+  device float2* field_nodes [[ buffer(bf_field_nodes_index), function_constant(fc_uses_field_nodes) ]],
 
-                  texture2d<float, access::write>  texture  [[ texture(0), function_constant(fc_uses_texture) ]]
+  constant MotionParam&  motionParam  [[ buffer(bf_motionParam_index) ]],
+  constant SimParam&     simParam     [[ buffer(bf_simParam_index) ]],
+
+  uint particleIndex [[ thread_position_in_grid ]],
+
+  texture2d<float, access::write>  texture  [[ texture(0), function_constant(fc_uses_texture) ]]
 )
 {
     //----------------------------------
@@ -61,32 +74,72 @@ void uber_compute(device float2*   positions                [[ buffer(bf_positio
     thread const auto index = particleIndex;
     thread const auto is_first_thread = (index == 0) ? true : false;
 
+    //----------------------------------
+    //  Runs once each frame
+    //----------------------------------
+    if (is_first_thread)
     {
-        //----------------------------------
-        //  Runs once each frame
-        //----------------------------------
 
-        // The first thread is responsible for adding the new particle
-        if (is_first_thread && simParam.shouldAddParticle)
+        if (fc_has_turbulence)
         {
-            // how many particles to add?
-            const auto initalVelocity = simParam.newParticleVelocity;
+            //----------------------------------
+            //  Turbulence
+            //----------------------------------
 
-            // Each new particle gets the same position but different velocities
-            for (uint newIndex = gpuParticleCount; newIndex < simParam.particleCount; ++newIndex)
+//            float zoff = 0;
+//            float zinc = 0.01f;
+//            float str = 3;
+//            float inc = 0.03f;
+//            const int scale = 5;
+//            const float two_pi = M_PI_F * 2;
+//            const int cols = floor(simParam.viewportSize.x / scale);
+//            const int rows = floor(simParam.viewportSize.y / scale);
+//
+//            float yoff = 0;
+//            for (int y = 1; y < rows; y++) {
+//                float xoff = 0;
+//                for (int x = 1; x < cols; ++x) {
+//
+//                    int index = (x + y * cols);
+//                    float angle = noise(seed_buffer, xoff, yoff, zoff) * two_pi;
+//                    auto v = float2_from_angle(angle);
+//                    v *= str;
+//                    field_nodes[index] = v;
+//
+//                    xoff += inc;
+//                }
+//                yoff += inc;
+//            }
+//            zoff += zinc;
+//            reseed(seed_buffer, simParam.particleCount % 3 + index * 3);
+        }
+
+        if (fc_has_canAddParticles)
+        {
+            //----------------------------------
+            //  Adds a particle using
+            //----------------------------------
+            if (simParam.shouldAddParticle)
             {
-                const auto randVel = rand2(initalVelocity.x, initalVelocity.y, newIndex, simParam.particleCount / newIndex, 34);
+                // how many particles to add?
+                const auto initalVelocity = simParam.newParticleVelocity;
 
-                positions[newIndex] = simParam.newParticlePosition;
-                velocities[newIndex] = randVel;
+                // Each new particle gets the same position but different velocities
+                for (uint newIndex = gpuParticleCount; newIndex < simParam.particleCount; ++newIndex)
+                {
+                    const auto randVel = rand2(initalVelocity.x, initalVelocity.y, newIndex, simParam.particleCount / newIndex, 34);
 
-                if (fc_uses_radii)      radii[newIndex] = simParam.newParticleRadius;
-                if (fc_uses_masses)     masses[newIndex] = simParam.newParticleMass;
-                if (fc_uses_colors)     colors[newIndex] = simParam.newParticleColor;
-                if (fc_uses_isAlives)   isAlives[newIndex] = true;
-                if (fc_uses_lifetimes)  lifetimes[newIndex] = simParam.newParticleLifetime * rand(newIndex, simParam.particleCount / newIndex, 34);
+                    positions[newIndex] = simParam.newParticlePosition;
+                    velocities[newIndex] = randVel;
+
+                    if (fc_uses_radii)      radii[newIndex] = simParam.newParticleRadius;
+                    if (fc_uses_masses)     masses[newIndex] = simParam.newParticleMass;
+                    if (fc_uses_colors)     colors[newIndex] = simParam.newParticleColor;
+                    if (fc_uses_isAlives)   isAlives[newIndex] = true;
+                    if (fc_uses_lifetimes)  lifetimes[newIndex] = simParam.newParticleLifetime * rand(newIndex, simParam.particleCount / newIndex, 34);
+                }
+                gpuParticleCount = simParam.particleCount;
             }
-            gpuParticleCount = simParam.particleCount;
         }
     }
 
@@ -99,6 +152,30 @@ void uber_compute(device float2*   positions                [[ buffer(bf_positio
     thread auto  &mass        = masses[index];
     thread auto  &isAlive     = isAlives[index];
     thread auto  &lifetime    = lifetimes[index];
+
+
+    {
+        //----------------------------------
+        //  Update
+        //  uses: positions, velocities, simParam, gpuParticleCount,
+        //----------------------------------
+
+        // Update all used variables
+        vel += simParam.gravityForce;
+        pos += vel;
+    }
+
+    if (fc_has_turbulence)
+    {
+        const int scale = 5;
+        const auto ppos = to_viewspace(pos, simParam.viewportSize);
+        int x = floor(ppos.x / scale);
+        int y = floor(ppos.y / scale);
+        x = (x < 0) ? 0 : x;
+        y = (y < 0) ? 0 : y;
+        const int iii = x + y * simParam.viewportSize.x;
+        vel += field_nodes[iii];
+    }
 
     if (fc_has_lifetime)
     {
@@ -139,17 +216,6 @@ void uber_compute(device float2*   positions                [[ buffer(bf_positio
     if (fc_has_attractedToMouse)
     {
         vel = attract_to_point(simParam.mousePos, pos, vel, mass);
-    }
-
-    {
-        //----------------------------------
-        //  Update
-        //  uses: positions, velocities, simParam, gpuParticleCount,
-        //----------------------------------
-
-        // Update all used variables
-        vel += simParam.gravityForce;
-        pos += vel;
     }
 
     if (fc_has_intercollision)
@@ -214,11 +280,6 @@ struct VertexOut
     vector_float4 color;
 };
 
-struct FragmentOut
-{
-    vector_float4 color0[[color(0)]];
-    vector_float4 color1[[color(1)]];
-};
 
 vertex
 VertexOut particle_vert(
@@ -250,8 +311,15 @@ VertexOut particle_vert(
     return vOut;
 }
 
+struct FragmentOut
+{
+    vector_float4 color0[[color(0)]];
+    vector_float4 color1[[color(1)]];
+};
+
 fragment
 FragmentOut particle_frag(VertexOut vert [[stage_in]])
 {
     return { vert.color, vert.color };
 }
+

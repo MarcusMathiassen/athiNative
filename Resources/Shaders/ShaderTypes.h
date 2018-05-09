@@ -40,6 +40,9 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     bf_viewportSize_index,
     bf_motionParam_index,
     bf_simParam_index,
+
+    bf_seed_buffer_index,
+    bf_field_nodes_index,
 };
 
 typedef struct

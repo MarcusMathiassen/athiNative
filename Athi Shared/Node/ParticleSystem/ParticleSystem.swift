@@ -19,6 +19,8 @@ enum ParticleOption: String {
     case lifetime = "fc_has_lifetime"
     case attractedToMouse = "fc_has_attractedToMouse"
     case homing = "fc_has_homing"
+    case turbulence = "fc_has_turbulence"
+    case canAddParticles = "fc_has_canAddParticles"
 }
 
 enum MissileOptions {
@@ -126,6 +128,10 @@ final class ParticleSystem {
     private var lifetimesBuffer: MTLBuffer! = nil
     private var gpuParticleCountBuffer: MTLBuffer! = nil
 
+    // Turbulence buffers
+    private var seedBuffer: MTLBuffer! = nil
+    private var fieldNodesBuffer: MTLBuffer! = nil
+
     private var vertices: [float2] = []
     private var indices: [UInt16] = []
 
@@ -152,6 +158,8 @@ final class ParticleSystem {
     private var usesColors = false
     private var usesisAlives = false
     private var usesLifetimes = false
+    private var usesSeedBuffer = false
+    private var usesFieldNodes = false
 
     private var hasInit = false
 
@@ -181,6 +189,8 @@ final class ParticleSystem {
         usesisAlives = options.contains(.lifetime)
         usesLifetimes = usesisAlives
         usesTexture = options.contains(.drawToTexture)
+        usesSeedBuffer = options.contains(.turbulence)
+        usesFieldNodes = usesSeedBuffer
 
         // Optional
         if usesRadii {
@@ -212,6 +222,16 @@ final class ParticleSystem {
                                             options: staticBufferResourceOption)!
         }
 
+        if usesSeedBuffer {
+            fieldNodesBuffer = device.makeBuffer(
+                length: MemoryLayout<float2>.stride * Int(framebufferWidth) * Int(framebufferHeight),
+                options: gpuOnlyResourceOption)!
+
+            seedBuffer = device.makeBuffer(
+                length: MemoryLayout<Int32>.stride * 512,
+                options: gpuOnlyResourceOption)!
+        }
+
         particlesAllocatedCount = maxParticles
 
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(
@@ -239,6 +259,8 @@ final class ParticleSystem {
         constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.homing.rawValue)
         constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.lifetime.rawValue)
         constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.drawToTexture.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.canAddParticles.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.turbulence.rawValue)
 
         // Then set all found in options to true
         var trueVal = true
@@ -289,6 +311,42 @@ final class ParticleSystem {
         } catch let error {
             print("Error: \(error)")
         }
+
+
+        if usesSeedBuffer {
+            //----------------------------------
+            //  Turbulence
+            //----------------------------------
+
+//            var zoff: Float = 0
+//            var zinc: Float = 0.01
+//            var str: Float = 3
+//            var inc: Float = 0.03
+//            let scale: Int = 5
+//            let twoPI: Float = Float.pi * 2
+//            let cols: Int = Int(framebufferWidth) / scale
+//            let rows: Int = Int(framebufferHeight) / scale
+//
+//            var yoff: Float = 0
+//
+//            for y in 1 ..< rows {
+//                var xoff: Float = 0
+//                for x in 1 ..< cols {
+//                    let index = (x + y * cols)
+//                    let angle = noise(seedBuffer, xoff, yoff, zoff) * twoPI
+//                    let dir = float2_from_angle(angle) * str
+//                    fieldNodes[index] += dir
+//
+//                    xoff += inc
+//                }
+//                yoff += inc
+//            }
+//            zoff += zinc
+//            reseed(seedBuffer, particleCount % 3 + index * 3);
+        }
+
+
+
 
         buildVertices(numVertices: numVerticesPerParticle)
     }
@@ -525,6 +583,11 @@ final class ParticleSystem {
             computeEncoder.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
         }
 
+        if usesSeedBuffer {
+            computeEncoder.setBuffer(seedBuffer, offset: 0, index: BufferIndex.bf_seed_buffer_index.rawValue)
+            computeEncoder.setBuffer(fieldNodesBuffer, offset: 0, index: BufferIndex.bf_field_nodes_index.rawValue)
+        }
+
         if usesTexture { computeEncoder.setTexture(pTexture, index: 0) }
 
         var motionParam = MotionParam()
@@ -576,7 +639,7 @@ final class ParticleSystem {
 
         self.simParam.shouldAddParticle = true
         self.simParam.newParticlePosition = position
-        self.simParam.newParticleVelocity = hasInitialVelocity ? float2(-5, 5) : float2(0)
+        self.simParam.newParticleVelocity = hasInitialVelocity ? float2(-2, 2) : float2(0)
         self.simParam.newParticleRadius = radius
         self.simParam.newParticleMass = Float.pi * radius * radius * radius
         self.simParam.newParticleColor = color

@@ -255,3 +255,54 @@ func colorOverTime(_ time: Double) -> float4 {
     #endif
     return float4(Float(r), Float(g), Float(b), 1)
 }
+
+func fade(_ t: Float) -> Float { return t * t * t * (t * (t * 6 - 15) + 10) }
+func lerp(_ t: Float, _ a: Float, _ b: Float) -> Float { return a + t * (b - a) }
+func grad(_ hash: Int32, _ x: Float, _ y: Float, _ z: Float) -> Float {
+    let h: Int32 = hash & 15
+    let u: Float = h < 8 ? x : y
+    let v: Float = h < 4 ? y : h == 12 || h == 14 ? x : z
+    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v)
+}
+
+//func noise(_ p: inout [Int32], _ x1: Float, _ y1: Float, _ z1: Float) -> Float {
+//
+//    let X: Int = Int(Int32(floorf(x1)) & 255)
+//    let Y: Int = Int(Int32(floorf(y1)) & 255)
+//    let Z: Int = Int(Int32(floorf(z1)) & 255)
+//
+//    let x = x1 - floorf(x1)
+//    let y = y1 - floorf(y1)
+//    let z = z1 - floorf(z1)
+//
+//    let u = fade(x)
+//    let v = fade(y)
+//    let w = fade(z)
+//
+//    let A: Int = Int(p[X] + Y)
+//    let AA: Int = Int(p[A] + Z)
+//    let AB: Int = Int(p[A + 1] + Z)
+//
+//    let B: Int = Int(p[X + 1] + Y)
+//    let BA: Int = Int(p[B] + Z)
+//    let BB: Int = Int(p[B + 1] + Z)
+//
+//    return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),
+//                                grad(p[BA], x - 1, y, z)),
+//                        lerp(u, grad(p[AB], x, y - 1, z),
+//                             grad(p[BB], x - 1, y - 1, z))),
+//                lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1),
+//                             grad(p[BA + 1], x - 1, y, z - 1)),
+//                     lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
+//                          grad(p[BB + 1], x - 1, y - 1, z - 1))));
+//}
+//void reseed()
+//    {
+//        for (std::int32_t i = 0; i < 256; ++i)
+//        p[i] = i;
+//        std::uint32_t seed = std::default_random_engine::default_seed;
+//        std::shuffle(std::begin(p), std::begin(p) + 256, std::default_random_engine(seed));
+//        for (size_t i = 0; i < 256; ++i)
+//        p[256 + i] = p[i];
+//}
+
