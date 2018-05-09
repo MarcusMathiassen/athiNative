@@ -32,7 +32,7 @@ float2 rand2(float min, float max, int x, int y, int z)
 
 float2 attract_to_point(float2 point, float2 p1, float2 v1, float m1)
 {
-    return m1 * normalize(point - p1) + v1;
+    return 0.3 * normalize(point - p1) + v1;
 }
 
 float2 homingMissile(float2 target,

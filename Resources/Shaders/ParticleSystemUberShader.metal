@@ -61,27 +61,33 @@ void uber_compute(device float2*   positions                [[ buffer(bf_positio
     thread const auto index = particleIndex;
     thread const auto is_first_thread = (index == 0) ? true : false;
 
-    // The first thread is responsible for adding the new particle
-    if (is_first_thread && simParam.shouldAddParticle)
     {
-        // how many particles to add?
-        const auto initalVelocity = simParam.newParticleVelocity;
+        //----------------------------------
+        //  Runs once each frame
+        //----------------------------------
 
-        // Each new particle gets the same position but different velocities
-        for (uint newIndex = gpuParticleCount; newIndex < simParam.particleCount; ++newIndex)
+        // The first thread is responsible for adding the new particle
+        if (is_first_thread && simParam.shouldAddParticle)
         {
-            const auto randVel = rand2(initalVelocity.x, initalVelocity.y, newIndex, simParam.particleCount / newIndex, 34);
+            // how many particles to add?
+            const auto initalVelocity = simParam.newParticleVelocity;
 
-            positions[newIndex] = simParam.newParticlePosition;
-            velocities[newIndex] = randVel;
+            // Each new particle gets the same position but different velocities
+            for (uint newIndex = gpuParticleCount; newIndex < simParam.particleCount; ++newIndex)
+            {
+                const auto randVel = rand2(initalVelocity.x, initalVelocity.y, newIndex, simParam.particleCount / newIndex, 34);
 
-            if (fc_uses_radii)      radii[newIndex] = simParam.newParticleRadius;
-            if (fc_uses_masses)     masses[newIndex] = simParam.newParticleMass;
-            if (fc_uses_colors)     colors[newIndex] = simParam.newParticleColor;
-            if (fc_uses_isAlives)   isAlives[newIndex] = true;
-            if (fc_uses_lifetimes)  lifetimes[newIndex] = simParam.newParticleLifetime * rand(newIndex, simParam.particleCount / newIndex, 34);
+                positions[newIndex] = simParam.newParticlePosition;
+                velocities[newIndex] = randVel;
+
+                if (fc_uses_radii)      radii[newIndex] = simParam.newParticleRadius;
+                if (fc_uses_masses)     masses[newIndex] = simParam.newParticleMass;
+                if (fc_uses_colors)     colors[newIndex] = simParam.newParticleColor;
+                if (fc_uses_isAlives)   isAlives[newIndex] = true;
+                if (fc_uses_lifetimes)  lifetimes[newIndex] = simParam.newParticleLifetime * rand(newIndex, simParam.particleCount / newIndex, 34);
+            }
+            gpuParticleCount = simParam.particleCount;
         }
-        gpuParticleCount = simParam.particleCount;
     }
 
     thread auto  &pos         = positions[index];
@@ -89,8 +95,8 @@ void uber_compute(device float2*   positions                [[ buffer(bf_positio
 
     thread auto  &color       = colors[index];
     thread auto  &radius      = radii[index];
-    thread auto  &mass        = masses[index];
 
+    thread auto  &mass        = masses[index];
     thread auto  &isAlive     = isAlives[index];
     thread auto  &lifetime    = lifetimes[index];
 
@@ -132,7 +138,7 @@ void uber_compute(device float2*   positions                [[ buffer(bf_positio
 
     if (fc_has_attractedToMouse)
     {
-        vel = attract_to_point(simParam.attractPoint, pos, vel, mass);
+        vel = attract_to_point(simParam.mousePos, pos, vel, mass);
     }
 
     {
@@ -237,6 +243,8 @@ VertexOut particle_vert(
     if (fc_has_lifetime)
     {
         vOut.color.a = lifetimes[iid];
+    } else {
+        vOut.color.a = 0.5;
     }
 
     return vOut;

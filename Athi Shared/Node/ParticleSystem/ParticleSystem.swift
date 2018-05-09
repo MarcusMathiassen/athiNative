@@ -215,7 +215,7 @@ final class ParticleSystem {
         particlesAllocatedCount = maxParticles
 
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: .bgra8Unorm,
+            pixelFormat: Renderer.pixelFormat,
             width: Int(framebufferWidth),
             height: Int(framebufferHeight),
             mipmapped: false)
@@ -260,8 +260,8 @@ final class ParticleSystem {
         pipelineDesc.label = "pipelineDesc"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
-        pipelineDesc.colorAttachments[1].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
 
         pipelineDesc.colorAttachments[0].isBlendingEnabled = true
         pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
@@ -328,20 +328,20 @@ final class ParticleSystem {
             size: MemoryLayout<UInt32>.stride
         )
 
-        if usesisAlives {
-            // Set all isAlives to true
-            var trueVals = [Bool](repeating: true, count: maxParticles)
-            let buffe = device.makeBuffer(bytes: &trueVals,
-                                          length: MemoryLayout<Bool>.stride * maxParticles,
-                                          options: .storageModeShared)!
-            blitCommandEncoder.copy(
-                from: buffe,
-                sourceOffset: 0,
-                to: isAlivesBuffer,
-                destinationOffset: 0,
-                size: MemoryLayout<Bool>.stride * maxParticles
-            )
-        }
+//        if usesisAlives {
+//            // Set all isAlives to true
+//            var trueVals = [Bool](repeating: true, count: maxParticles)
+//            let buffe = device.makeBuffer(bytes: &trueVals,
+//                                          length: MemoryLayout<Bool>.stride * maxParticles,
+//                                          options: .storageModeShared)!
+//            blitCommandEncoder.copy(
+//                from: buffe,
+//                sourceOffset: 0,
+//                to: isAlivesBuffer,
+//                destinationOffset: 0,
+//                size: MemoryLayout<Bool>.stride * maxParticles
+//            )
+//        }
         blitCommandEncoder.endEncoding()
     }
 
@@ -377,6 +377,12 @@ final class ParticleSystem {
         renderEncoder.setRenderPipelineState(pipelineState!)
 
         if !usesTexture {
+
+            if shouldUpdate {
+                buildVertices(numVertices: numVerticesPerParticle)
+                shouldUpdate = false
+            }
+
             renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
             renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
             renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
@@ -388,6 +394,8 @@ final class ParticleSystem {
             }
             renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
                                          index: BufferIndex.bf_viewportSize_index.rawValue)
+
+            renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
 
             renderEncoder.drawIndexedPrimitives(
                 type: .triangle,
@@ -572,7 +580,7 @@ final class ParticleSystem {
         self.simParam.newParticleRadius = radius
         self.simParam.newParticleMass = Float.pi * radius * radius * radius
         self.simParam.newParticleColor = color
-        self.simParam.newParticleLifetime = 3.0
+        self.simParam.newParticleLifetime = 3
     }
 
     public func setVerticesPerParticle(num: Int) {

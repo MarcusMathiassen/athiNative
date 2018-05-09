@@ -79,7 +79,10 @@ class IOSViewController: UIViewController {
                           repeats: true, block: { _ in
                               // Get the accelerometer data.
                               if let data = self.motion.accelerometerData {
-                                  let acc = float3(data.acceleration)
+                                let acc = float3(
+                                    Float(data.acceleration.x),
+                                    Float(data.acceleration.y),
+                                    Float(data.acceleration.z))
 
                                   // Use the accelerometer data in your app.
                                   accelerometer = acc
@@ -107,7 +110,10 @@ class IOSViewController: UIViewController {
                           repeats: true, block: { _ in
                               // Get the gyro data.
                               if let data = self.motion.gyroData {
-                                let rotationRate = float3(data.rotationRate)
+                                let rotationRate = float3(
+                                    Float(data.rotationRate.x),
+                                    Float(data.rotationRate.y),
+                                    Float(data.rotationRate.z))
 
                                   // Use the gyroscope data in your app.
                                   gyroRotation = rotationRate

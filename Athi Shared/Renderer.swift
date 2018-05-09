@@ -30,7 +30,7 @@ struct FrameDescriptor {
     var viewportSize: float2 = float2(0)
 
     var clearColor: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
-    var pixelFormat: MTLPixelFormat = .bgra8Unorm
+    var pixelFormat: MTLPixelFormat = Renderer.pixelFormat
     var deltaTime: Float = 0.0
 }
 
@@ -63,12 +63,12 @@ final class Renderer: NSObject, MTKViewDelegate {
         device = view.device!
 
         let myParticleOptions: [ParticleOption] = [
-            .lifetime,
-//            .homing,
+//            .lifetime,
+            .homing,
 //            .turbulence,
 //            .attractedToMouse,
-            .intercollision,
-            .borderBound,
+//            .intercollision,
+//            .borderBound,
 //            .drawToTexture
         ]
         particleSystem = ParticleSystem(device: device, options: myParticleOptions)
@@ -79,17 +79,19 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         super.init()
 
+        #if os(macOS)
         let devices = MTLCopyAllDevices()
         print("Available devices:")
         for device in devices {
             print((device.name == self.device.name) ? "*" : " ", device.name)
         }
 
-        print("argumentBuffersSupport:", device.argumentBuffersSupport.rawValue)
         print("isHeadless:", device.isHeadless)
         print("isLowPower:", device.isLowPower)
         print("isRemovable:", device.isRemovable)
+        #endif
 
+        print("argumentBuffersSupport:", device.argumentBuffersSupport.rawValue)
         print("Argument buffer support:", device.argumentBuffersSupport.rawValue)
         print("ReadWrite texture support:", device.readWriteTextureSupport.rawValue)
         print("maxThreadsPerThreadgroup:", device.maxThreadsPerThreadgroup)
@@ -122,7 +124,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.preferredFramesPerSecond = 60
         view.sampleCount = 1
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
-        view.colorPixelFormat = .bgra8Unorm
+        view.colorPixelFormat = Renderer.pixelFormat
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
     }
@@ -145,7 +147,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         frameDescriptor.framebufferSize = float2(framebufferWidth, framebufferHeight)
         frameDescriptor.viewportSize = frameDescriptor.framebufferSize
         frameDescriptor.deltaTime = deltaTime
-        frameDescriptor.pixelFormat = .bgra8Unorm
+        frameDescriptor.pixelFormat = Renderer.pixelFormat
 
         #if os(macOS)
         let bck = backgroundColor.cgColor
@@ -237,7 +239,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         viewportSize.y = framebufferHeight
 
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: .bgra8Unorm,
+            pixelFormat: Renderer.pixelFormat,
             width: Int(framebufferWidth),
             height: Int(framebufferHeight),
             mipmapped: false)

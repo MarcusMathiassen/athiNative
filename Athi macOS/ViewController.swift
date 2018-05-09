@@ -242,7 +242,7 @@ class MACOSViewController: NSViewController {
         }
 
         mtkView.device = defaultDevice
-        
+
         guard let newRenderer = Renderer(view: mtkView) else {
             print("Renderer cannot be initialized")
             return
