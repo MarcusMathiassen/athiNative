@@ -68,16 +68,6 @@ void init_buffers(
 {
     thread const auto index = particleIndex;
 
-    // Find emitter for this particle
-    for (uint32_t emitter_index = 0; emitter_index < simParam.emitter_count; ++emitter_index)
-    {
-        const auto emitter = emitters[emitter_index];
-        if (index > emitter.start_index && index < emitter.end_index)
-        {
-            emitter_indices[index] = emitter_index;
-        }
-    }
-
     //----------------------------------
     //  Initilize all particle buffers
     //----------------------------------
@@ -139,6 +129,24 @@ void uber_compute(
     // Get the emitter for this particle
     const auto emitter_id = emitter_indices[index];
     const auto emitter = emitters[emitter_id];
+    thread const auto is_first_thread = index == 0 ? true : false;
+    
+    if (is_first_thread && simParam.emitter_count != gpuParticleCount)
+    {
+        uint32_t counter = emitters[gpuParticleCount].start_index;
+        // Find emitter for this particle
+        for (uint32_t emitter_index = gpuParticleCount;
+             emitter_index < simParam.emitter_count; ++emitter_index)
+        {
+            const auto amount = emitters[emitter_index].start_index + emitters[emitter_index].particle_count;
+            for (uint32_t i = counter; i < amount; ++i)
+            {
+                emitter_indices[i] = emitter_index;
+            }
+            counter += amount;
+        }
+        gpuParticleCount = simParam.emitter_count;
+    }
 //    thread const auto is_first_thread = (index == emitter.start_index) ? true : false;
 
     //----------------------------------

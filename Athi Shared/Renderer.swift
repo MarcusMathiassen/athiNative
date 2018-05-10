@@ -136,8 +136,8 @@ final class Renderer: NSObject, MTKViewDelegate {
         var emitter = Emitter()
         emitter.position = float2(25, framebufferHeight/2)
         emitter.direction = float2(1, 0)
-        emitter.count = 6000
-        emitter.spread = 0
+        emitter.count = 2000
+        emitter.spread = 2
         emitter.speed = 10
         emitter.size = 5
         emitter.lifetime = 5
@@ -147,7 +147,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         emitter.position = float2(framebufferWidth-25, framebufferHeight/2)
         emitter.direction = float2(-1, 0)
-        emitter.count = 6000
+        emitter.count = 2000
         emitter.spread = 1
         emitter.speed = 10
         emitter.size = 5
@@ -253,7 +253,17 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         switch gMouseOption {
         case MouseOption.spawn:
-            break
+            var emitter = Emitter()
+            emitter.position = mousePos
+            emitter.direction = float2(0, 0)
+            emitter.count = 10
+            emitter.spread = 2
+            emitter.speed = 10
+            emitter.size = gParticleSize
+            emitter.lifetime = 5
+            emitter.color = particleSystem.particleColor
+            emitter.options = [.lifetime]
+            let _ = particleSystem.addEmitter(emitter)
 //            particleSystem.addParticlesToEmitter(0, count: 10)
 
         case MouseOption.drag:

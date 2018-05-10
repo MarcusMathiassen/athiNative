@@ -396,6 +396,31 @@ final class ParticleSystem {
             destinationOffset: 0,
             size: MemoryLayout<UInt32>.stride
         )
+        
+        var vas = [Bool](repeating: false, count: maxParticles)
+        let buffi = device.makeBuffer(bytes: &vas,
+                                     length: MemoryLayout<Bool>.stride * maxParticles,
+                                     options: .storageModeShared)!
+        blitCommandEncoder.copy(
+            from: buffi,
+            sourceOffset: 0,
+            to: isAlivesBuffer,
+            destinationOffset: 0,
+            size: MemoryLayout<Bool>.stride * maxParticles
+        )
+        
+        var vasee = [_Emitter](repeating: _Emitter(), count: maxParticles)
+        let buffeei = device.makeBuffer(bytes: &vasee,
+                                      length: MemoryLayout<_Emitter>.stride * maxEmitterCount,
+                                      options: .storageModeShared)!
+        blitCommandEncoder.copy(
+            from: buffeei,
+            sourceOffset: 0,
+            to: emittersBuffer,
+            destinationOffset: 0,
+            size: MemoryLayout<_Emitter>.stride * maxEmitterCount
+        )
+
 
         blitCommandEncoder.endEncoding()
     }
@@ -416,20 +441,6 @@ final class ParticleSystem {
             destinationOffset: 0,
             size: MemoryLayout<UInt32>.stride
         )
-
-//        // Initilize emitters
-//        let buffii = device.makeBuffer(
-//            bytes: &emitters,
-//            length: MemoryLayout<_Emitter>.stride * emitters.count,
-//            options: .storageModeShared)!
-//
-//        blitCommandEncoder.copy(
-//            from: buffii,
-//            sourceOffset: 0,
-//            to: emittersBuffer,
-//            destinationOffset: 0,
-//            size: MemoryLayout<_Emitter>.stride * emitters.count
-//        )
 
         blitCommandEncoder.endEncoding()
 
@@ -487,6 +498,7 @@ final class ParticleSystem {
             simParam.particleCount = UInt32(particleCount)
             simParam.viewportSize = viewportSize
             simParam.attractPoint = attractPoint
+            simParam.emitter_count = UInt32(emitters.count)
             simParam.mousePos = mousePos
             simParam.currentTime = Float(getTime())
             simParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
@@ -558,7 +570,7 @@ final class ParticleSystem {
 
     public func draw(view: MTKView, frameDescriptor: FrameDescriptor, commandBuffer: MTLCommandBuffer) {
 
-        if particleCount == 0 { return }
+        if emitters.count == 0 { return }
 
         commandBuffer.pushDebugGroup("ParticleSystem Draw")
 
@@ -664,23 +676,23 @@ final class ParticleSystem {
     }
 
     private func updateParticles(commandBuffer: MTLCommandBuffer) {
-
-        if particleCount == 0 { return }
-
-        if simParam.clearParticles { setGPUParticleCount(commandBuffer: commandBuffer, value: 0) }
-
+        
+        if emitters.count == 0 { return }
+    
         if !hasInit {
 
             initGPUBuffers(commandBuffer: commandBuffer)
 
             hasInit = true
         }
+        
+        if simParam.clearParticles { setGPUParticleCount(commandBuffer: commandBuffer, value: 0) }
 
         commandBuffer.pushDebugGroup("Particles Update")
 
         // Update emitters
         for idx in emitters.indices {
-            emitters[idx].size = gParticleSize
+//            emitters[idx].size = gParticleSize
             emitters[idx].target_pos = attractPoint
 //            emitters[idx].color = particleColor
             emitters[idx].has_intercollision = enableCollisions
@@ -737,6 +749,7 @@ final class ParticleSystem {
         simParam.viewportSize = viewportSize
         simParam.attractPoint = attractPoint
         simParam.mousePos = mousePos
+        simParam.emitter_count = UInt32(emitters.count)
         simParam.currentTime = Float(getTime())
         simParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
         computeEncoder.setBytes(&simParam,
@@ -785,6 +798,7 @@ final class ParticleSystem {
 
     public func eraseParticles() {
         self.particleCount = 0
+        self.emitters.removeAll()
         self.simParam.clearParticles = true
     }
 
@@ -796,7 +810,7 @@ final class ParticleSystem {
 
         particleCount += count
     }
-
+    
     public func addParticleWith(position: float2, color: float4, radius: Float) {
 
         if self.particleCount == self.maxParticles { return }
