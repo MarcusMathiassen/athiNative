@@ -39,7 +39,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     var wireframeMode: Bool = false
     var fillMode: MTLTriangleFillMode = .fill
 
-    static var clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+    static var clearColor = MTLClearColor(red: 9/255, green: 9/255, blue: 9/255, alpha: 1)
     static var pixelFormat = MTLPixelFormat.bgra8Unorm
 
     var framerate: Int = 0
@@ -59,26 +59,14 @@ final class Renderer: NSObject, MTKViewDelegate {
     let commandQueue: MTLCommandQueue
 
     init?(view: MTKView) {
-        
-        device = view.device!
 
-        let myParticleOptions: [ParticleOption] = [
-            .lifetime,
-            .homing,
-//            .turbulence,
-//            .attractedToMouse,
-            .intercollision,
-//            .borderBound,
-//            .drawToTexture,
-            .canAddParticles,
-        ]
-        particleSystem = ParticleSystem(device: device, options: myParticleOptions)
+        device = view.device!
 
         commandQueue = device.makeCommandQueue()!
 
 //        inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
 
-        super.init()
+//        super.init()
 
         #if os(macOS)
         let devices = MTLCopyAllDevices()
@@ -124,10 +112,59 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.autoResizeDrawable = true // auto updates the views resolution on resizing
         view.preferredFramesPerSecond = 60
         view.sampleCount = 1
-        view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0)
+        view.clearColor = Renderer.clearColor
         view.colorPixelFormat = Renderer.pixelFormat
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
+
+        let myParticleOptions: [ParticleOption] = [
+                        .lifetime,
+                        .homing,
+            //            .turbulence,
+            //            .attractedToMouse,
+                        .intercollision,
+                        .borderBound,
+            //            .drawToTexture,
+//                        .canAddParticles
+        ]
+        particleSystem = ParticleSystem(
+            device: device,
+            options: myParticleOptions,
+            maxParticles: 100_000
+        )
+
+        var emitter = Emitter()
+        emitter.position = float2(600, 500)
+        emitter.count = 500
+        emitter.spread = 5
+        emitter.speed = 5
+        emitter.size = 5
+        emitter.lifetime = 10
+        emitter.color = float4(1, 0.541, 0.847, 1)
+        emitter.options = [.lifetime, .intercollision]
+        let emitter0 = particleSystem.addEmitter(emitter)
+
+        emitter.position = float2(800, 500)
+        emitter.direction = float2(1, 0)
+        emitter.count = 10_000
+        emitter.spread = 5
+        emitter.speed = 5
+        emitter.size = 2
+        emitter.lifetime = 3
+        emitter.color = float4(1, 0.462, 0.485, 1)
+        emitter.options = [.lifetime, .homing]
+        let emitter1 = particleSystem.addEmitter(emitter)
+
+        emitter.position = float2(1000, 500)
+        emitter.direction = float2(0, 1)
+        emitter.count = 500
+        emitter.spread = 1
+        emitter.speed = 5
+        emitter.size = 5
+        emitter.lifetime = 10
+        emitter.color = float4(0.451, 0.993, 1, 1)
+        emitter.options = [.lifetime, .intercollision]
+        let emitter2 = particleSystem.addEmitter(emitter)
     }
 
     func draw(in view: MTKView) {
@@ -158,14 +195,12 @@ final class Renderer: NSObject, MTKViewDelegate {
             blue: Double(bck.components![2]),
             alpha: Double(bck.components![3]))
         #else
-        frameDescriptor.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        frameDescriptor.clearColor = Renderer.clearColor
         #endif
 
-        if particleColorCycle {
+        if gParticleColorCycle {
             particleSystem.particleColor = colorOverTime(getTime())
         }
-
-        let startTime = getTime()
 
         updateInput()
 
@@ -178,6 +213,13 @@ final class Renderer: NSObject, MTKViewDelegate {
             commandBuffer: commandBuffer
         )
 
+        if particleSystem.particleCount == 0 {
+            // Clear the screen
+            let renderPassDesc = view.currentRenderPassDescriptor!
+            let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)
+            renderEncoder?.endEncoding()
+        }
+
         if gDrawDebug {
             particleSystem.drawDebug(
                 color: float4(1),
@@ -189,6 +231,9 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
+
+        let startTime = getTime()
+
         commandBuffer.waitUntilCompleted()
 
         frametime = Float((getTime() - startTime) * 1000.0)
@@ -207,13 +252,8 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         switch gMouseOption {
         case MouseOption.spawn:
-
-            for _ in 0 ..< 100 {
-                particleSystem.addParticleWith(
-                    position: mousePos,
-                    color: particleSystem.particleColor,
-                    radius: particleSize)
-            }
+            break
+//            particleSystem.addParticlesToEmitter(0, count: 10)
 
         case MouseOption.drag:
              break

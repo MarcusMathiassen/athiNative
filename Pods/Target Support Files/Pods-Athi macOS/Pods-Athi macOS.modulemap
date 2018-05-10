@@ -1,0 +1,6 @@
+framework module Pods_Athi_macOS {
+  umbrella header "Pods-Athi macOS-umbrella.h"
+
+  export *
+  module * { export * }
+}

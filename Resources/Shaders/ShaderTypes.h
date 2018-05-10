@@ -43,6 +43,8 @@ typedef NS_ENUM(NSInteger, BufferIndex)
 
     bf_seed_buffer_index,
     bf_field_nodes_index,
+    bf_emitters_index,
+    bf_emitter_indices_index,
 };
 
 typedef struct
@@ -52,14 +54,41 @@ typedef struct
 
 typedef struct
 {
+    uint particle_count;
+    uint max_particle_count;
+
+    vector_float2 viewport_size;
+    vector_float2 gravity_force;
+    vector_float2 attract_point;
+    vector_float2 mouse_pos;
+
+    // Emitters
+    bool add_emitter;
+    bool remove_emitter;
+
+    uint selected_emitter;
+
+    uint emitter_count;
+
+    float current_time;
+    float delta_time;
+
+} GlobalParam;
+
+
+
+typedef struct
+{
     vector_float2 viewportSize;
     vector_float2 attractPoint;
     vector_float2 gravityForce;
     
     vector_float2 mousePos;
     float currentTime;
-    
+
+    uint emitter_count;
     uint particleCount;
+
     bool shouldAddParticle;
     vector_float2 newParticlePosition;
     vector_float2 newParticleVelocity;
@@ -69,16 +98,73 @@ typedef struct
     float newParticleLifetime;
     bool clearParticles;
     float initialVelocity;
+
+    uint add_particles_count;
+    uint selected_emitter_id;
 } SimParam;
 
 typedef struct
 {
-    uint particleCount;
-    bool shouldAddParticle;
-    vector_float2 spawnPoint;
-    vector_float2 spawnDirection;
-    float spawnSpeed;
+    uint            particle_count;
+    uint            max_particle_count;
+
+    // Option variables
+    vector_float2   target_pos;
+    vector_float2   gravity_force;
+
+    bool            should_add_particle;
+    bool            should_clear_particles;
+
+    // Particle Spawn settings
+    vector_float2   position;
+    vector_float2   direction;
+    vector_float4   color;
+    float           speed;
+    float           maxSpeed;
+
 } EmitterParam;
+
+typedef struct
+{
+    uint            particle_count;
+    uint            add_particles_count;
+    uint            max_particle_count;
+
+    // Option variables
+    vector_float2   target_pos;
+    vector_float2   gravity_force;
+
+    bool            should_add_particle;
+    bool            should_clear_particles;
+
+    bool has_lifetime;
+    bool has_intercollision;
+    bool has_can_add_particles;
+    bool has_borderbound;
+    bool has_homing;
+
+    // Particle Spawn settings
+    vector_float2   position;
+    vector_float2   direction;
+    vector_float4   color;
+
+    float           spread;
+    float           size;
+    float           speed;
+    float           maxSpeed;
+    float           lifetime;
+
+    uint start_index;
+    uint end_index;
+
+} _Emitter;
+
+typedef struct
+{
+    uint min;
+    uint max;
+} Range;
+
 
 #endif /* ShaderTypes_h */
 

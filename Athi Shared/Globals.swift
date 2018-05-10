@@ -18,15 +18,16 @@ enum TreeOption {
     case noTree
 }
 
+var gSpawnAmount: Int = 10
 var gComputeDeviceOption: ComputeDeviceOption = .cpu
 var gTreeOption: TreeOption = .quadtree
 var gDrawDebug: Bool = false
 
-var pixelScale: Float = 0
+var gPixelScale: Float = 0
 
-var particleSize: Float = 4
+var gParticleSize: Float = 4
 
-var particleColorCycle: Bool = true
+var gParticleColorCycle: Bool = false
 
 var gyroRotation = float3(0, 0, 0)
 var accelerometer = float3(0, 0, 0)
@@ -35,10 +36,10 @@ var viewportSize = float2(0, 0)
 
 #if os(macOS)
     import AppKit
-    var backgroundColor = NSColor(calibratedRed: 0, green: 0, blue: 0, alpha: 1)
+    var backgroundColor = NSColor(calibratedRed: 9/255, green: 9/255, blue: 9/255, alpha: 1)
 
     var colorSpace: NSColorSpace?
 #else
     import UIKit
-    var backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    var backgroundColor = UIColor(red: 9/255, green: 9/255, blue: 9/255, alpha: 1)
 #endif

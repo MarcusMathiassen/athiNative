@@ -22,7 +22,7 @@ class MACOSViewController: NSViewController {
 
     override func mouseMoved(with event: NSEvent) {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
-        mousePos *= pixelScale
+        mousePos *= gPixelScale
         // print("Mouse position:", mousePos)
     }
 
@@ -34,7 +34,7 @@ class MACOSViewController: NSViewController {
 
     override func mouseDragged(with event: NSEvent) {
         mousePos = float2(Float(event.locationInWindow.x), Float(event.locationInWindow.y))
-        mousePos *= pixelScale
+        mousePos *= gPixelScale
 
         isMouseDragging = true
     }
@@ -105,7 +105,7 @@ class MACOSViewController: NSViewController {
     }
 
     @IBAction func cycleColorSwitch(_ sender: NSButton) {
-        particleColorCycle = (sender.state.rawValue == 0) ? false : true
+        gParticleColorCycle = (sender.state.rawValue == 0) ? false : true
     }
 
     @IBOutlet var framerateLabel: NSTextField!
@@ -139,7 +139,7 @@ class MACOSViewController: NSViewController {
     }
 
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
-        particleSize = sender.floatValue
+        gParticleSize = sender.floatValue
     }
 
     func startVariableUpdater() {
@@ -220,13 +220,13 @@ class MACOSViewController: NSViewController {
         menuView.layer?.cornerRadius = 10.0
 
         colorSpace = NSScreen.screens[0].colorSpace!
-        pixelScale = Float(NSScreen.screens[0].backingScaleFactor)
+        gPixelScale = Float(NSScreen.screens[0].backingScaleFactor)
 
         screenWidth = Float(view.frame.width)
         screenHeight = Float(view.frame.height)
 
-        framebufferWidth = Float(view.frame.width) * pixelScale
-        framebufferHeight = Float(view.frame.height) * pixelScale
+        framebufferWidth = Float(view.frame.width) * gPixelScale
+        framebufferHeight = Float(view.frame.height) * gPixelScale
 
         mouseOptionButton.addItem(withTitle: "Repel")
 

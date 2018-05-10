@@ -42,7 +42,7 @@ class IOSViewController: UIViewController {
         renderer.particleSystem.blurStrength = sender.value
     }
     @IBAction func particleSizeSlider(_ sender: UISlider) {
-        particleSize = sender.value
+        gParticleSize = sender.value
     }
 
     @IBOutlet var particleCountLabel: UILabel?
@@ -60,7 +60,7 @@ class IOSViewController: UIViewController {
                 renderer.particleSystem.addParticleWith(
                     position: point,
                     color: renderer.particleSystem.particleColor,
-                    radius: particleSize)
+                    radius: gParticleSize)
             }
         }
     }
@@ -138,13 +138,13 @@ class IOSViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        pixelScale = 2
+        gPixelScale = 2
 
         screenWidth = Float(view.frame.width)
         screenHeight = Float(view.frame.height)
 
-        framebufferWidth = Float(view.frame.width) * pixelScale
-        framebufferHeight = Float(view.frame.height) * pixelScale
+        framebufferWidth = Float(view.frame.width) * gPixelScale
+        framebufferHeight = Float(view.frame.height) * gPixelScale
 
         startAccelerometers()
         startGyros()

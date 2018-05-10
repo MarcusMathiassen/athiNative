@@ -1,0 +1,741 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		29B6D052F286EDC6FD01C69749F7620B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 431D334C455E16522AD0E41506C7B4D1 /* Foundation.framework */; };
+		36E2E9D80F41049199912657F80609E9 /* Pods-Athi macOS-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = E98BEC5E5F67D4D8766CFF34852B267D /* Pods-Athi macOS-dummy.m */; };
+		597A0DD4E2B95031E8C2B12AA7401243 /* Pods-Athi iOS-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = E3A3F71A3EF7FD1C8E00C7D9A6FB6015 /* Pods-Athi iOS-dummy.m */; };
+		663F40E36154E3A7DB8AEA20B65D2CC4 /* Pods-Athi tvOS-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = E1608F3EAB7F67C99329ABCA63E6D6B8 /* Pods-Athi tvOS-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		8213C5508C90C2C793AAF7575614BA7D /* Pods-Athi macOS-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = D6E9D4A4BFB1C909ECF67E958AA4F5FD /* Pods-Athi macOS-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		96206CBFEAE03C5EA0DCDB8576C8A7B3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CC0E9850E102760A0993631966EBEDF /* Foundation.framework */; };
+		B71B6FC56780C96A10B9DCC4F52BBDEB /* Pods-Athi iOS-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = FD189CB1B0F6B19A3457DC9AEF8AD6B0 /* Pods-Athi iOS-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D157B36C4BE40F9354B44223E3151E40 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48233FC070FA1CADC1C3A92C3D3948A1 /* Cocoa.framework */; };
+		EF3D5A8970C213867450591CA1DB4C94 /* Pods-Athi tvOS-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CD05BA70091274B6755260F5616A7A /* Pods-Athi tvOS-dummy.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3796F05E88BB515CE7EC420CE1721A9C /* Pods-Athi macOS-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Athi macOS-frameworks.sh"; sourceTree = "<group>"; };
+		431D334C455E16522AD0E41506C7B4D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS11.3.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		48233FC070FA1CADC1C3A92C3D3948A1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		4CC0E9850E102760A0993631966EBEDF /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS11.3.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		4D669DEF85290EDA840B69C707F1DEC4 /* Pods-Athi macOS.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-Athi macOS.modulemap"; sourceTree = "<group>"; };
+		5254475919D9760F802079E3A7FC6128 /* Pods-Athi iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Athi iOS.release.xcconfig"; sourceTree = "<group>"; };
+		58CD05BA70091274B6755260F5616A7A /* Pods-Athi tvOS-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-Athi tvOS-dummy.m"; sourceTree = "<group>"; };
+		5C3EEC7E0B65C20F2649EEC1EDD93B6D /* Pods-Athi tvOS.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-Athi tvOS.modulemap"; sourceTree = "<group>"; };
+		6818D5538246DE618EA3AAEA1B69A4EC /* Pods_Athi_tvOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Pods_Athi_tvOS.framework; path = "Pods-Athi tvOS.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		691817570954FC03FF5ADE0ACF6C6BA6 /* Pods-Athi tvOS-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-Athi tvOS-acknowledgements.plist"; sourceTree = "<group>"; };
+		6C3A99318C28ABCFACA4FD57A503CFFD /* Pods-Athi tvOS-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-Athi tvOS-acknowledgements.markdown"; sourceTree = "<group>"; };
+		731228DD5770258E85DCA79B69AA0C3F /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7434261AC8DFD7ADF05DF2FD3E34ADD5 /* Pods-Athi macOS-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-Athi macOS-acknowledgements.plist"; sourceTree = "<group>"; };
+		74B985C1DA3B0B9E3E51D7258638CD99 /* Pods-Athi iOS-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-Athi iOS-acknowledgements.markdown"; sourceTree = "<group>"; };
+		794EC31162AD6F5191A9D912ABB309E1 /* Pods-Athi tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Athi tvOS.release.xcconfig"; sourceTree = "<group>"; };
+		82ED95B9D14032C89CFF349CB1E8C615 /* Pods_Athi_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Pods_Athi_iOS.framework; path = "Pods-Athi iOS.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		83DE8F09751D2543C50572F94E6370BF /* Pods-Athi iOS-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Athi iOS-frameworks.sh"; sourceTree = "<group>"; };
+		8AD9B819773DC2BEFDB33DC95B3498E2 /* Pods-Athi tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Athi tvOS.debug.xcconfig"; sourceTree = "<group>"; };
+		92CA5EB4E2F31FF88EF1EF5B90509E67 /* Pods-Athi iOS.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-Athi iOS.modulemap"; sourceTree = "<group>"; };
+		93A4A3777CF96A4AAC1D13BA6DCCEA73 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		98E56713D4451554F0DB2BB8B2516953 /* Pods-Athi tvOS-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Athi tvOS-frameworks.sh"; sourceTree = "<group>"; };
+		A1EF8C1B257D8E52DD4725B5F9F26269 /* Pods-Athi iOS-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-Athi iOS-acknowledgements.plist"; sourceTree = "<group>"; };
+		B80141881B2CE55AD64C256DB83BBCF2 /* Pods-Athi macOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Athi macOS.release.xcconfig"; sourceTree = "<group>"; };
+		C05444EAF1F5298F547E3B94693503FC /* Pods_Athi_macOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Pods_Athi_macOS.framework; path = "Pods-Athi macOS.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE1C7B4774FF1E1BAFBCEAC90A52A3D5 /* Pods-Athi macOS-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-Athi macOS-acknowledgements.markdown"; sourceTree = "<group>"; };
+		CEBA4893649438B07C49AE9204FF9EA9 /* Pods-Athi macOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Athi macOS.debug.xcconfig"; sourceTree = "<group>"; };
+		D08A43C7EFCFDA8F64D5F2E09F1F22F3 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D6E9D4A4BFB1C909ECF67E958AA4F5FD /* Pods-Athi macOS-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-Athi macOS-umbrella.h"; sourceTree = "<group>"; };
+		D9D4FBE2DCDB999F5B29F96A907C789F /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		DDB86073E5CA44168D000FE6925B7A6E /* Pods-Athi macOS-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Athi macOS-resources.sh"; sourceTree = "<group>"; };
+		E1608F3EAB7F67C99329ABCA63E6D6B8 /* Pods-Athi tvOS-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-Athi tvOS-umbrella.h"; sourceTree = "<group>"; };
+		E3A3F71A3EF7FD1C8E00C7D9A6FB6015 /* Pods-Athi iOS-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-Athi iOS-dummy.m"; sourceTree = "<group>"; };
+		E98BEC5E5F67D4D8766CFF34852B267D /* Pods-Athi macOS-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-Athi macOS-dummy.m"; sourceTree = "<group>"; };
+		EB82D00C13352ED600254F35CC722224 /* Pods-Athi iOS-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Athi iOS-resources.sh"; sourceTree = "<group>"; };
+		FD189CB1B0F6B19A3457DC9AEF8AD6B0 /* Pods-Athi iOS-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-Athi iOS-umbrella.h"; sourceTree = "<group>"; };
+		FE170B5256EC5E23A675859264573374 /* Pods-Athi iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Athi iOS.debug.xcconfig"; sourceTree = "<group>"; };
+		FEA56A334DC0D7E5ACDE3C26FB7BA95D /* Pods-Athi tvOS-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Athi tvOS-resources.sh"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7BB0F854381E224008FF43F5678619A8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				29B6D052F286EDC6FD01C69749F7620B /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1381AF437AB098A8F841E7B01043C03 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96206CBFEAE03C5EA0DCDB8576C8A7B3 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED001E2DFBD8B68BBB6B5A37B8D45100 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D157B36C4BE40F9354B44223E3151E40 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5619CECEFF614655208FCBE82AD3347A /* Pods-Athi iOS */ = {
+			isa = PBXGroup;
+			children = (
+				D9D4FBE2DCDB999F5B29F96A907C789F /* Info.plist */,
+				92CA5EB4E2F31FF88EF1EF5B90509E67 /* Pods-Athi iOS.modulemap */,
+				74B985C1DA3B0B9E3E51D7258638CD99 /* Pods-Athi iOS-acknowledgements.markdown */,
+				A1EF8C1B257D8E52DD4725B5F9F26269 /* Pods-Athi iOS-acknowledgements.plist */,
+				E3A3F71A3EF7FD1C8E00C7D9A6FB6015 /* Pods-Athi iOS-dummy.m */,
+				83DE8F09751D2543C50572F94E6370BF /* Pods-Athi iOS-frameworks.sh */,
+				EB82D00C13352ED600254F35CC722224 /* Pods-Athi iOS-resources.sh */,
+				FD189CB1B0F6B19A3457DC9AEF8AD6B0 /* Pods-Athi iOS-umbrella.h */,
+				FE170B5256EC5E23A675859264573374 /* Pods-Athi iOS.debug.xcconfig */,
+				5254475919D9760F802079E3A7FC6128 /* Pods-Athi iOS.release.xcconfig */,
+			);
+			name = "Pods-Athi iOS";
+			path = "Target Support Files/Pods-Athi iOS";
+			sourceTree = "<group>";
+		};
+		7DB346D0F39D3F0E887471402A8071AB = {
+			isa = PBXGroup;
+			children = (
+				93A4A3777CF96A4AAC1D13BA6DCCEA73 /* Podfile */,
+				E9474CE87C6AA9A851AEC24006206CAA /* Frameworks */,
+				E5AC0B10BD8474D97DB4AA3F4D15F254 /* Products */,
+				F68804B0EC02B15D2B9BE9374C950736 /* Targets Support Files */,
+			);
+			sourceTree = "<group>";
+		};
+		A92424381BD60E468F098B2B23A5EECB /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				48233FC070FA1CADC1C3A92C3D3948A1 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		B0FF9339F7D53164C70A97558AEB9656 /* Pods-Athi tvOS */ = {
+			isa = PBXGroup;
+			children = (
+				D08A43C7EFCFDA8F64D5F2E09F1F22F3 /* Info.plist */,
+				5C3EEC7E0B65C20F2649EEC1EDD93B6D /* Pods-Athi tvOS.modulemap */,
+				6C3A99318C28ABCFACA4FD57A503CFFD /* Pods-Athi tvOS-acknowledgements.markdown */,
+				691817570954FC03FF5ADE0ACF6C6BA6 /* Pods-Athi tvOS-acknowledgements.plist */,
+				58CD05BA70091274B6755260F5616A7A /* Pods-Athi tvOS-dummy.m */,
+				98E56713D4451554F0DB2BB8B2516953 /* Pods-Athi tvOS-frameworks.sh */,
+				FEA56A334DC0D7E5ACDE3C26FB7BA95D /* Pods-Athi tvOS-resources.sh */,
+				E1608F3EAB7F67C99329ABCA63E6D6B8 /* Pods-Athi tvOS-umbrella.h */,
+				8AD9B819773DC2BEFDB33DC95B3498E2 /* Pods-Athi tvOS.debug.xcconfig */,
+				794EC31162AD6F5191A9D912ABB309E1 /* Pods-Athi tvOS.release.xcconfig */,
+			);
+			name = "Pods-Athi tvOS";
+			path = "Target Support Files/Pods-Athi tvOS";
+			sourceTree = "<group>";
+		};
+		B4E5527EF294F9F1D7643CEB40AEDAC8 /* tvOS */ = {
+			isa = PBXGroup;
+			children = (
+				4CC0E9850E102760A0993631966EBEDF /* Foundation.framework */,
+			);
+			name = tvOS;
+			sourceTree = "<group>";
+		};
+		B90266215DE614AD366764DFCF072D6D /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				431D334C455E16522AD0E41506C7B4D1 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		C970F96FF55BD4A4D132837F0343953E /* Pods-Athi macOS */ = {
+			isa = PBXGroup;
+			children = (
+				731228DD5770258E85DCA79B69AA0C3F /* Info.plist */,
+				4D669DEF85290EDA840B69C707F1DEC4 /* Pods-Athi macOS.modulemap */,
+				CE1C7B4774FF1E1BAFBCEAC90A52A3D5 /* Pods-Athi macOS-acknowledgements.markdown */,
+				7434261AC8DFD7ADF05DF2FD3E34ADD5 /* Pods-Athi macOS-acknowledgements.plist */,
+				E98BEC5E5F67D4D8766CFF34852B267D /* Pods-Athi macOS-dummy.m */,
+				3796F05E88BB515CE7EC420CE1721A9C /* Pods-Athi macOS-frameworks.sh */,
+				DDB86073E5CA44168D000FE6925B7A6E /* Pods-Athi macOS-resources.sh */,
+				D6E9D4A4BFB1C909ECF67E958AA4F5FD /* Pods-Athi macOS-umbrella.h */,
+				CEBA4893649438B07C49AE9204FF9EA9 /* Pods-Athi macOS.debug.xcconfig */,
+				B80141881B2CE55AD64C256DB83BBCF2 /* Pods-Athi macOS.release.xcconfig */,
+			);
+			name = "Pods-Athi macOS";
+			path = "Target Support Files/Pods-Athi macOS";
+			sourceTree = "<group>";
+		};
+		E5AC0B10BD8474D97DB4AA3F4D15F254 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				82ED95B9D14032C89CFF349CB1E8C615 /* Pods_Athi_iOS.framework */,
+				C05444EAF1F5298F547E3B94693503FC /* Pods_Athi_macOS.framework */,
+				6818D5538246DE618EA3AAEA1B69A4EC /* Pods_Athi_tvOS.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E9474CE87C6AA9A851AEC24006206CAA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B90266215DE614AD366764DFCF072D6D /* iOS */,
+				A92424381BD60E468F098B2B23A5EECB /* OS X */,
+				B4E5527EF294F9F1D7643CEB40AEDAC8 /* tvOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F68804B0EC02B15D2B9BE9374C950736 /* Targets Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				5619CECEFF614655208FCBE82AD3347A /* Pods-Athi iOS */,
+				C970F96FF55BD4A4D132837F0343953E /* Pods-Athi macOS */,
+				B0FF9339F7D53164C70A97558AEB9656 /* Pods-Athi tvOS */,
+			);
+			name = "Targets Support Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		43CC4FCAC2CF3274D982CB18C483C817 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				663F40E36154E3A7DB8AEA20B65D2CC4 /* Pods-Athi tvOS-umbrella.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BFA475EF51A8FE0D0C9C512CFFA6FC8A /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B71B6FC56780C96A10B9DCC4F52BBDEB /* Pods-Athi iOS-umbrella.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D20E398B42DCE964A8FFF7B104DC42D6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8213C5508C90C2C793AAF7575614BA7D /* Pods-Athi macOS-umbrella.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		02890189D7BD809FCE755813E88B2F80 /* Pods-Athi iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D69F6A287760C2C3CEAD9C53464CCBF /* Build configuration list for PBXNativeTarget "Pods-Athi iOS" */;
+			buildPhases = (
+				6A831FF4A0B5CAE988A5B0AAB861387D /* Sources */,
+				7BB0F854381E224008FF43F5678619A8 /* Frameworks */,
+				BFA475EF51A8FE0D0C9C512CFFA6FC8A /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Pods-Athi iOS";
+			productName = "Pods-Athi iOS";
+			productReference = 82ED95B9D14032C89CFF349CB1E8C615 /* Pods_Athi_iOS.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		3142BE96314ABC66B3353130522D0CDD /* Pods-Athi macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4167F0589F6F6740CFF34DD33F7171FD /* Build configuration list for PBXNativeTarget "Pods-Athi macOS" */;
+			buildPhases = (
+				A099B47F609C7C34972C323E8B7B19EF /* Sources */,
+				ED001E2DFBD8B68BBB6B5A37B8D45100 /* Frameworks */,
+				D20E398B42DCE964A8FFF7B104DC42D6 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Pods-Athi macOS";
+			productName = "Pods-Athi macOS";
+			productReference = C05444EAF1F5298F547E3B94693503FC /* Pods_Athi_macOS.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		68C3E3174A1870F6A168BBFE85559ECE /* Pods-Athi tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 25C4CC1C2EB62B6BF86D6F9FF523E90B /* Build configuration list for PBXNativeTarget "Pods-Athi tvOS" */;
+			buildPhases = (
+				A46490B3493C600BF6624FE67837354A /* Sources */,
+				E1381AF437AB098A8F841E7B01043C03 /* Frameworks */,
+				43CC4FCAC2CF3274D982CB18C483C817 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Pods-Athi tvOS";
+			productName = "Pods-Athi tvOS";
+			productReference = 6818D5538246DE618EA3AAEA1B69A4EC /* Pods_Athi_tvOS.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D41D8CD98F00B204E9800998ECF8427E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0930;
+				LastUpgradeCheck = 0930;
+			};
+			buildConfigurationList = 2D8E8EC45A3A1A1D94AE762CB5028504 /* Build configuration list for PBXProject "Pods" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 7DB346D0F39D3F0E887471402A8071AB;
+			productRefGroup = E5AC0B10BD8474D97DB4AA3F4D15F254 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				02890189D7BD809FCE755813E88B2F80 /* Pods-Athi iOS */,
+				3142BE96314ABC66B3353130522D0CDD /* Pods-Athi macOS */,
+				68C3E3174A1870F6A168BBFE85559ECE /* Pods-Athi tvOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6A831FF4A0B5CAE988A5B0AAB861387D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				597A0DD4E2B95031E8C2B12AA7401243 /* Pods-Athi iOS-dummy.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A099B47F609C7C34972C323E8B7B19EF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				36E2E9D80F41049199912657F80609E9 /* Pods-Athi macOS-dummy.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A46490B3493C600BF6624FE67837354A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EF3D5A8970C213867450591CA1DB4C94 /* Pods-Athi tvOS-dummy.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0E518969D2A7A5E4BCFA73E2D60E18CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 794EC31162AD6F5191A9D912ABB309E1 /* Pods-Athi tvOS.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Target Support Files/Pods-Athi tvOS/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-Athi tvOS/Pods-Athi tvOS.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 11.3;
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		2E5FE34E09680E2AE2BE95E29C1133E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5254475919D9760F802079E3A7FC6128 /* Pods-Athi iOS.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Target Support Files/Pods-Athi iOS/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-Athi iOS/Pods-Athi iOS.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		4DB366207060B3C28CD5E8A5DB67ECCF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CEBA4893649438B07C49AE9204FF9EA9 /* Pods-Athi macOS.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "Target Support Files/Pods-Athi macOS/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MODULEMAP_FILE = "Target Support Files/Pods-Athi macOS/Pods-Athi macOS.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		5069D08FAF9620A205084A20D4CA6A47 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B80141881B2CE55AD64C256DB83BBCF2 /* Pods-Athi macOS.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "Target Support Files/Pods-Athi macOS/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MODULEMAP_FILE = "Target Support Files/Pods-Athi macOS/Pods-Athi macOS.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		76DCC9CAF49F195730DC554A8A281269 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = FE170B5256EC5E23A675859264573374 /* Pods-Athi iOS.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Target Support Files/Pods-Athi iOS/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-Athi iOS/Pods-Athi iOS.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		81C3CD9FD2E80777521E505179C909D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_DEBUG=1",
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SYMROOT = "${SRCROOT}/../build";
+				TVOS_DEPLOYMENT_TARGET = 11.3;
+			};
+			name = Debug;
+		};
+		B8CDA5E6725AAB1AED3D7D94E6DE4B05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8AD9B819773DC2BEFDB33DC95B3498E2 /* Pods-Athi tvOS.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Target Support Files/Pods-Athi tvOS/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-Athi tvOS/Pods-Athi tvOS.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 11.3;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		D274DDF2EC66C21CC4AFF4E9D4CD2EC5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_RELEASE=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SYMROOT = "${SRCROOT}/../build";
+				TVOS_DEPLOYMENT_TARGET = 11.3;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		25C4CC1C2EB62B6BF86D6F9FF523E90B /* Build configuration list for PBXNativeTarget "Pods-Athi tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B8CDA5E6725AAB1AED3D7D94E6DE4B05 /* Debug */,
+				0E518969D2A7A5E4BCFA73E2D60E18CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2D8E8EC45A3A1A1D94AE762CB5028504 /* Build configuration list for PBXProject "Pods" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				81C3CD9FD2E80777521E505179C909D5 /* Debug */,
+				D274DDF2EC66C21CC4AFF4E9D4CD2EC5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4167F0589F6F6740CFF34DD33F7171FD /* Build configuration list for PBXNativeTarget "Pods-Athi macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DB366207060B3C28CD5E8A5DB67ECCF /* Debug */,
+				5069D08FAF9620A205084A20D4CA6A47 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5D69F6A287760C2C3CEAD9C53464CCBF /* Build configuration list for PBXNativeTarget "Pods-Athi iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76DCC9CAF49F195730DC554A8A281269 /* Debug */,
+				2E5FE34E09680E2AE2BE95E29C1133E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D41D8CD98F00B204E9800998ECF8427E /* Project object */;
+}

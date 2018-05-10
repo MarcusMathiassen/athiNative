@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		50305B130250F483D5A99A6D /* Pods_Athi_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E75C7245C10A75A4E866753E /* Pods_Athi_macOS.framework */; };
 		9001438B2072ABBC009FB201 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900143882072ABBB009FB201 /* ViewController.swift */; };
 		9001438D2072AD5C009FB201 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9001438C2072AD5C009FB201 /* Utility.swift */; };
 		9001438E2072AD5C009FB201 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9001438C2072AD5C009FB201 /* Utility.swift */; };
@@ -55,9 +56,15 @@
 		9051D96B2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
 		9051D96C2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
 		9051D96D2076D17200E2DB51 /* Quad.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9051D96A2076D17200E2DB51 /* Quad.metal */; };
+		D27BAE651F80930D43C06D7D /* Pods_Athi_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC9F245833B67D165D1EFA72 /* Pods_Athi_iOS.framework */; };
+		EECE9863B64F780506673FAF /* Pods_Athi_tvOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEB89F0CC5984FEDD49B3B6A /* Pods_Athi_tvOS.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		18C7A62BDF55AC269417233A /* Pods-Athi iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Athi iOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-Athi iOS/Pods-Athi iOS.release.xcconfig"; sourceTree = "<group>"; };
+		7E93EDE0829B1CB275B49588 /* Pods-Athi macOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Athi macOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Athi macOS/Pods-Athi macOS.debug.xcconfig"; sourceTree = "<group>"; };
+		814145FA4CE5AAE960567924 /* Pods-Athi iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Athi iOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Athi iOS/Pods-Athi iOS.debug.xcconfig"; sourceTree = "<group>"; };
+		8566384E55881F3039359DE6 /* Pods-Athi tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Athi tvOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-Athi tvOS/Pods-Athi tvOS.release.xcconfig"; sourceTree = "<group>"; };
 		900143882072ABBB009FB201 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9001438C2072AD5C009FB201 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		90027F8720780CF900FC6980 /* PrimitiveShapes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PrimitiveShapes.swift; path = "Athi Shared/PrimitiveShapes.swift"; sourceTree = SOURCE_ROOT; };
@@ -88,6 +95,11 @@
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
+		BCCF2C6A6EDFF94A4A145883 /* Pods-Athi tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Athi tvOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Athi tvOS/Pods-Athi tvOS.debug.xcconfig"; sourceTree = "<group>"; };
+		BEB89F0CC5984FEDD49B3B6A /* Pods_Athi_tvOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Athi_tvOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4AEB9C12971BE74A8548678 /* Pods-Athi macOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Athi macOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-Athi macOS/Pods-Athi macOS.release.xcconfig"; sourceTree = "<group>"; };
+		E75C7245C10A75A4E866753E /* Pods_Athi_macOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Athi_macOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EC9F245833B67D165D1EFA72 /* Pods_Athi_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Athi_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D27BAE651F80930D43C06D7D /* Pods_Athi_iOS.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,6 +115,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EECE9863B64F780506673FAF /* Pods_Athi_tvOS.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,12 +123,36 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				50305B130250F483D5A99A6D /* Pods_Athi_macOS.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A9DB4724DA36EBCB07E76D1 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				814145FA4CE5AAE960567924 /* Pods-Athi iOS.debug.xcconfig */,
+				18C7A62BDF55AC269417233A /* Pods-Athi iOS.release.xcconfig */,
+				7E93EDE0829B1CB275B49588 /* Pods-Athi macOS.debug.xcconfig */,
+				E4AEB9C12971BE74A8548678 /* Pods-Athi macOS.release.xcconfig */,
+				BCCF2C6A6EDFF94A4A145883 /* Pods-Athi tvOS.debug.xcconfig */,
+				8566384E55881F3039359DE6 /* Pods-Athi tvOS.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
+		14258FBE289B873941668F6F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				EC9F245833B67D165D1EFA72 /* Pods_Athi_iOS.framework */,
+				E75C7245C10A75A4E866753E /* Pods_Athi_macOS.framework */,
+				BEB89F0CC5984FEDD49B3B6A /* Pods_Athi_tvOS.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9000A0642075315C00EA056B /* Node */ = {
 			isa = PBXGroup;
 			children = (
@@ -136,6 +174,8 @@
 				900CAD2720729D6500AE60E9 /* Athi tvOS */,
 				900CAD3520729D6500AE60E9 /* Athi macOS */,
 				900CAD1520729D6500AE60E9 /* Products */,
+				0A9DB4724DA36EBCB07E76D1 /* Pods */,
+				14258FBE289B873941668F6F /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -230,6 +270,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 900CAD4C20729D6500AE60E9 /* Build configuration list for PBXNativeTarget "Athi iOS" */;
 			buildPhases = (
+				5C74C12C2A590D539AEABEA9 /* [CP] Check Pods Manifest.lock */,
 				900CAD1020729D6500AE60E9 /* Sources */,
 				900CAD1120729D6500AE60E9 /* Frameworks */,
 				900CAD1220729D6500AE60E9 /* Resources */,
@@ -247,6 +288,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 900CAD4F20729D6500AE60E9 /* Build configuration list for PBXNativeTarget "Athi tvOS" */;
 			buildPhases = (
+				E967D3FF1BD8FC6D386AA6C2 /* [CP] Check Pods Manifest.lock */,
 				900CAD2220729D6500AE60E9 /* Sources */,
 				900CAD2320729D6500AE60E9 /* Frameworks */,
 				900CAD2420729D6500AE60E9 /* Resources */,
@@ -264,6 +306,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 900CAD5220729D6500AE60E9 /* Build configuration list for PBXNativeTarget "Athi macOS" */;
 			buildPhases = (
+				645E146F7707F55857BB071D /* [CP] Check Pods Manifest.lock */,
 				900CAD3020729D6500AE60E9 /* Sources */,
 				900CAD3120729D6500AE60E9 /* Frameworks */,
 				900CAD3220729D6500AE60E9 /* Resources */,
@@ -351,6 +394,42 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		5C74C12C2A590D539AEABEA9 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Athi iOS-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		645E146F7707F55857BB071D /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Athi macOS-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		90406E68209F4734009AA049 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -363,6 +442,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if which swiftlint >/dev/null; then\n    swiftlint\nelse\necho \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi";
+		};
+		E967D3FF1BD8FC6D386AA6C2 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Athi tvOS-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -580,6 +677,7 @@
 		};
 		900CAD4D20729D6500AE60E9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 814145FA4CE5AAE960567924 /* Pods-Athi iOS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -608,6 +706,7 @@
 		};
 		900CAD4E20729D6500AE60E9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 18C7A62BDF55AC269417233A /* Pods-Athi iOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -637,6 +736,7 @@
 		};
 		900CAD5020729D6500AE60E9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BCCF2C6A6EDFF94A4A145883 /* Pods-Athi tvOS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "tvOS App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "tvOS LaunchImage";
@@ -660,6 +760,7 @@
 		};
 		900CAD5120729D6500AE60E9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8566384E55881F3039359DE6 /* Pods-Athi tvOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "tvOS App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "tvOS LaunchImage";
@@ -684,6 +785,7 @@
 		};
 		900CAD5320729D6500AE60E9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7E93EDE0829B1CB275B49588 /* Pods-Athi macOS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -715,6 +817,7 @@
 		};
 		900CAD5420729D6500AE60E9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E4AEB9C12971BE74A8548678 /* Pods-Athi macOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
