@@ -538,6 +538,7 @@ final class ParticleSystem {
         temp_emitter.max_particle_count = UInt32(emitter.count)
         temp_emitter.size = emitter.size
         temp_emitter.spread = emitter.spread
+        temp_emitter.speed = emitter.speed
         temp_emitter.lifetime = emitter.lifetime
 
         temp_emitter.has_homing = emitter.options.contains(.homing)

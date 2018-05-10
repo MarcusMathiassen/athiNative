@@ -85,8 +85,10 @@ void init_buffers(
     // Get the emitter for this particle
     thread auto emitter = emitters[emitter_indices[index]];
 
+    const auto dir = emitter.direction * emitter.speed;
+
     positions[index] = emitter.position;
-    velocities[index] = emitter.speed * emitter.direction;
+    velocities[index] = dir + rand2(-emitter.spread, emitter.spread, index, emitter.particle_count/3, 34);
 
     if (fc_uses_radii)      radii[index] = emitter.size;
     if (fc_uses_masses)     masses[index] = M_PI_F * emitter.size * emitter.size;
@@ -180,6 +182,8 @@ void uber_compute(
     auto  isAlive     = isAlives[index];
     auto  lifetime    = lifetimes[index];
 
+    threadgroup_barrier(mem_flags::mem_device);
+
     if (fc_has_turbulence)
     {
         const int scale = 5;
@@ -218,16 +222,16 @@ void uber_compute(
             // Respawn the particle if dead
             if (!isAlive)
             {
-                pos = emitter.position;
-
                 const auto dir = emitter.direction * emitter.speed;
-                vel = dir + rand2(-emitter.spread, emitter.spread, index, emitter.particle_count/3, 34);
 
-                if (fc_uses_colors) color = emitter.color;
-                if (fc_uses_radii)  radius = emitter.size;
+                pos = emitter.position;
+                vel = dir + rand2(-emitter.spread, emitter.spread, index, emitter.particle_count/3, index*index);
 
-                isAlive = true;
-                lifetime = emitter.lifetime * rand(index, simParam.particleCount / lifetime, 34);
+                if (fc_uses_radii)      radius = emitter.size;
+                if (fc_uses_masses)     mass = M_PI_F * emitter.size * emitter.size;
+                if (fc_uses_colors)     color = emitter.color;
+                if (fc_uses_isAlives)   isAlive = true;
+                if (fc_uses_lifetimes)  lifetime = emitter.lifetime * rand(index, index*34 / index, 34);
             }
         }
     }
@@ -312,6 +316,7 @@ void uber_compute(
     }
 
     {
+        threadgroup_barrier(mem_flags::mem_device);
         //----------------------------------
         //  Update
         //  uses: positions, velocities, simParam, gpuParticleCount,
@@ -319,7 +324,7 @@ void uber_compute(
 
         // Update all used variables
         velocities[index] = vel + emitter.gravity_force;
-        positions[index] = pos + vel;
+        positions[index] = pos + velocities[index];
 
         if (fc_uses_radii)      radii[index] = radius;
         if (fc_uses_masses)     masses[index] = mass;

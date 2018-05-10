@@ -134,37 +134,38 @@ final class Renderer: NSObject, MTKViewDelegate {
         )
 
         var emitter = Emitter()
-        emitter.position = float2(600, 500)
-        emitter.count = 500
-        emitter.spread = 5
-        emitter.speed = 5
-        emitter.size = 5
-        emitter.lifetime = 10
-        emitter.color = float4(1, 0.541, 0.847, 1)
-        emitter.options = [.lifetime, .intercollision]
-        let emitter0 = particleSystem.addEmitter(emitter)
-
-        emitter.position = float2(800, 500)
+        emitter.position = float2(25, framebufferHeight/2)
         emitter.direction = float2(1, 0)
-        emitter.count = 10_000
-        emitter.spread = 5
-        emitter.speed = 5
-        emitter.size = 2
-        emitter.lifetime = 3
-        emitter.color = float4(1, 0.462, 0.485, 1)
-        emitter.options = [.lifetime, .homing]
-        let emitter1 = particleSystem.addEmitter(emitter)
-
-        emitter.position = float2(1000, 500)
-        emitter.direction = float2(0, 1)
-        emitter.count = 500
-        emitter.spread = 1
-        emitter.speed = 5
+        emitter.count = 6000
+        emitter.spread = 0
+        emitter.speed = 10
         emitter.size = 5
-        emitter.lifetime = 10
-        emitter.color = float4(0.451, 0.993, 1, 1)
-        emitter.options = [.lifetime, .intercollision]
-        let emitter2 = particleSystem.addEmitter(emitter)
+        emitter.lifetime = 5
+        emitter.color = float4(1, 0.47, 0.47, 1)
+        emitter.options = [.lifetime]
+        let attacker = particleSystem.addEmitter(emitter)
+
+        emitter.position = float2(framebufferWidth-25, framebufferHeight/2)
+        emitter.direction = float2(-1, 0)
+        emitter.count = 6000
+        emitter.spread = 1
+        emitter.speed = 10
+        emitter.size = 5
+        emitter.lifetime = 5
+        emitter.color = float4(0.416, 0.844, 0.990, 1)
+        emitter.options = [.lifetime]
+        let healer = particleSystem.addEmitter(emitter)
+//
+//        emitter.position = float2(1000, 500)
+//        emitter.direction = float2(0, 1)
+//        emitter.count = 3000
+//        emitter.spread = 2
+//        emitter.speed = 10
+//        emitter.size = 5
+//        emitter.lifetime = 10
+//        emitter.color = float4(0.451, 0.993, 1, 1)
+//        emitter.options = [.lifetime]
+//        let emitter2 = particleSystem.addEmitter(emitter)
     }
 
     func draw(in view: MTKView) {
