@@ -37,7 +37,7 @@ constant bool fc_uses_isAlives  = fc_has_lifetime;
 constant bool fc_uses_lifetimes = fc_has_lifetime;
 
 constant bool fc_uses_seed_buffer = fc_has_turbulence;
-constant bool  fc_uses_field_nodes = fc_has_turbulence;
+constant bool fc_uses_field_nodes = fc_has_turbulence;
 // -------------------------
 
 
