@@ -8,7 +8,8 @@
 
 // ---------Name qualifers---------------
 //     fc_*:   Function constant
-//     fc_uses_*: Function constant telling if a buffer is used/available
+//     fc_uses_*: If a buffer is used or not
+//     fc_has_*:  If a feature is enabled
 // -------------------------
 
 #include <metal_stdlib>
