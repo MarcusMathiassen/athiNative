@@ -19,7 +19,7 @@ enum TreeOption {
 }
 
 var gSpawnAmount: Int = 10
-var gComputeDeviceOption: ComputeDeviceOption = .cpu
+var gComputeDeviceOption: ComputeDeviceOption = .gpu
 var gTreeOption: TreeOption = .quadtree
 var gDrawDebug: Bool = false
 

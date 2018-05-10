@@ -51,21 +51,19 @@ class IOSViewController: UIViewController {
 
         for touch in touches {
             var point: float2 = float2(Float(touch.location(in: view).x), Float(touch.location(in: view).y))
-            //            print(point)
             point *= 2
             point.y -= screenHeight
             point.y *= -1
-
-            for _ in 0 ..< 10 {
-                renderer.particleSystem.addParticleWith(
-                    position: point,
-                    color: renderer.particleSystem.particleColor,
-                    radius: gParticleSize)
-            }
+            mousePos = point
         }
     }
 
     override func touchesBegan(_: Set<UITouch>, with _: UIEvent?) {
+        isMouseDown = true
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        isMouseDown = false
     }
 
     func startAccelerometers() {

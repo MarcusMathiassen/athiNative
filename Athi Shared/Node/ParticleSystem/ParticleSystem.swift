@@ -374,6 +374,7 @@ final class ParticleSystem {
         byteF.allowedUnits = .useAll
         byteF.isAdaptive = true
 
+        #if os(macOS)
         print(
             device.name,
             "allocated:",
@@ -381,6 +382,7 @@ final class ParticleSystem {
             "of",
             byteF.string(fromByteCount: Int64(device.recommendedMaxWorkingSetSize))
             )
+        #endif
     }
 
     private func setGPUParticleCount(commandBuffer: MTLCommandBuffer, value: Int) {

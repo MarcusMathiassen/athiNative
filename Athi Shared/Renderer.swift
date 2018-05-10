@@ -136,7 +136,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         var emitter = Emitter()
         emitter.position = float2(25, framebufferHeight/2)
         emitter.direction = float2(1, 0)
-        emitter.count = 2000
+        emitter.count = 1000
         emitter.spread = 2
         emitter.speed = 10
         emitter.size = 5
@@ -147,7 +147,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         emitter.position = float2(framebufferWidth-25, framebufferHeight/2)
         emitter.direction = float2(-1, 0)
-        emitter.count = 2000
+        emitter.count = 1000
         emitter.spread = 1
         emitter.speed = 10
         emitter.size = 5
@@ -256,7 +256,7 @@ final class Renderer: NSObject, MTKViewDelegate {
             var emitter = Emitter()
             emitter.position = mousePos
             emitter.direction = float2(0, 0)
-            emitter.count = 10
+            emitter.count = gSpawnAmount
             emitter.spread = 2
             emitter.speed = 10
             emitter.size = gParticleSize
