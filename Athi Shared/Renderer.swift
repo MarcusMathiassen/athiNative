@@ -124,13 +124,13 @@ final class Renderer: NSObject, MTKViewDelegate {
             //            .attractedToMouse,
                         .intercollision,
                         .borderBound,
-            //            .drawToTexture,
+//                        .drawToTexture,
 //                        .canAddParticles
         ]
         particleSystem = ParticleSystem(
             device: device,
             options: myParticleOptions,
-            maxParticles: 100_000
+            maxParticles: 10_000
         )
 
         var emitter = Emitter()
