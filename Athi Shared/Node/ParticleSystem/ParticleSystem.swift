@@ -175,6 +175,7 @@ final class ParticleSystem {
 
     private var shouldAddEmitter = false
     private var hasInit = false
+    private var clearParticles = true
 
     public func makeEmitter(descriptor: PSEmitterDescriptor) -> Emitter {
         var emitter = Emitter()
@@ -337,18 +338,18 @@ final class ParticleSystem {
             print("Error: \(error)")
         }
 
-        var computeFunc: MTLFunction! = nil
-        do {
-            try computeFunc = library.makeFunction(name: "uber_compute", constantValues: constVals)
-            computeFunc.label = "uber_compute"
-        } catch let error {
-            print("Error: \(error)")
-        }
-        do {
-            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
-        } catch let error {
-            print("Error: \(error)")
-        }
+//        var computeFunc: MTLFunction! = nil
+//        do {
+//            try computeFunc = library.makeFunction(name: "uber_compute", constantValues: constVals)
+//            computeFunc.label = "uber_compute"
+//        } catch let error {
+//            print("Error: \(error)")
+//        }
+//        do {
+//            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
+//        } catch let error {
+//            print("Error: \(error)")
+//        }
 
         var basicComputeFunc: MTLFunction! = nil
         do {
@@ -394,16 +395,17 @@ final class ParticleSystem {
             size: MemoryLayout<UInt32>.stride
         )
 
-        var vas = [Bool](repeating: false, count: maxParticles)
+
+        var vas = [Float](repeating: -1.0, count: maxParticles)
         let buffi = device.makeBuffer(bytes: &vas,
-                                      length: MemoryLayout<Bool>.stride * maxParticles,
+                                      length: MemoryLayout<Float>.stride * maxParticles,
                                       options: .storageModeShared)!
         blitCommandEncoder.copy(
             from: buffi,
             sourceOffset: 0,
-            to: isAlivesBuffer,
+            to: lifetimesBuffer,
             destinationOffset: 0,
-            size: MemoryLayout<Bool>.stride * maxParticles
+            size: MemoryLayout<Float>.stride * maxParticles
         )
         blitCommandEncoder.endEncoding()
     }
@@ -572,8 +574,9 @@ final class ParticleSystem {
     private func basic_update(commandBuffer: MTLCommandBuffer) {
 
         if emitters.count == 0 { return }
-        if simParam.clearParticles {
+        if clearParticles {
             clearGPUParticles(commandBuffer: commandBuffer)
+            clearParticles = false
         }
 
         if shouldAddEmitter {
@@ -623,7 +626,7 @@ final class ParticleSystem {
         emittersToAddCount = 0
 
         // Compute kernel threadgroup size
-        let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
+        let threadExecutionWidth = (basicComputePipelineState?.threadExecutionWidth)!
 
         // A one dimensional thread group Swift to pass Metal a one dimensional array
         let threadGroupCount = MTLSize(width: threadExecutionWidth, height: 1, depth: 1)
@@ -660,8 +663,8 @@ final class ParticleSystem {
 
     public func eraseParticles() {
         self.particleCount = 0
+        self.clearParticles = true
         self.emitters.removeAll()
-        self.simParam.clearParticles = true
     }
 
     public func setVerticesPerParticle(num: Int) {

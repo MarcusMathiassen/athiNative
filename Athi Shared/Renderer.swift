@@ -139,18 +139,25 @@ final class Renderer: NSObject, MTKViewDelegate {
         emitterDesc.spawnPoint = float2(25, framebufferHeight/2)
         emitterDesc.spawnDirection = float2(1, 0)
         emitterDesc.spawnRate = 300
-        emitterDesc.particleLifetime = 2.0
+        emitterDesc.particleLifetime = 9.0
         emitterDesc.particleSize = 5
         emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
         emitterDesc.options = [.lifetime, .respawns, .borderBound]
         var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
         _ = particleSystem.addEmitter(&redEmitter)
 
-        emitterDesc.spawnRate = 300
-        emitterDesc.particleColor = float4(0.416, 0.844, 0.990, 1)
-        emitterDesc.spawnPoint = float2(framebufferWidth-25, framebufferHeight/2)
-        emitterDesc.spawnDirection = float2(-1, 0)
-        var blueEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+
+        var emitterDesc1 = PSEmitterDescriptor()
+        emitterDesc1.isActive = true
+        emitterDesc1.mozzleSpread = 1.0
+        emitterDesc1.spawnPoint = float2(framebufferWidth - 25, framebufferHeight/2)
+        emitterDesc1.spawnDirection = float2(-1, 0)
+        emitterDesc1.spawnRate = 300
+        emitterDesc1.particleLifetime = 9.0
+        emitterDesc1.particleSize = 7
+        emitterDesc1.particleColor = float4(0.46, 0.47, 1, 1)
+        emitterDesc1.options = [.lifetime, .respawns, .borderBound]
+        var blueEmitter = particleSystem.makeEmitter(descriptor: emitterDesc1)
         _ = particleSystem.addEmitter(&blueEmitter)
 
         super.init()
@@ -231,6 +238,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         switch gMouseOption {
         case MouseOption.spawn:
+
             var emitterDesc = PSEmitterDescriptor()
             emitterDesc.isActive = true
             emitterDesc.mozzleSpread = 1

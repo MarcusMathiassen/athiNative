@@ -33,7 +33,10 @@ void update_emitter_indices(device Emitter* emitters, device ushort* emitter_ind
 float2 to_viewspace(float2 point, float2 viewport);
 
 float rand(Seed seed);
+float rand(int seed);
 float2 rand2(Range<float> range, Seed seed);
+float2 rand2(float min, float max, int seed);
+
 template <class T>
 T rand(Range<T> range, Seed seed)
 {
