@@ -10,7 +10,7 @@
 
 import Metal
 import MetalKit
-import MetalPerformanceShaders
+import MetalPerformanceShaders // MPSImageGaussianBlur
 
 enum ParticleOption: String {
     case borderBound = "fc_has_borderBound"
@@ -21,10 +21,7 @@ enum ParticleOption: String {
     case homing = "fc_has_homing"
     case turbulence = "fc_has_turbulence"
     case canAddParticles = "fc_has_canAddParticles"
-}
-
-enum MissileOptions {
-    case homing
+    case respawns = "fc_has_respawns"
 }
 
 enum EmitterOptions {
@@ -34,69 +31,62 @@ enum EmitterOptions {
     case lifetime
     case attractedToMouse
     case homing
-    case turbulence
+    case turbulenceader
     case canAddParticles
+    case respawns
+}
+
+struct PSEmitterDescriptor {
+    var isActive: Bool = false
+    var spawnPoint: float2 = float2(0, 0)
+    var spawnDirection: float2 = float2(0, 1)
+    var spawnRate: Float = 10.0
+    var particleSpeed: Float = 5.0
+    var particleColor: float4 = float4(1)
+    var particleSize: Float = 1.0
+    var particleLifetime: Float = 1.0
+    var mozzleSpread: Float = 1.0
+    var options: [EmitterOptions] = [.lifetime, .respawns]
 }
 
 /**
- Emmits particles.
- */
-struct Emitter {
-
-    var id: Int = 0
-
-    /**
-     The position to spawn from.
-    */
-    var position: float2 = float2(0)
-
-    /**
-     The Emmit direction. Normalized.
-    */
-    var direction: float2 = float2(0)
-
-    var size: Float = 5
-
-    /**
-     The initial velocity of each particle emmited
-     */
-    var speed: Float = 0
-
-    var lifetime: Float = 1
-
-    /**
-     The initial velocity of each particle emmited
-     */
-    var spread: Float = 0
-
-    var color: float4 = float4(1)
-
-    /**
-     The amount of particles this emitter emmits.
-    */
-    private var particleCount: UInt32 = 0
-
-    /**
-     The amount of particles this emitter can emmit.
-    */
-    var count: Int = 0
-
-    var options: [EmitterOptions] = []
-}
-
-
+    A particle system consist of N number of emitters
+     sharing a fixed size particle pool between them.
+*/
 final class ParticleSystem {
 
-    var emitters: [_Emitter] = []
+    /**
+        A list of all emitters in the ParticleSystem.
+    */
+    var emitters: [Emitter] = []
+    
+    var emitterIndices: [UInt16] = []
+    
+    /**
+        The maximum amount of emitters this ParticleSystem can use.
+    */
     private var maxEmitterCount: Int
 
-    // every emitter gets a piece of the pie
+    private var emittersToAddCount: Int = 0
 
+    /**
+        Maximum amount of particles that can be emitted at the same time.
+    */
     var maxParticles: Int
 
+    /**
+        A list of all available features for emitters
+    */
     var options: [ParticleOption] = []
-    var computeDeviceOption: ComputeDeviceOption = .cpu
 
+    /**
+        The compute device to use.
+    */
+    var computeDeviceOption: ComputeDeviceOption = .gpu
+
+    /**
+        Number of active particles.
+    */
     public var particleCount: Int = 0
 
     var globalParam: GlobalParam = GlobalParam()
@@ -118,10 +108,6 @@ final class ParticleSystem {
 
     private var tempGravityForce = float2(0)
     private var shouldUpdate: Bool = false
-
-    ///////////////////
-    // Rendering
-    ///////////////////
 
     var enablePostProcessing: Bool = true
     var postProcessingSamples: Int = 1
@@ -166,6 +152,7 @@ final class ParticleSystem {
     private var pipelineState: MTLRenderPipelineState?
     private var computePipelineState: MTLComputePipelineState?
     private var initComputePipelineState: MTLComputePipelineState?
+    private var basicComputePipelineState: MTLComputePipelineState?
 
     var inTexture: MTLTexture! = nil
     var outTexture: MTLTexture! = nil
@@ -186,27 +173,49 @@ final class ParticleSystem {
     private var usesSeedBuffer = false
     private var usesFieldNodes = false
 
+    private var shouldAddEmitter = false
     private var hasInit = false
+
+    public func makeEmitter(descriptor: PSEmitterDescriptor) -> Emitter {
+        var emitter = Emitter()
+        emitter.particleCount = uint(Int32(descriptor.spawnRate / descriptor.particleLifetime))
+        emitter.lifetime = descriptor.particleLifetime
+        emitter.position = descriptor.spawnPoint
+        emitter.size = descriptor.particleSize
+        emitter.color = descriptor.particleColor
+        emitter.direction = descriptor.spawnDirection
+
+        emitter.speed = 5
+        emitter.spread = descriptor.mozzleSpread
+
+        emitter.isActive = descriptor.isActive
+        emitter.hasCanAddParticles = descriptor.options.contains(.canAddParticles)
+        emitter.hasHoming = descriptor.options.contains(.homing)
+        emitter.hasBorderBound = descriptor.options.contains(.borderBound)
+        emitter.hasLifetime = descriptor.options.contains(.lifetime)
+        emitter.hasIntercollision = descriptor.options.contains(.intercollision)
+        emitter.hasRespawns = descriptor.options.contains(.respawns)
+
+        return emitter
+    }
 
     init(device: MTLDevice,
          options: [ParticleOption] = [],
          maxParticles: Int = 1_000_000) {
 
         self.maxParticles = maxParticles
-        self.maxEmitterCount = 1000
+        self.maxEmitterCount = maxParticles / 10
 
         self.options = options
 
         self.device = device
         quad = Quad(device: device)
 
-//        if !options.contains(.canAddParticles) {
-//            self.particleCount = maxParticles
-//        }
+        emitterIndices = [UInt16](repeating: 0, count: maxParticles)
 
         // Initalize our GPU buffers
         // Always needed
-        emittersBuffer = device.makeBuffer(length: MemoryLayout<_Emitter>.stride * maxEmitterCount,
+        emittersBuffer = device.makeBuffer(length: MemoryLayout<Emitter>.stride * maxEmitterCount,
                                             options: .storageModeShared)!
         emitterIndicesBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * maxParticles,
                                            options: gpuOnlyResourceOption)!
@@ -286,22 +295,16 @@ final class ParticleSystem {
         let constVals = MTLFunctionConstantValues()
 
         // Set all values to false first
-        var falseVal = false
-
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.attractedToMouse.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.intercollision.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.borderBound.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.homing.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.lifetime.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.drawToTexture.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.canAddParticles.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.turbulence.rawValue)
+        var falseVals = [Bool](repeating: false, count: 9)
+        constVals.setConstantValues(&falseVals, type: .bool, range: 0 ..< falseVals.count)
 
         // Then set all found in options to true
         var trueVal = true
         for option in options {
             constVals.setConstantValue(&trueVal, type: .bool, withName: option.rawValue)
         }
+
+        print(constVals)
 
         let library = device.makeDefaultLibrary()!
         var vertexFunc: MTLFunction! = nil
@@ -347,25 +350,17 @@ final class ParticleSystem {
             print("Error: \(error)")
         }
 
-        if !options.contains(.canAddParticles) {
-            var initComputeFunc: MTLFunction! = nil
-            do {
-                try initComputeFunc = library.makeFunction(name: "init_buffers", constantValues: constVals)
-                initComputeFunc.label = "init_buffers"
-            } catch let error {
-                print("Error: \(error)")
-            }
-            do {
-                try initComputePipelineState = device.makeComputePipelineState(function: initComputeFunc!)
-            } catch let error {
-                print("Error: \(error)")
-            }
+        var basicComputeFunc: MTLFunction! = nil
+        do {
+            try basicComputeFunc = library.makeFunction(name: "basic_update", constantValues: constVals)
+            basicComputeFunc.label = "basic_update"
+        } catch let error {
+            print("Error: \(error)")
         }
-
-        if usesSeedBuffer {
-            //----------------------------------
-            //  Turbulence
-            //----------------------------------
+        do {
+            try basicComputePipelineState = device.makeComputePipelineState(function: basicComputeFunc!)
+        } catch let error {
+            print("Error: \(error)")
         }
 
         buildVertices(numVertices: numVerticesPerParticle)
@@ -385,6 +380,33 @@ final class ParticleSystem {
         #endif
     }
 
+    private func clearGPUParticles(commandBuffer: MTLCommandBuffer) {
+        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+
+        // Set GPU Particles count to 0
+        var val: UInt32 = 0
+        let buff = device.makeBuffer(bytes: &val, length: MemoryLayout<UInt32>.stride, options: .storageModeShared)!
+        blitCommandEncoder.copy(
+            from: buff,
+            sourceOffset: 0,
+            to: gpuParticleCountBuffer,
+            destinationOffset: 0,
+            size: MemoryLayout<UInt32>.stride
+        )
+
+        var vas = [Bool](repeating: false, count: maxParticles)
+        let buffi = device.makeBuffer(bytes: &vas,
+                                      length: MemoryLayout<Bool>.stride * maxParticles,
+                                      options: .storageModeShared)!
+        blitCommandEncoder.copy(
+            from: buffi,
+            sourceOffset: 0,
+            to: isAlivesBuffer,
+            destinationOffset: 0,
+            size: MemoryLayout<Bool>.stride * maxParticles
+        )
+        blitCommandEncoder.endEncoding()
+    }
     private func setGPUParticleCount(commandBuffer: MTLCommandBuffer, value: Int) {
         let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
 
@@ -398,174 +420,44 @@ final class ParticleSystem {
             destinationOffset: 0,
             size: MemoryLayout<UInt32>.stride
         )
-        
-        var vas = [Bool](repeating: false, count: maxParticles)
-        let buffi = device.makeBuffer(bytes: &vas,
-                                     length: MemoryLayout<Bool>.stride * maxParticles,
+        blitCommandEncoder.endEncoding()
+    }
+
+    private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
+        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+
+        let newEmitterBuffer = device.makeBuffer(bytes: &emitters,
+                                     length: MemoryLayout<Emitter>.stride * emitters.count,
                                      options: .storageModeShared)!
         blitCommandEncoder.copy(
-            from: buffi,
-            sourceOffset: 0,
-            to: isAlivesBuffer,
-            destinationOffset: 0,
-            size: MemoryLayout<Bool>.stride * maxParticles
-        )
-        
-        var vasee = [_Emitter](repeating: _Emitter(), count: maxParticles)
-        let buffeei = device.makeBuffer(bytes: &vasee,
-                                      length: MemoryLayout<_Emitter>.stride * maxEmitterCount,
-                                      options: .storageModeShared)!
-        blitCommandEncoder.copy(
-            from: buffeei,
+            from: newEmitterBuffer,
             sourceOffset: 0,
             to: emittersBuffer,
             destinationOffset: 0,
-            size: MemoryLayout<_Emitter>.stride * maxEmitterCount
+            size: MemoryLayout<Emitter>.stride * emitters.count
         )
-
-
         blitCommandEncoder.endEncoding()
     }
 
     /**
-     Initilizes all GPU Bufferes
-     */
-    private func initGPUBuffers(commandBuffer: MTLCommandBuffer) {
-        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+        Adds an emitter to the particle system.
+        Return an ID for future updates to the emitter.
+    */
+    public func addEmitter(_ emitter: inout Emitter) -> Int {
+        if shouldAddEmitter { return -1 }
+        if emitters.count+1 > maxEmitterCount ||
+            Int(emitter.particleCount) + particleCount > maxParticles { return -1; }
 
-        // Set GPU Particles count to 0
-        var zero: UInt32 = 0
-        let buff = device.makeBuffer(bytes: &zero, length: MemoryLayout<UInt32>.stride, options: .storageModeShared)!
-        blitCommandEncoder.copy(
-            from: buff,
-            sourceOffset: 0,
-            to: gpuParticleCountBuffer,
-            destinationOffset: 0,
-            size: MemoryLayout<UInt32>.stride
-        )
-
-        blitCommandEncoder.endEncoding()
-
-        if !options.contains(.canAddParticles) {
-            self.simParam.newParticlePosition = viewportSize / 2
-            self.simParam.newParticleVelocity = hasInitialVelocity ? float2(-5, 5) : float2(0)
-            self.simParam.newParticleRadius = 5
-            self.simParam.newParticleMass = Float.pi * 5 * 5
-            self.simParam.newParticleColor = float4(1)
-            self.simParam.newParticleLifetime = 1.0
-
-            self.simParam.emitter_count = UInt32(emitters.count)
-
-            commandBuffer.pushDebugGroup("GPU buffers init")
-
-            // Update emitter buffers
-            emittersBuffer.contents().copyMemory(from: &emitters, byteCount: MemoryLayout<_Emitter>.stride * emitters.count)
-
-            let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
-
-            computeEncoder.setComputePipelineState(initComputePipelineState!)
-
-            computeEncoder.setBuffer(emittersBuffer, offset: 0, index: BufferIndex.bf_emitters_index.rawValue)
-            computeEncoder.setBuffer(emitterIndicesBuffer, offset: 0, index: BufferIndex.bf_emitter_indices_index.rawValue)
-
-            computeEncoder.setBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
-            computeEncoder.setBuffer(velocitiesBuffer, offset: 0, index: BufferIndex.bf_velocities_index.rawValue)
-            computeEncoder.setBuffer(gpuParticleCountBuffer,
-                                     offset: 0,
-                                     index: BufferIndex.bf_gpuParticleCount_index.rawValue)
-
-            if usesRadii {
-                computeEncoder.setBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-            }
-            if usesMasses {
-                computeEncoder.setBuffer(massesBuffer, offset: 0, index: BufferIndex.bf_masses_index.rawValue)
-            }
-            if usesColors {
-                computeEncoder.setBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-            }
-            if usesisAlives {
-                computeEncoder.setBuffer(isAlivesBuffer, offset: 0, index: BufferIndex.bf_isAlives_index.rawValue)
-            }
-            if usesLifetimes {
-                computeEncoder.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
-            }
-
-            if usesSeedBuffer {
-                computeEncoder.setBuffer(seedBuffer, offset: 0, index: BufferIndex.bf_seed_buffer_index.rawValue)
-                computeEncoder.setBuffer(fieldNodesBuffer, offset: 0, index: BufferIndex.bf_field_nodes_index.rawValue)
-            }
-
-            if usesTexture { computeEncoder.setTexture(pTexture, index: 0) }
-
-            simParam.particleCount = UInt32(particleCount)
-            simParam.viewportSize = viewportSize
-            simParam.attractPoint = attractPoint
-            simParam.emitter_count = UInt32(emitters.count)
-            simParam.mousePos = mousePos
-            simParam.currentTime = Float(getTime())
-            simParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
-            computeEncoder.setBytes(&simParam,
-                                    length: MemoryLayout<SimParam>.stride,
-                                    index: BufferIndex.bf_simParam_index.rawValue)
-            // Reset simParams
-            simParam.clearParticles = false
-            simParam.shouldAddParticle = false
-            simParam.newParticlePosition = mousePos
-
-            // Compute kernel threadgroup size
-            let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
-
-            // A one dimensional thread group Swift to pass Metal a one dimensional array
-            let threadGroupCount = MTLSize(width: threadExecutionWidth, height: 1, depth: 1)
-            let threadGroups = MTLSize(width: (particleCount + threadGroupCount.width - 1) / threadGroupCount.width,
-                                       height: 1,
-                                       depth: 1)
-
-            computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
-
-            // Finish
-            computeEncoder.endEncoding()
-            commandBuffer.popDebugGroup()
-
-        }
-    }
-
-    public func addEmitter(_ emitter: Emitter) -> Int {
-
-        if particleCount + emitter.count > maxParticles {
-           print("Max particle count reached.")
-            return -1
-        }
-
-        var temp_emitter = _Emitter()
-        temp_emitter.color = emitter.color
-        temp_emitter.direction = emitter.direction
-        temp_emitter.position = emitter.position
-
-        let hasCanAddParticles = emitter.options.contains(.canAddParticles)
-        temp_emitter.particle_count = hasCanAddParticles ? 0 : UInt32(emitter.count)
-
-        temp_emitter.start_index = UInt32(particleCount)
-        temp_emitter.end_index = temp_emitter.start_index + temp_emitter.particle_count
-
-        temp_emitter.target_pos = attractPoint
-        temp_emitter.max_particle_count = UInt32(emitter.count)
-        temp_emitter.size = emitter.size
-        temp_emitter.spread = emitter.spread
-        temp_emitter.speed = emitter.speed
-        temp_emitter.lifetime = emitter.lifetime
-
-        temp_emitter.has_homing = emitter.options.contains(.homing)
-        temp_emitter.has_borderbound = emitter.options.contains(.borderBound)
-        temp_emitter.has_lifetime = emitter.options.contains(.lifetime)
-        temp_emitter.has_intercollision = emitter.options.contains(.intercollision)
-        temp_emitter.has_can_add_particles = emitter.options.contains(.canAddParticles)
+        emitter.startIndex = UInt32(particleCount)
 
         let id = emitters.count
-        emitters.append(temp_emitter)
+        emitters.append(emitter)
 
         // Increase the total amount of particles used
-        particleCount += hasCanAddParticles ? 0 : emitter.count
+        particleCount += Int(emitter.particleCount)
+
+        shouldAddEmitter = true
+        emittersToAddCount += 1
 
         return id
     }
@@ -677,99 +569,68 @@ final class ParticleSystem {
         }
     }
 
-    private func updateParticles(commandBuffer: MTLCommandBuffer) {
-        
+    private func basic_update(commandBuffer: MTLCommandBuffer) {
+
         if emitters.count == 0 { return }
-    
-        if !hasInit {
-
-            initGPUBuffers(commandBuffer: commandBuffer)
-
-            hasInit = true
+        if simParam.clearParticles {
+            clearGPUParticles(commandBuffer: commandBuffer)
         }
-        
-        if simParam.clearParticles { setGPUParticleCount(commandBuffer: commandBuffer, value: 0) }
+
+        if shouldAddEmitter {
+            updateEmitterIndices(commandBuffer: commandBuffer)
+            setGPUParticleCount(commandBuffer: commandBuffer, value: emitters.count)
+            shouldAddEmitter = false
+        }
 
         commandBuffer.pushDebugGroup("Particles Update")
 
-        // Update emitters
-        for idx in emitters.indices {
-//            emitters[idx].size = gParticleSize
-            emitters[idx].target_pos = attractPoint
-//            emitters[idx].color = particleColor
-            emitters[idx].has_intercollision = enableCollisions
-            emitters[idx].gravity_force = enableGravity ? float2(0, gravityForce) : float2(0)
-        }
-
         // Update emitter buffers
-        emittersBuffer.contents().copyMemory(from: &emitters, byteCount: MemoryLayout<_Emitter>.stride * emitters.count)
-
+        emittersBuffer.contents().copyMemory(from: &emitters, byteCount: MemoryLayout<Emitter>.stride * emitters.count)
 
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
 
-        computeEncoder.setComputePipelineState(computePipelineState!)
+        computeEncoder.setComputePipelineState(basicComputePipelineState!)
+
+        var globalParam = GlobalParam()
+        globalParam.attractPoint = attractPoint
+        globalParam.currentTime = Float(getTime())
+        globalParam.deltaTime = 1/60
+        globalParam.emitterCount = UInt32(emitters.count)
+        globalParam.mousePos = mousePos
+        globalParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
+        globalParam.particleCount = UInt32(particleCount)
+        globalParam.viewportSize = viewportSize
+
+        computeEncoder.setBytes(&globalParam,
+                                length: MemoryLayout<GlobalParam>.stride,
+                                index: BufferIndex.bf_globalParam_index.rawValue)
 
         computeEncoder.setBuffer(emittersBuffer, offset: 0, index: BufferIndex.bf_emitters_index.rawValue)
         computeEncoder.setBuffer(emitterIndicesBuffer, offset: 0, index: BufferIndex.bf_emitter_indices_index.rawValue)
 
         computeEncoder.setBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
         computeEncoder.setBuffer(velocitiesBuffer, offset: 0, index: BufferIndex.bf_velocities_index.rawValue)
+        computeEncoder.setBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+        computeEncoder.setBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
+        computeEncoder.setBuffer(isAlivesBuffer, offset: 0, index: BufferIndex.bf_isAlives_index.rawValue)
+        computeEncoder.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
 
-        computeEncoder.setBuffer(gpuParticleCountBuffer, offset: 0,
-                                 index: BufferIndex.bf_gpuParticleCount_index.rawValue)
-
-        if usesRadii {
-            computeEncoder.setBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-        }
         if usesMasses {
             computeEncoder.setBuffer(massesBuffer, offset: 0, index: BufferIndex.bf_masses_index.rawValue)
         }
-        if usesColors {
-            computeEncoder.setBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-        }
-        if usesisAlives {
-            computeEncoder.setBuffer(isAlivesBuffer, offset: 0, index: BufferIndex.bf_isAlives_index.rawValue)
-        }
-        if usesLifetimes {
-            computeEncoder.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
-        }
 
-        if usesSeedBuffer {
-            computeEncoder.setBuffer(seedBuffer, offset: 0, index: BufferIndex.bf_seed_buffer_index.rawValue)
-            computeEncoder.setBuffer(fieldNodesBuffer, offset: 0, index: BufferIndex.bf_field_nodes_index.rawValue)
-        }
-
-        if usesTexture { computeEncoder.setTexture(pTexture, index: 0) }
-
-        var motionParam = MotionParam()
-        motionParam.deltaTime = 1/60
-        computeEncoder.setBytes(&motionParam,
-                                 length: MemoryLayout<MotionParam>.stride,
-                                 index: BufferIndex.bf_motionParam_index.rawValue)
-
-        simParam.particleCount = UInt32(particleCount)
-        simParam.viewportSize = viewportSize
-        simParam.attractPoint = attractPoint
-        simParam.mousePos = mousePos
-        simParam.emitter_count = UInt32(emitters.count)
-        simParam.currentTime = Float(getTime())
-        simParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
-        computeEncoder.setBytes(&simParam,
-                                 length: MemoryLayout<SimParam>.stride,
-                                 index: BufferIndex.bf_simParam_index.rawValue)
-        // Reset simParams
-        simParam.clearParticles = false
-        simParam.shouldAddParticle = false
-        simParam.newParticlePosition = mousePos
+        // Reset frame by frame variables
+        emittersToAddCount = 0
 
         // Compute kernel threadgroup size
         let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
 
         // A one dimensional thread group Swift to pass Metal a one dimensional array
         let threadGroupCount = MTLSize(width: threadExecutionWidth, height: 1, depth: 1)
-        let threadGroups = MTLSize(width: (particleCount + threadGroupCount.width - 1) / threadGroupCount.width,
-                                   height: 1,
-                                   depth: 1)
+        let threadGroups = MTLSize(
+            width: (particleCount + threadGroupCount.width - 1) / threadGroupCount.width,
+            height: 1,
+            depth: 1)
 
         computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
 
@@ -777,8 +638,7 @@ final class ParticleSystem {
         computeEncoder.endEncoding()
         commandBuffer.popDebugGroup()
     }
-
-
+    
     public func drawDebug(color: float4,
                           view: MTKView,
                           frameDescriptor: FrameDescriptor,
@@ -794,7 +654,7 @@ final class ParticleSystem {
         case .cpu:
             break
         case .gpu:
-            updateParticles(commandBuffer: commandBuffer)
+            basic_update(commandBuffer: commandBuffer)
         }
     }
 
@@ -802,30 +662,6 @@ final class ParticleSystem {
         self.particleCount = 0
         self.emitters.removeAll()
         self.simParam.clearParticles = true
-    }
-
-    public func addParticlesToEmitter(_ emitterID: Int, count: Int) {
-
-        simParam.shouldAddParticle = true
-        simParam.add_particles_count = UInt32(count)
-        simParam.selected_emitter_id = UInt32(emitterID)
-
-        particleCount += count
-    }
-    
-    public func addParticleWith(position: float2, color: float4, radius: Float) {
-
-        if self.particleCount == self.maxParticles { return }
-
-        self.particleCount += 1
-
-        self.simParam.shouldAddParticle = true
-        self.simParam.newParticlePosition = position
-        self.simParam.newParticleVelocity = hasInitialVelocity ? float2(-1, 1) : float2(0)
-        self.simParam.newParticleRadius = radius
-        self.simParam.newParticleMass = Float.pi * radius * radius * radius
-        self.simParam.newParticleColor = color
-        self.simParam.newParticleLifetime = 3
     }
 
     public func setVerticesPerParticle(num: Int) {
@@ -867,5 +703,30 @@ final class ParticleSystem {
             bytes: indices,
             length: MemoryLayout<UInt16>.stride * indices.count,
             options: staticBufferResourceOption)!
+    }
+
+    private func updateEmitterIndices(commandBuffer: MTLCommandBuffer) {
+
+        for emitterIndex in emitters.indices {
+            var counter = emitters[emitterIndex].startIndex
+            let amount = emitters[emitterIndex].startIndex + emitters[emitterIndex].particleCount
+            for i in counter ..< amount {
+                emitterIndices[Int(i)] = UInt16(emitterIndex)
+            }
+        }
+        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+
+        // Set GPU Particles count to 0
+        let buff = device.makeBuffer(bytes: &emitterIndices,
+                                     length: MemoryLayout<UInt16>.stride * maxParticles,
+                                     options: .storageModeShared)!
+        blitCommandEncoder.copy(
+            from: buff,
+            sourceOffset: 0,
+            to: emitterIndicesBuffer,
+            destinationOffset: 0,
+            size: MemoryLayout<UInt16>.stride * maxParticles
+        )
+        blitCommandEncoder.endEncoding()
     }
 }

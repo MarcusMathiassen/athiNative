@@ -63,6 +63,7 @@ class MACOSViewController: NSViewController {
         renderer.particleSystem.enableGravity = (sender.state.rawValue == 0) ? false : true
     }
 
+    @IBOutlet weak var emitterCountLabel: NSTextField!
     @IBOutlet var mouseOptionButton: NSPopUpButton!
     @IBOutlet var particleColorWellOutlet: NSColorWell!
     @IBAction func particleColorWell(_ sender: NSColorWell) {
@@ -100,16 +101,11 @@ class MACOSViewController: NSViewController {
         renderer.fillMode = (sender.state.rawValue == 0) ? .fill : .lines
     }
 
-    @IBAction func multithreadedSwitch(_ sender: NSButton) {
-        renderer.particleSystem.enableMultithreading = (sender.state.rawValue == 0) ? false : true
-    }
-
     @IBAction func cycleColorSwitch(_ sender: NSButton) {
         gParticleColorCycle = (sender.state.rawValue == 0) ? false : true
     }
 
     @IBOutlet var framerateLabel: NSTextField!
-    @IBOutlet var frametimeLabel: NSTextField!
     @IBOutlet var particleCountLabel: NSTextField!
 
     @IBAction func treeOptimalSize(_ sender: NSButton) {
@@ -150,10 +146,11 @@ class MACOSViewController: NSViewController {
                           self.particleCountLabel?.stringValue =
                             "Particles: " + String(self.renderer.particleSystem.particleCount)
 
-                          self.frametimeLabel?.stringValue = "Frametime: " + String(self.renderer.frametime)
-
                           self.framerateLabel?.stringValue = "Framerate: " + String(self.renderer.framerate)
 
+                        self.emitterCountLabel?.stringValue = "Emitters: "
+ + String(self.renderer.particleSystem.emitters.count)
+                        
                           let particleColor = NSColor(
                               red: CGFloat(self.renderer.particleSystem.particleColor.x),
                               green: CGFloat(self.renderer.particleSystem.particleColor.y),
@@ -192,16 +189,7 @@ class MACOSViewController: NSViewController {
 
     @IBOutlet weak var treeOptionButton: NSPopUpButton!
     @IBOutlet weak var computeDeviceOptionButton: NSPopUpButton!
-    @IBAction func addParticlesButton(_ sender: NSButton) {
-        for col in stride(from: 0, to: framebufferWidth, by: 10) {
-            for row in stride(from: 0, to: framebufferHeight, by: 10) {
-                let color = renderer.particleSystem.particleColor
-                let pos = float2(col, row)
-                renderer.particleSystem.addParticleWith(position: pos, color: color, radius: 1.0)
-            }
-        }
 
-    }
     @IBAction func showMenuView(_ sender: NSButton) {
         let showMenu = (sender.intValue == 0) ? false : true
         if showMenu {

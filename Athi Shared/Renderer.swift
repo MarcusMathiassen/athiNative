@@ -49,25 +49,15 @@ final class Renderer: NSObject, MTKViewDelegate {
     var particleSystem: ParticleSystem
 
     // Tripple buffering
-//    var maxNumInFlightBuffers = 3
+    var maxNumInFlightBuffers = 3
     var currentQueue = 0
-//    var inFlightSemaphore: DispatchSemaphore
-    //
+    var inFlightSemaphore: DispatchSemaphore
 
     var device: MTLDevice
-//    let commandQueues: [MTLCommandQueue]
+
     let commandQueue: MTLCommandQueue
 
-    init?(view: MTKView) {
-
-        device = view.device!
-
-        commandQueue = device.makeCommandQueue()!
-
-//        inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
-
-//        super.init()
-
+    public func printDeviceInfo(_ device: MTLDevice) {
         #if os(macOS)
         let devices = MTLCopyAllDevices()
         print("Available devices:")
@@ -108,6 +98,15 @@ final class Renderer: NSObject, MTKViewDelegate {
         print("iOS_GPUFamily3_v3: ", device.supportsFeatureSet(.iOS_GPUFamily3_v3))
         print("iOS_GPUFamily4_v1: ", device.supportsFeatureSet(.iOS_GPUFamily4_v1))
         #endif
+    }
+
+    init?(view: MTKView) {
+
+        device = view.device!
+
+        inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
+
+        commandQueue = device.makeCommandQueue()!
 
         view.autoResizeDrawable = true // auto updates the views resolution on resizing
         view.preferredFramesPerSecond = 60
@@ -119,10 +118,11 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         let myParticleOptions: [ParticleOption] = [
                         .lifetime,
-                        .homing,
+//                        .homing,
+                        .respawns,
             //            .turbulence,
             //            .attractedToMouse,
-                        .intercollision,
+//                        .intercollision,
                         .borderBound,
 //                        .drawToTexture,
 //                        .canAddParticles
@@ -130,55 +130,49 @@ final class Renderer: NSObject, MTKViewDelegate {
         particleSystem = ParticleSystem(
             device: device,
             options: myParticleOptions,
-            maxParticles: 10_000
+            maxParticles: 100_000
         )
 
-        var emitter = Emitter()
-        emitter.position = float2(25, framebufferHeight/2)
-        emitter.direction = float2(1, 0)
-        emitter.count = 1000
-        emitter.spread = 2
-        emitter.speed = 10
-        emitter.size = 5
-        emitter.lifetime = 5
-        emitter.color = float4(1, 0.47, 0.47, 1)
-        emitter.options = [.lifetime]
-        let attacker = particleSystem.addEmitter(emitter)
+        var emitterDesc = PSEmitterDescriptor()
+        emitterDesc.isActive = true
+        emitterDesc.mozzleSpread = 1.0
+        emitterDesc.spawnPoint = float2(25, framebufferHeight/2)
+        emitterDesc.spawnDirection = float2(1, 0)
+        emitterDesc.spawnRate = 300
+        emitterDesc.particleLifetime = 2.0
+        emitterDesc.particleSize = 5
+        emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
+        emitterDesc.options = [.lifetime, .respawns, .borderBound]
+        var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+        _ = particleSystem.addEmitter(&redEmitter)
 
-        emitter.position = float2(framebufferWidth-25, framebufferHeight/2)
-        emitter.direction = float2(-1, 0)
-        emitter.count = 1000
-        emitter.spread = 1
-        emitter.speed = 10
-        emitter.size = 5
-        emitter.lifetime = 5
-        emitter.color = float4(0.416, 0.844, 0.990, 1)
-        emitter.options = [.lifetime]
-        let healer = particleSystem.addEmitter(emitter)
-//
-//        emitter.position = float2(1000, 500)
-//        emitter.direction = float2(0, 1)
-//        emitter.count = 3000
-//        emitter.spread = 2
-//        emitter.speed = 10
-//        emitter.size = 5
-//        emitter.lifetime = 10
-//        emitter.color = float4(0.451, 0.993, 1, 1)
-//        emitter.options = [.lifetime]
-//        let emitter2 = particleSystem.addEmitter(emitter)
+        emitterDesc.spawnRate = 300
+        emitterDesc.particleColor = float4(0.416, 0.844, 0.990, 1)
+        emitterDesc.spawnPoint = float2(framebufferWidth-25, framebufferHeight/2)
+        emitterDesc.spawnDirection = float2(-1, 0)
+        var blueEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+        _ = particleSystem.addEmitter(&blueEmitter)
+
+        super.init()
+
+        printDeviceInfo(device)
     }
 
     func draw(in view: MTKView) {
 
 //        _ = self.inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
+        let startTime = getTime()
+
 //        currentQueue = (currentQueue + 1) % maxNumInFlightBuffers
 
         let commandBuffer = commandQueue.makeCommandBuffer()!
+
         commandBuffer.label = "CommandBuffer: " + String(currentQueue)
 
+//        let blocker = inFlightSemaphore
 //        commandBuffer.addCompletedHandler { (_) in
-//            self.inFlightSemaphore.signal()
+//            blocker.signal()
 //        }
 
         var frameDescriptor = FrameDescriptor()
@@ -208,11 +202,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         updateVariables()
 
         particleSystem.update(commandBuffer: commandBuffer, computeDevice: gComputeDeviceOption)
-        particleSystem.draw(
-            view: view,
-            frameDescriptor: frameDescriptor,
-            commandBuffer: commandBuffer
-        )
+        particleSystem.draw(view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
 
         if particleSystem.particleCount == 0 {
             // Clear the screen
@@ -221,20 +211,8 @@ final class Renderer: NSObject, MTKViewDelegate {
             renderEncoder?.endEncoding()
         }
 
-        if gDrawDebug {
-            particleSystem.drawDebug(
-                color: float4(1),
-                view: view,
-                frameDescriptor: frameDescriptor,
-                commandBuffer: commandBuffer
-            )
-        }
-
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
-
-        let startTime = getTime()
-
         commandBuffer.waitUntilCompleted()
 
         frametime = Float((getTime() - startTime) * 1000.0)
@@ -253,18 +231,18 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         switch gMouseOption {
         case MouseOption.spawn:
-            var emitter = Emitter()
-            emitter.position = mousePos
-            emitter.direction = float2(0, 0)
-            emitter.count = gSpawnAmount
-            emitter.spread = 2
-            emitter.speed = 10
-            emitter.size = gParticleSize
-            emitter.lifetime = 5
-            emitter.color = particleSystem.particleColor
-            emitter.options = [.lifetime]
-            let _ = particleSystem.addEmitter(emitter)
-//            particleSystem.addParticlesToEmitter(0, count: 10)
+            var emitterDesc = PSEmitterDescriptor()
+            emitterDesc.isActive = true
+            emitterDesc.mozzleSpread = 1
+            emitterDesc.spawnPoint = mousePos
+            emitterDesc.spawnDirection = float2(1, 0)
+            emitterDesc.spawnRate = 300
+            emitterDesc.particleLifetime = 3.0
+            emitterDesc.particleSize = gParticleSize
+            emitterDesc.particleColor = particleSystem.particleColor
+            emitterDesc.options = [.lifetime, .respawns, .borderBound]
+            var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+            _ = particleSystem.addEmitter(&redEmitter)
 
         case MouseOption.drag:
              break

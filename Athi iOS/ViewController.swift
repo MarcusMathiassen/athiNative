@@ -61,7 +61,7 @@ class IOSViewController: UIViewController {
     override func touchesBegan(_: Set<UITouch>, with _: UIEvent?) {
         isMouseDown = true
     }
-    
+
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isMouseDown = false
     }

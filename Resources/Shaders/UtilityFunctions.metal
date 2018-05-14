@@ -8,45 +8,27 @@
 
 #include <metal_stdlib>
 using namespace metal;
+#include "ShaderTypes.h"
+#include "UtilityFunctions.h"
 
-// Generate a random float in the range [0.0f, 1.0f] using x, y, and z (based on the xor128 algorithm)
-float rand(int x, int y, int z)
+float rand(Seed seed)
 {
-    int seed = x + y * 57 + z * 241;
-    seed= (seed<< 13) ^ seed;
-    return (( 1.0 - ( (seed * (seed * seed * 15731 + 789221) + 1376312589) & 2147483647) / 1073741824.0f) + 1.0f) / 2.0f;
+    int _seed = seed.x + seed.y * 57 + seed.z * 241;
+    _seed= (_seed<< 13) ^ _seed;
+    return (( 1.0 - ( (_seed * (_seed * _seed * 15731 + 789221) + 1376312589) & 2147483647) / 1073741824.0f) + 1.0f) / 2.0f;
 }
 
-int rand_i32(int min, int max, int seed)
+float2 rand2(Range<float> range, Seed seed)
 {
-    const float in = rand(seed*seed+14, min*seed-523, min*seed+34);
-    const float slope = 1.0 * (max - min);
-    const int32_t res = min + slope * (in);
-    return res;
-}
-
-float rand_f32(float min, float max, int seed)
-{
-    const float sss = rand(seed*seed-123, min*seed+34, min*seed-3);
-
+    const auto inputX = rand(seed);
+    const auto inputY = rand({seed.z, seed.y, seed.x});
+    
     // Map to range
-    const float slope = 1.0 * (max - min);
-    const float res = min + slope * (sss);
-
-    return res;
-}
-
-float2 rand2(float min, float max, int x, int y, int z)
-{
-    const float inputX = rand(x,y,z);
-    const float inputY = rand(z,x,y);
-
-    // Map to range
-    const float slope = 1.0 * (max - min);
-    const float xr = min + slope * (inputX);
-    const float yr = min + slope * (inputY);
-
-    return float2(xr, yr);
+    const auto slope = 1.0 * (range.max - range.min);
+    const auto xr = range.min + slope * (inputX);
+    const auto yr = range.min + slope * (inputY);
+    
+    return {xr, yr};
 }
 
 /**
@@ -130,63 +112,23 @@ float2 float2_from_angle(float angle)
     return normalize(float2(cos(angle), sin(angle)));
 }
 
-
-// Noise functions
-float fade(float t){return t * t * t * (t * (t * 6 - 15) + 10);}
-float lerp(float t, float a, float b){return a + t * (b - a);}
-float grad(int32_t hash, float x, float y, float z)
+void update_emitter_indices(device Emitter* emitters,
+                            device ushort* emitter_indices,
+                            device uint& emitter_count,
+                            uint new_emitter_count)
 {
-    const int32_t h = hash & 15;
-    const float u = h < 8 ? x : y;
-    const float v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+    auto counter = emitters[emitter_count].startIndex;
+    // Find emitter for this particle
+    for (auto emitter_index = emitter_count;
+         emitter_index < new_emitter_count; ++emitter_index)
+    {
+        const auto amount = emitters[emitter_index].startIndex + emitters[emitter_index].particleCount;
+        for (auto i = counter; i < amount; ++i)
+        {
+            emitter_indices[i] = emitter_index;
+        }
+        counter += amount;
+    }
+    emitter_count = new_emitter_count;
 }
 
-float noise(device int32_t *p, float x, float y, float z)
-{
-    const int32_t X = static_cast<int32_t>(floor(x)) & 255;
-    const int32_t Y = static_cast<int32_t>(floor(y)) & 255;
-    const int32_t Z = static_cast<int32_t>(floor(z)) & 255;
-
-    x -= floor(x);
-    y -= floor(y);
-    z -= floor(z);
-
-    const float u = fade(x);
-    const float v = fade(y);
-    const float w = fade(z);
-
-    const int A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z;
-    const int B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
-
-    return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),
-                                grad(p[BA], x - 1, y, z)),
-                        lerp(u, grad(p[AB], x, y - 1, z),
-                             grad(p[BB], x - 1, y - 1, z))),
-                lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1),
-                             grad(p[BA + 1], x - 1, y, z - 1)),
-                     lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
-                          grad(p[BB + 1], x - 1, y - 1, z - 1))));
-}
-
-void reseed(device int32_t *p, int seed)
-{
-    for (int32_t i = 0; i < 256; ++i)
-    {
-        p[i] = i;
-    }
-
-    for (int i = 256 - 1; i > 1; --i)
-    {
-        const int j = rand_i32(0, i, p[i]);
-
-        const auto temp = p[i];
-        p[i] = p[j];
-        p[j] = temp;
-    }
-
-    for (size_t i = 0; i < 256; ++i)
-    {
-        p[256 + i] = p[i];
-    }
-}
