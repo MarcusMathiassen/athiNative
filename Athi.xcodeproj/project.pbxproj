@@ -47,6 +47,9 @@
 		9017362C20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */; };
 		9017362D20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */; };
 		9017362E20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */; };
+		901B23D220AB2111000C029A /* CustomTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901B23D120AB2111000C029A /* CustomTypes.swift */; };
+		901B23D320AB2111000C029A /* CustomTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901B23D120AB2111000C029A /* CustomTypes.swift */; };
+		901B23D420AB2111000C029A /* CustomTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901B23D120AB2111000C029A /* CustomTypes.swift */; };
 		90238DF22073912100D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF32073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
 		90238DF42073912700D25590 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90238DF12073912100D25590 /* Math.swift */; };
@@ -92,6 +95,7 @@
 		9017362720A0BEC000CB9D68 /* ParticleSystemUberShader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ParticleSystemUberShader.metal; sourceTree = "<group>"; };
 		9017362B20A0CCD600CB9D68 /* UtilityFunctions.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = UtilityFunctions.metal; sourceTree = "<group>"; };
 		9017362F20A0CD4E00CB9D68 /* UtilityFunctions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UtilityFunctions.h; sourceTree = "<group>"; };
+		901B23D120AB2111000C029A /* CustomTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTypes.swift; sourceTree = "<group>"; };
 		90238DF12073912100D25590 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		9051D9662076CDCE00E2DB51 /* Quad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quad.swift; sourceTree = "<group>"; };
 		9051D96A2076D17200E2DB51 /* Quad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Quad.metal; sourceTree = "<group>"; };
@@ -188,6 +192,7 @@
 				900AE7EC207657F700465EAD /* Globals.swift */,
 				900CAD0F20729D6500AE60E9 /* Assets.xcassets */,
 				9001438C2072AD5C009FB201 /* Utility.swift */,
+				901B23D120AB2111000C029A /* CustomTypes.swift */,
 				90238DF12073912100D25590 /* Math.swift */,
 			);
 			path = "Athi Shared";
@@ -460,6 +465,7 @@
 				90027F8820780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8C207811BC00FC6980 /* primitive.metal in Sources */,
 				900CAD4120729D6500AE60E9 /* Renderer.swift in Sources */,
+				901B23D220AB2111000C029A /* CustomTypes.swift in Sources */,
 				90238DF22073912100D25590 /* Math.swift in Sources */,
 				9051D96B2076D17200E2DB51 /* Quad.metal in Sources */,
 				9017362C20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */,
@@ -475,6 +481,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				901B23D320AB2111000C029A /* CustomTypes.swift in Sources */,
 				9001438E2072AD5C009FB201 /* Utility.swift in Sources */,
 				900B3B2220754C9100569776 /* Input.swift in Sources */,
 				900CAD4220729D6500AE60E9 /* Renderer.swift in Sources */,
@@ -501,6 +508,7 @@
 				90027F8A20780CF900FC6980 /* PrimitiveShapes.swift in Sources */,
 				90027F8E207811BC00FC6980 /* primitive.metal in Sources */,
 				900CAD4320729D6500AE60E9 /* Renderer.swift in Sources */,
+				901B23D420AB2111000C029A /* CustomTypes.swift in Sources */,
 				90238DF42073912700D25590 /* Math.swift in Sources */,
 				9051D96D2076D17200E2DB51 /* Quad.metal in Sources */,
 				9017362E20A0CCD600CB9D68 /* UtilityFunctions.metal in Sources */,

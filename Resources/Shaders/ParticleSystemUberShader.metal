@@ -107,7 +107,7 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
         // Fade the particle out until it's dead
         if (fc_uses_colors)
         {
-            colors[index].a = lifetimes[index];
+//            colors[index].a = lifetimes[index];
         }
     }
     
@@ -308,7 +308,7 @@ VertexOut particle_vert(constant float2*     positions      [[ buffer(bf_positio
     vOut.color = colors[iid];
 
     // Fade out based on lifetime
-    vOut.color.a = lifetimes[iid];
+//    vOut.color.a = lifetimes[iid];
 
     return vOut;
 }
@@ -322,7 +322,7 @@ struct VertexOutPoint
 
 vertex
 VertexOutPoint point_vert(constant float2*     positions      [[ buffer(bf_positions_index) ]],
-                          constant half4*     colors         [[ buffer(bf_colors_index) ]],
+                          constant half4*      colors         [[ buffer(bf_colors_index) ]],
                           constant float*      radii          [[ buffer(bf_radii_index) ]],
                           constant float*      lifetimes      [[ buffer(bf_lifetimes_index)]],
                           constant float2&     viewport_size  [[ buffer(bf_viewportSize_index) ]],
@@ -335,11 +335,9 @@ VertexOutPoint point_vert(constant float2*     positions      [[ buffer(bf_posit
     VertexOutPoint vOut;
     vOut.position = float4(fpos, 0, 1);
     vOut.color = colors[vid];
-    vOut.pointSize = radii[vid];
 
-    // Fade out based on lifetime
-    vOut.color.a = lifetimes[vid];
-
+    // We fade the points out
+    vOut.pointSize = radii[vid] * (lifetimes[vid] > 1.0 ? 1.0 : lifetimes[vid]);
     return vOut;
 }
 

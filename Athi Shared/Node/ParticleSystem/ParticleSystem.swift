@@ -402,13 +402,13 @@ final class ParticleSystem {
         pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
         pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
 
-        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
-        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+//        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
+//        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
+//        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+//        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+//        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+//        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+//        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
@@ -853,7 +853,7 @@ final class ParticleSystem {
     private func updateEmitterIndices(commandBuffer: MTLCommandBuffer) {
 
         for emitterIndex in emitters.indices {
-            var counter = emitters[emitterIndex].startIndex
+            let counter = emitters[emitterIndex].startIndex
             let amount = emitters[emitterIndex].startIndex + emitters[emitterIndex].particleCount
             for i in counter ..< amount {
                 emitterIndices[Int(i)] = UInt16(emitterIndex)

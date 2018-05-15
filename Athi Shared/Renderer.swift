@@ -40,7 +40,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     var fillMode: MTLTriangleFillMode = .fill
 
     static var clearColor = MTLClearColor(red: 9/255, green: 9/255, blue: 9/255, alpha: 1)
-    static var pixelFormat = MTLPixelFormat.bgra8Unorm
+    static var pixelFormat: MTLPixelFormat = .bgra8Unorm
 
     var framerate: Int = 0
     var frametime: Float = 0
@@ -130,21 +130,22 @@ final class Renderer: NSObject, MTKViewDelegate {
         particleSystem = ParticleSystem(
             device: device,
             options: myParticleOptions,
-            maxParticles: 10_000
+            maxParticles: 1_000_000
         )
 
-            var emitterDesc = PSEmitterDescriptor()
-            emitterDesc.isActive = true
-            emitterDesc.mozzleSpread = 2
-            emitterDesc.spawnPoint = float2(framebufferWidth/2, 0)
-            emitterDesc.spawnDirection = float2(0, 1)
-            emitterDesc.spawnRate = 1000
-            emitterDesc.particleLifetime = 5.0
-            emitterDesc.particleSize = 5
-            emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
-            emitterDesc.options = [.lifetime, .respawns]
-            var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
-            _ = particleSystem.addEmitter(&redEmitter)
+        var emitterDesc = PSEmitterDescriptor()
+        emitterDesc.isActive = true
+        emitterDesc.mozzleSpread = 2
+        emitterDesc.spawnPoint = float2(framebufferWidth/2, 0)
+        emitterDesc.spawnDirection = float2(0, 1)
+        emitterDesc.spawnRate = 10000
+        emitterDesc.particleSpeed = 5
+        emitterDesc.particleLifetime = 5.0
+        emitterDesc.particleSize = 5
+        emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
+        emitterDesc.options = [.lifetime, .respawns]
+        var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+        _ = particleSystem.addEmitter(&redEmitter)
 
         super.init()
 
@@ -230,8 +231,8 @@ final class Renderer: NSObject, MTKViewDelegate {
             emitterDesc.mozzleSpread = 2
             emitterDesc.spawnPoint = mousePos
             emitterDesc.spawnDirection = float2(0, 0)
-            emitterDesc.spawnRate = 100
-            emitterDesc.particleLifetime = 3
+            emitterDesc.spawnRate = 1000
+            emitterDesc.particleLifetime = 5
             emitterDesc.particleSize = gParticleSize
             emitterDesc.particleColor = particleSystem.particleColor
             emitterDesc.options = [.lifetime, .respawns]
@@ -275,8 +276,8 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         textureDesc.usage = [.shaderRead, .shaderWrite, .renderTarget]
         particleSystem.outTexture = device.makeTexture(descriptor: textureDesc)!
-        particleSystem.finalTexture = device.makeTexture(descriptor: textureDesc)!
         particleSystem.pTexture = device.makeTexture(descriptor: textureDesc)!
+        particleSystem.finalTexture = device.makeTexture(descriptor: textureDesc)!
 
         #if os(macOS)
             let area = NSTrackingArea(
