@@ -65,22 +65,22 @@ vertex Vertex quadVert(uint vid [[vertex_id]])
 
 struct FragOut
 {
-    float4 color0[[color(0)]];
-    float4 color1[[color(1)]];
+    half4 color0[[color(0)]];
+    half4 color1[[color(1)]];
 };
 
 
 fragment FragOut gaussianBlurFrag(Vertex                              vert            [[stage_in]],
                                   constant float2*                    resolution      [[buffer(0)]],
                                   constant float2*                    direction       [[buffer(1)]],
-                                  texture2d<float, access::sample>    texIn           [[texture(0)]])
+                                  texture2d<half, access::sample>    texIn           [[texture(0)]])
 {
-    const auto br = blur13(texIn, vert.uv, *resolution, *direction);
+    const auto br = 1.0f; //blur13(texIn, vert.uv, *resolution, *direction);
     return { br, br };
 }
 
 fragment FragOut quadFrag(Vertex                              vert           [[stage_in]],
-                          texture2d<float, access::sample>    colorTexture   [[texture(0)]])
+                          texture2d<half, access::sample>    colorTexture   [[texture(0)]])
 {
     constexpr sampler textureSampler (mag_filter::linear,
                                       min_filter::linear);

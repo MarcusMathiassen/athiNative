@@ -130,7 +130,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         particleSystem = ParticleSystem(
             device: device,
             options: myParticleOptions,
-            maxParticles: 100_000
+            maxParticles: 10_000
         )
 
             var emitterDesc = PSEmitterDescriptor()
@@ -138,7 +138,7 @@ final class Renderer: NSObject, MTKViewDelegate {
             emitterDesc.mozzleSpread = 2
             emitterDesc.spawnPoint = float2(framebufferWidth/2, 0)
             emitterDesc.spawnDirection = float2(0, 1)
-            emitterDesc.spawnRate = 10000
+            emitterDesc.spawnRate = 1000
             emitterDesc.particleLifetime = 5.0
             emitterDesc.particleSize = 5
             emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)

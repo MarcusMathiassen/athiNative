@@ -39,6 +39,27 @@ constant bool fc_uses_isAlives  = fc_has_lifetime;
 constant bool fc_uses_lifetimes = fc_has_lifetime;
 // -------------------------
 
+struct Emitter
+{
+    bool isActive;
+    float2 position;
+    float2 direction;
+    float size;
+    float speed;
+    float lifetime;
+    float spread;
+    half4 color;
+    uint particleCount;
+    uint startIndex;
+    
+    bool hasHoming;
+    bool hasLifetime;
+    bool hasBorderBound;
+    bool hasIntercollision;
+    bool hasCanAddParticles;
+    bool hasRespawns;
+};
+
 kernel
 void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
                   device ushort*   emitter_indices [[ buffer(bf_emitter_indices_index) ]],
@@ -47,7 +68,7 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
                   device float2*   velocities  [[ buffer(bf_velocities_index) ]],
 
                   device float*   radii        [[ buffer(bf_radii_index) ]],
-                  device float4*  colors       [[ buffer(bf_colors_index) ]],
+                  device half4*  colors       [[ buffer(bf_colors_index) ]],
 
                   device bool*    isAlives     [[ buffer(bf_isAlives_index) ]],
                   device float*   lifetimes    [[ buffer(bf_lifetimes_index) ]],
@@ -271,7 +292,7 @@ struct VertexOut
 vertex
 VertexOut particle_vert(constant float2*     positions      [[ buffer(bf_positions_index) ]],
                         constant float*      radii          [[ buffer(bf_radii_index) ]],
-                        constant float4*     colors         [[ buffer(bf_colors_index) ]],
+                        constant half4*     colors         [[ buffer(bf_colors_index) ]],
                         constant float2*     vertices       [[ buffer(bf_vertices_index) ]],
                         constant float*      lifetimes      [[ buffer(bf_lifetimes_index),function_constant(fc_uses_lifetimes) ]],
                         constant float2&     viewport_size  [[ buffer(bf_viewportSize_index) ]],
@@ -284,7 +305,7 @@ VertexOut particle_vert(constant float2*     positions      [[ buffer(bf_positio
 
     VertexOut vOut;
     vOut.position = float4(fpos, 0, 1);
-    vOut.color = half4(colors[iid]);
+    vOut.color = colors[iid];
 
     // Fade out based on lifetime
     vOut.color.a = lifetimes[iid];
@@ -301,7 +322,7 @@ struct VertexOutPoint
 
 vertex
 VertexOutPoint point_vert(constant float2*     positions      [[ buffer(bf_positions_index) ]],
-                          constant float4*     colors         [[ buffer(bf_colors_index) ]],
+                          constant half4*     colors         [[ buffer(bf_colors_index) ]],
                           constant float*      radii          [[ buffer(bf_radii_index) ]],
                           constant float*      lifetimes      [[ buffer(bf_lifetimes_index)]],
                           constant float2&     viewport_size  [[ buffer(bf_viewportSize_index) ]],
@@ -313,7 +334,7 @@ VertexOutPoint point_vert(constant float2*     positions      [[ buffer(bf_posit
 
     VertexOutPoint vOut;
     vOut.position = float4(fpos, 0, 1);
-    vOut.color = half4(colors[vid]);
+    vOut.color = colors[vid];
     vOut.pointSize = radii[vid];
 
     // Fade out based on lifetime

@@ -97,6 +97,27 @@ struct PSEmitterDescriptor {
     var options: [EmitterOptions] = [.lifetime, .respawns]
 }
 
+struct Emitter {
+    var isActive: Bool = false
+    var position: float2 = float2(0)
+    var direction: float2 = float2(0)
+    var size: Float32 = 0
+    var speed: Float32 = 0
+    var lifetime: Float32 = 0
+    var spread: Float32 = 0
+    var color: half4 = half4(0,0,0,0)
+    var particleCount: UInt32 = 0
+    var startIndex: UInt32 = 0
+    
+    var hasHoming: Bool = false
+    var hasLifetime: Bool = false
+    var hasBorderBound: Bool = false
+    var hasIntercollision: Bool = false
+    var hasCanAddParticles: Bool = false
+    var hasRespawns: Bool = false
+}
+
+
 /**
     A particle system consist of N number of emitters
      sharing a fixed size particle pool between them.
@@ -238,7 +259,7 @@ final class ParticleSystem {
         emitter.lifetime = descriptor.particleLifetime
         emitter.position = descriptor.spawnPoint
         emitter.size = descriptor.particleSize
-        emitter.color = descriptor.particleColor
+        emitter.color = half4(descriptor.particleColor)
         emitter.direction = descriptor.spawnDirection
 
         emitter.speed = 5
@@ -258,7 +279,7 @@ final class ParticleSystem {
     init(device: MTLDevice,
          options: [ParticleOption] = [],
          maxParticles: Int = 1_000_000) {
-
+        
         self.maxParticles = maxParticles
         self.maxEmitterCount = maxParticles / 10
 
@@ -302,7 +323,7 @@ final class ParticleSystem {
                                              options: gpuOnlyResourceOption)!
         }
         if usesColors {
-            colorsBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * maxParticles,
+            colorsBuffer = device.makeBuffer(length: MemoryLayout<half4>.stride * maxParticles,
                                              options: gpuOnlyResourceOption)!
         }
 
@@ -339,6 +360,8 @@ final class ParticleSystem {
             width: Int(framebufferWidth),
             height: Int(framebufferHeight),
             mipmapped: false)
+        
+        textureDesc.resourceOptions = .storageModePrivate
 
         textureDesc.usage = .shaderRead
         inTexture = device.makeTexture(descriptor: textureDesc)!

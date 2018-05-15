@@ -143,23 +143,4 @@ float2 float2_from_angle(float angle)
     return normalize(float2(cos(angle), sin(angle)));
 }
 
-void update_emitter_indices(device Emitter* emitters,
-                            device ushort* emitter_indices,
-                            device uint& emitter_count,
-                            uint new_emitter_count)
-{
-    auto counter = emitters[emitter_count].startIndex;
-    // Find emitter for this particle
-    for (auto emitter_index = emitter_count;
-         emitter_index < new_emitter_count; ++emitter_index)
-    {
-        const auto amount = emitters[emitter_index].startIndex + emitters[emitter_index].particleCount;
-        for (auto i = counter; i < amount; ++i)
-        {
-            emitter_indices[i] = emitter_index;
-        }
-        counter += amount;
-    }
-    emitter_count = new_emitter_count;
-}
 

@@ -99,28 +99,6 @@ typedef struct
     uint selected_emitter_id;
 } SimParam;
 
-typedef struct
-{
-    bool isActive;
-    vector_float2 position;
-    vector_float2 direction;
-    float size;
-    float speed;
-    float lifetime;
-    float spread;
-    vector_float4 color;
-    uint particleCount;
-    uint startIndex;
-
-    bool hasHoming;
-    bool hasLifetime;
-    bool hasBorderBound;
-    bool hasIntercollision;
-    bool hasCanAddParticles;
-    bool hasRespawns;
-
-} Emitter;
-
 
 #endif /* ShaderTypes_h */
 

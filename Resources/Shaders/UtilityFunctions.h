@@ -29,7 +29,6 @@ struct Seed
     int x, y, z;
 };
 
-void update_emitter_indices(device Emitter* emitters, device ushort* emitter_indices, device uint& emitter_count, uint new_emitter_count);
 float2 to_viewspace(float2 point, float2 viewport);
 
 float rand(Seed seed);
