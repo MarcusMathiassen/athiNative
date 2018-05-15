@@ -34,6 +34,7 @@ float2 to_viewspace(float2 point, float2 viewport);
 
 float rand(Seed seed);
 float rand(int seed);
+float rand_f32(float min, float max, int seed);
 float2 rand2(Range<float> range, Seed seed);
 float2 rand2(float min, float max, int seed);
 

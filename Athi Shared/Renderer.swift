@@ -133,32 +133,18 @@ final class Renderer: NSObject, MTKViewDelegate {
             maxParticles: 100_000
         )
 
-        var emitterDesc = PSEmitterDescriptor()
-        emitterDesc.isActive = true
-        emitterDesc.mozzleSpread = 1.0
-        emitterDesc.spawnPoint = float2(25, framebufferHeight/2)
-        emitterDesc.spawnDirection = float2(1, 0)
-        emitterDesc.spawnRate = 300
-        emitterDesc.particleLifetime = 9.0
-        emitterDesc.particleSize = 5
-        emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
-        emitterDesc.options = [.lifetime, .respawns, .borderBound]
-        var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
-        _ = particleSystem.addEmitter(&redEmitter)
-
-
-        var emitterDesc1 = PSEmitterDescriptor()
-        emitterDesc1.isActive = true
-        emitterDesc1.mozzleSpread = 1.0
-        emitterDesc1.spawnPoint = float2(framebufferWidth - 25, framebufferHeight/2)
-        emitterDesc1.spawnDirection = float2(-1, 0)
-        emitterDesc1.spawnRate = 300
-        emitterDesc1.particleLifetime = 9.0
-        emitterDesc1.particleSize = 7
-        emitterDesc1.particleColor = float4(0.46, 0.47, 1, 1)
-        emitterDesc1.options = [.lifetime, .respawns, .borderBound]
-        var blueEmitter = particleSystem.makeEmitter(descriptor: emitterDesc1)
-        _ = particleSystem.addEmitter(&blueEmitter)
+            var emitterDesc = PSEmitterDescriptor()
+            emitterDesc.isActive = true
+            emitterDesc.mozzleSpread = 2
+            emitterDesc.spawnPoint = float2(framebufferWidth/2, 0)
+            emitterDesc.spawnDirection = float2(0, 1)
+            emitterDesc.spawnRate = 10000
+            emitterDesc.particleLifetime = 5.0
+            emitterDesc.particleSize = 5
+            emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
+            emitterDesc.options = [.lifetime, .respawns]
+            var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+            _ = particleSystem.addEmitter(&redEmitter)
 
         super.init()
 
@@ -241,14 +227,14 @@ final class Renderer: NSObject, MTKViewDelegate {
 
             var emitterDesc = PSEmitterDescriptor()
             emitterDesc.isActive = true
-            emitterDesc.mozzleSpread = 1
+            emitterDesc.mozzleSpread = 2
             emitterDesc.spawnPoint = mousePos
-            emitterDesc.spawnDirection = float2(1, 0)
-            emitterDesc.spawnRate = 300
-            emitterDesc.particleLifetime = 3.0
+            emitterDesc.spawnDirection = float2(0, 0)
+            emitterDesc.spawnRate = 100
+            emitterDesc.particleLifetime = 3
             emitterDesc.particleSize = gParticleSize
             emitterDesc.particleColor = particleSystem.particleColor
-            emitterDesc.options = [.lifetime, .respawns, .borderBound]
+            emitterDesc.options = [.lifetime, .respawns]
             var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
             _ = particleSystem.addEmitter(&redEmitter)
 
@@ -281,6 +267,8 @@ final class Renderer: NSObject, MTKViewDelegate {
             width: Int(framebufferWidth),
             height: Int(framebufferHeight),
             mipmapped: false)
+
+        textureDesc.resourceOptions = .storageModePrivate
 
         textureDesc.usage = [.shaderRead, .renderTarget]
         particleSystem.inTexture = device.makeTexture(descriptor: textureDesc)!

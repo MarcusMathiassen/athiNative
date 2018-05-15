@@ -24,6 +24,12 @@ enum ParticleOption: String {
     case respawns = "fc_has_respawns"
 }
 
+enum RenderingOption {
+    case circles
+    case pixels
+    case points
+}
+
 enum EmitterOptions {
     case borderBound
     case intercollision
@@ -31,9 +37,51 @@ enum EmitterOptions {
     case lifetime
     case attractedToMouse
     case homing
-    case turbulenceader
+    case turbulence
     case canAddParticles
     case respawns
+}
+
+extension float2: Codable {
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let x = try values.decode(Float.self, forKey: .x)
+        let y = try values.decode(Float.self, forKey: .y)
+        self.init(x, y)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(x, forKey: .x)
+        try container.encode(y, forKey: .y)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x, y
+    }
+}
+
+extension float4: Codable {
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let x = try values.decode(Float.self, forKey: .x)
+        let y = try values.decode(Float.self, forKey: .y)
+        let z = try values.decode(Float.self, forKey: .z)
+        let w = try values.decode(Float.self, forKey: .w)
+        self.init(x, y, z, w)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(x, forKey: .x)
+        try container.encode(y, forKey: .y)
+        try container.encode(z, forKey: .z)
+        try container.encode(w, forKey: .w)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x, y, z, w
+    }
 }
 
 struct PSEmitterDescriptor {
@@ -91,6 +139,8 @@ final class ParticleSystem {
 
     var globalParam: GlobalParam = GlobalParam()
     var simParam: SimParam = SimParam()
+
+    var renderingOption: RenderingOption = .points
 
     // Options
     var shouldRepel: Bool = false
@@ -150,9 +200,12 @@ final class ParticleSystem {
     private var indexBuffer: MTLBuffer! = nil
 
     private var pipelineState: MTLRenderPipelineState?
+    private var pointPipelineState: MTLRenderPipelineState?
     private var computePipelineState: MTLComputePipelineState?
     private var initComputePipelineState: MTLComputePipelineState?
     private var basicComputePipelineState: MTLComputePipelineState?
+
+    private var mNoDepthTest: MTLDepthStencilState?
 
     var inTexture: MTLTexture! = nil
     var outTexture: MTLTexture! = nil
@@ -179,7 +232,9 @@ final class ParticleSystem {
 
     public func makeEmitter(descriptor: PSEmitterDescriptor) -> Emitter {
         var emitter = Emitter()
-        emitter.particleCount = uint(Int32(descriptor.spawnRate / descriptor.particleLifetime))
+
+        emitter.particleCount = UInt32(descriptor.spawnRate / descriptor.particleLifetime)
+
         emitter.lifetime = descriptor.particleLifetime
         emitter.position = descriptor.spawnPoint
         emitter.size = descriptor.particleSize
@@ -338,6 +393,37 @@ final class ParticleSystem {
             print("Error: \(error)")
         }
 
+        do {
+            try vertexFunc = library.makeFunction(name: "point_vert", constantValues: constVals)
+        } catch let error {
+            print("Error: \(error)")
+        }
+
+        let pointPipelineDesc = MTLRenderPipelineDescriptor()
+        pointPipelineDesc.label = "PointPipelineDesc"
+        pointPipelineDesc.vertexFunction = vertexFunc
+        pointPipelineDesc.fragmentFunction = library.makeFunction(name: "point_frag")!
+        pointPipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        pointPipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
+
+        pointPipelineDesc.colorAttachments[0].isBlendingEnabled = true
+        pointPipelineDesc.colorAttachments[0].rgbBlendOperation = .add
+        pointPipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+        pointPipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pointPipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pointPipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pointPipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+        let depthStencilDesc = MTLDepthStencilDescriptor()
+        depthStencilDesc.isDepthWriteEnabled = false
+        mNoDepthTest = device.makeDepthStencilState(descriptor: depthStencilDesc)!
+
+        do {
+            try pointPipelineState = device.makeRenderPipelineState(descriptor: pointPipelineDesc)
+        } catch let error {
+            print("Error: \(error)")
+        }
+
 //        var computeFunc: MTLFunction! = nil
 //        do {
 //            try computeFunc = library.makeFunction(name: "uber_compute", constantValues: constVals)
@@ -395,7 +481,6 @@ final class ParticleSystem {
             size: MemoryLayout<UInt32>.stride
         )
 
-
         var vas = [Float](repeating: -1.0, count: maxParticles)
         let buffi = device.makeBuffer(bytes: &vas,
                                       length: MemoryLayout<Float>.stride * maxParticles,
@@ -407,6 +492,7 @@ final class ParticleSystem {
             destinationOffset: 0,
             size: MemoryLayout<Float>.stride * maxParticles
         )
+
         blitCommandEncoder.endEncoding()
     }
     private func setGPUParticleCount(commandBuffer: MTLCommandBuffer, value: Int) {
@@ -464,6 +550,10 @@ final class ParticleSystem {
         return id
     }
 
+    public func renderPoints() {
+
+    }
+
     public func draw(view: MTKView, frameDescriptor: FrameDescriptor, commandBuffer: MTLCommandBuffer) {
 
         if emitters.count == 0 { return }
@@ -483,38 +573,66 @@ final class ParticleSystem {
 
         var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
-        renderEncoder.pushDebugGroup("Draw particles (off-screen)")
-        renderEncoder.setRenderPipelineState(pipelineState!)
-
         if !usesTexture {
 
-            if shouldUpdate {
-                buildVertices(numVertices: numVerticesPerParticle)
-                shouldUpdate = false
+            switch renderingOption {
+            case .points:
+                renderEncoder.pushDebugGroup("Draw particles as POINTS(off-screen)")
+                renderEncoder.setRenderPipelineState(pointPipelineState!)
+                renderEncoder.setDepthStencilState(mNoDepthTest)
+
+                if shouldUpdate {
+                    buildVertices(numVertices: numVerticesPerParticle)
+                    shouldUpdate = false
+                }
+
+                renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
+                renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+                renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
+                    renderEncoder.setVertexBuffer(lifetimesBuffer,
+                                                  offset: 0,
+                                                  index: BufferIndex.bf_lifetimes_index.rawValue)
+                renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
+                                             index: BufferIndex.bf_viewportSize_index.rawValue)
+
+                renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
+                renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: particleCount)
+
+            case .circles:
+                renderEncoder.pushDebugGroup("Draw particles as CIRCLES (off-screen)")
+                renderEncoder.setRenderPipelineState(pipelineState!)
+                renderEncoder.setDepthStencilState(mNoDepthTest)
+
+                if shouldUpdate {
+                    buildVertices(numVertices: numVerticesPerParticle)
+                    shouldUpdate = false
+                }
+
+                renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
+                renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+                renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
+                renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: BufferIndex.bf_vertices_index.rawValue)
+                if usesLifetimes {
+                    renderEncoder.setVertexBuffer(lifetimesBuffer,
+                                                  offset: 0,
+                                                  index: BufferIndex.bf_lifetimes_index.rawValue)
+                }
+                renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
+                                             index: BufferIndex.bf_viewportSize_index.rawValue)
+
+                renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
+
+                renderEncoder.drawIndexedPrimitives(
+                    type: .triangle,
+                    indexCount: indices.count,
+                    indexType: .uint16,
+                    indexBuffer: indexBuffer,
+                    indexBufferOffset: 0,
+                    instanceCount: particleCount
+                )
+            case .pixels:
+                break
             }
-
-            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
-            renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-            renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: BufferIndex.bf_vertices_index.rawValue)
-            if usesLifetimes {
-                 renderEncoder.setVertexBuffer(lifetimesBuffer,
-                                               offset: 0,
-                                               index: BufferIndex.bf_lifetimes_index.rawValue)
-            }
-            renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
-                                         index: BufferIndex.bf_viewportSize_index.rawValue)
-
-            renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
-
-            renderEncoder.drawIndexedPrimitives(
-                type: .triangle,
-                indexCount: indices.count,
-                indexType: .uint16,
-                indexBuffer: indexBuffer,
-                indexBufferOffset: 0,
-                instanceCount: particleCount
-            )
         }
 
         renderEncoder.popDebugGroup()
@@ -603,6 +721,7 @@ final class ParticleSystem {
         globalParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
         globalParam.particleCount = UInt32(particleCount)
         globalParam.viewportSize = viewportSize
+        globalParam.seed = Int32(randFloat(0, 100))
 
         computeEncoder.setBytes(&globalParam,
                                 length: MemoryLayout<GlobalParam>.stride,

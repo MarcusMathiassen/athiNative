@@ -25,6 +25,17 @@ float rand(int seed)
     return (( 1.0 - ( (_seed * (_seed * _seed * 15731 + 789221) + 1376312589) & 2147483647) / 1073741824.0f) + 1.0f) / 2.0f;
 }
 
+float rand_f32(float min, float max, int seed)
+{
+    int _seed = seed*3 + seed*0.14 * 57 + seed*91.123 * 241;
+    _seed= (_seed<< 13) ^ _seed;
+    const float input = (( 1.0 - ( (_seed * (_seed * _seed * 15731 + 789221) + 1376312589) & 2147483647) / 1073741824.0f) + 1.0f) / 2.0f;
+
+    const auto res = min + (max - min) * input;
+
+    return res;
+}
+
 float2 rand2(float min, float max, int seed)
 {
     const auto inputX = rand(seed);

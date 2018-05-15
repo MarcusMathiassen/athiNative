@@ -69,6 +69,8 @@ typedef struct
     float currentTime;
     float deltaTime;
 
+    int seed;
+
 } GlobalParam;
 
 typedef struct

@@ -64,18 +64,21 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
         // Get the emitter for this particle
         const auto emitter = emitters[emitter_indices[index]];
 
-        const auto dir = emitter.direction * emitter.speed;
+        const auto vel = emitter.direction * emitter.speed;
 
         positions[index] = emitter.position;
-        velocities[index] = dir + rand2(-emitter.spread, emitter.spread, index);
+        velocities[index] = vel + rand2(-emitter.spread, emitter.spread, index);
 
 
         // Update variables if available
-        radii[index] = emitter.size;
+        radii[index] = emitter.size * 0.5 + emitter.size * rand_f32(0.0, 0.5, globalParam.seed * index);
         colors[index] = emitter.color;
         isAlives[index] = true;
-        lifetimes[index] = emitter.lifetime * rand(index);
+
+        const auto particleIndexInEmitter = index - emitter.startIndex;
+        lifetimes[index] = emitter.lifetime * rand_f32(0, 1, globalParam.seed * particleIndexInEmitter);
         if (fc_uses_masses)  masses[index] = M_PI_F * emitter.size * emitter.size;
+
     } else {
         // Decrease the lifetime
         lifetimes[index] -= globalParam.deltaTime;
@@ -262,7 +265,7 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
 struct VertexOut
 {
     float4 position[[position]];
-    float4 color;
+    half4 color;
 };
 
 vertex
@@ -281,7 +284,7 @@ VertexOut particle_vert(constant float2*     positions      [[ buffer(bf_positio
 
     VertexOut vOut;
     vOut.position = float4(fpos, 0, 1);
-    vOut.color = colors[iid];
+    vOut.color = half4(colors[iid]);
 
     // Fade out based on lifetime
     vOut.color.a = lifetimes[iid];
@@ -289,10 +292,40 @@ VertexOut particle_vert(constant float2*     positions      [[ buffer(bf_positio
     return vOut;
 }
 
+struct VertexOutPoint
+{
+    float4 position[[position]];
+    half4 color;
+    float pointSize [[point_size]];
+};
+
+vertex
+VertexOutPoint point_vert(constant float2*     positions      [[ buffer(bf_positions_index) ]],
+                          constant float4*     colors         [[ buffer(bf_colors_index) ]],
+                          constant float*      radii          [[ buffer(bf_radii_index) ]],
+                          constant float*      lifetimes      [[ buffer(bf_lifetimes_index)]],
+                          constant float2&     viewport_size  [[ buffer(bf_viewportSize_index) ]],
+                          const uint vid                      [[ vertex_id ]]
+                          )
+{
+    // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
+    const float2 fpos = -1.0 + (positions[vid]) / (viewport_size / 2.0);
+
+    VertexOutPoint vOut;
+    vOut.position = float4(fpos, 0, 1);
+    vOut.color = half4(colors[vid]);
+    vOut.pointSize = radii[vid];
+
+    // Fade out based on lifetime
+    vOut.color.a = lifetimes[vid];
+
+    return vOut;
+}
+
 struct FragmentOut
 {
-    float4 color0[[color(0)]];
-    float4 color1[[color(1)]];
+    half4 color0[[color(0)]];
+    half4 color1[[color(1)]];
 };
 
 fragment
@@ -301,3 +334,13 @@ FragmentOut particle_frag(VertexOut vert [[stage_in]])
     return { vert.color, vert.color };
 }
 
+fragment
+FragmentOut point_frag(VertexOutPoint vert [[stage_in]],
+                       const float2 pointCoord [[point_coord]]
+                       )
+{
+    if (length(pointCoord - float2(0.5)) > 0.5) {
+        discard_fragment();
+    }
+    return { vert.color, vert.color };
+}
