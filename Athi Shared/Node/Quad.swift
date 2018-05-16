@@ -30,14 +30,6 @@ final class Quad {
         pipelineDesc.fragmentFunction = fragFunc
         pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
 
-        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
-        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
         } catch {
@@ -51,6 +43,7 @@ final class Quad {
         blurPipelineDesc.vertexFunction = vertexFunc
         blurPipelineDesc.fragmentFunction = blurfragFunc
         blurPipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        blurPipelineDesc.colorAttachments[0].isBlendingEnabled = false
 
         do {
             try gaussianBlurPipelineState = device.makeRenderPipelineState(descriptor: blurPipelineDesc)

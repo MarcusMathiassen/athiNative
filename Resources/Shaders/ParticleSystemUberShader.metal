@@ -80,39 +80,103 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
                   const uint index [[ thread_position_in_grid ]]
 )
 {
-    if (lifetimes[index] < 0)
+    // Get the emitter for this particle
+    const auto emitter = emitters[emitter_indices[index]];
+
+    auto  pos = positions[index];
+    auto  vel = velocities[index];
+
+    auto  color = colors[index];
+    auto  radius = radii[index];
+
+    auto  mass = masses[index];
+    auto  isAlive = isAlives[index];
+    auto  lifetime = lifetimes[index];
+
+    threadgroup_barrier(mem_flags::mem_device);
+
+    if (fc_has_intercollision)
     {
-        // Get the emitter for this particle
-        const auto emitter = emitters[emitter_indices[index]];
-
-        const auto vel = emitter.direction * emitter.speed;
-
-        positions[index] = emitter.position;
-        velocities[index] = vel + rand2(-emitter.spread, emitter.spread, index);
-
-
-        // Update variables if available
-        radii[index] = emitter.size * 0.5 + emitter.size * rand_f32(0.0, 0.5, globalParam.seed * index);
-        colors[index] = emitter.color;
-        isAlives[index] = true;
-
-        const auto particleIndexInEmitter = index - emitter.startIndex;
-        lifetimes[index] = emitter.lifetime * rand_f32(0, 1, globalParam.seed * particleIndexInEmitter);
-        if (fc_uses_masses)  masses[index] = M_PI_F * emitter.size * emitter.size;
-
-    } else {
-        // Decrease the lifetime
-        lifetimes[index] -= globalParam.deltaTime;
-
-        // Fade the particle out until it's dead
-        if (fc_uses_colors)
+        for (uint otherIndex = 0; otherIndex < globalParam.particleCount; ++otherIndex)
         {
-//            colors[index].a = lifetimes[index];
+//            if (otherIndex == emitter.startIndex) otherIndex += emitter.particleCount;
+            if (index == otherIndex) { continue; }
+
+            if (fc_uses_isAlives)
+            {
+                if (!isAlives[otherIndex]) { continue; }
+            }
+
+            // Skip any emitters without collision
+//            const auto other_emitter = emitters[emitter_indices[otherIndex]];
+//            if (!other_emitter.hasIntercollision)
+//            {
+//                otherIndex = other_emitter.startIndex + other_emitter.particleCount;
+//            }
+
+            const auto other_pos = positions[otherIndex];
+            const auto other_radi = radii[otherIndex];
+
+            if (collision_check(pos, other_pos, radius, other_radi))
+            {
+                const auto other_vel = velocities[otherIndex];
+                const auto other_mass = masses[otherIndex];
+
+                vel = collision_resolve(pos, vel,  mass, other_pos, other_vel, other_mass);
+            }
         }
     }
-    
-    velocities[index] += globalParam.gravityForce;
-    positions[index] += velocities[index];
+
+    lifetime -= globalParam.deltaTime;
+    if (lifetime < 0)
+    {
+        const auto new_vel = emitter.direction * emitter.speed;
+
+        pos = emitter.position;
+        vel = new_vel + rand2(-emitter.spread, emitter.spread, index);
+
+        // Update variables if available
+        radius = emitter.size * 0.5 + emitter.size * rand_f32(0.0, 0.5, globalParam.seed * index);
+        color = emitter.color;
+        isAlive = true;
+
+        const auto particleIndexInEmitter = index - emitter.startIndex;
+        lifetime = emitter.lifetime * rand_f32(0, 1, globalParam.seed * particleIndexInEmitter);
+        if (fc_uses_masses)  mass = M_PI_F * emitter.size * emitter.size;
+    }
+
+    if (fc_has_homing)
+    {
+        vel = homingMissile(globalParam.attractPoint, 1.0, pos, vel);
+    }
+
+    if (fc_has_attractedToMouse)
+    {
+        vel = attract_to_point(globalParam.mousePos, pos, vel, mass);
+    }
+
+    if (fc_has_borderBound)
+    {
+        if (pos.x < 0 + radius)                        {  vel.x *= -1; }
+        if (pos.x > globalParam.viewportSize.x - radius)  {  vel.x *= -1; }
+        if (pos.y < 0 + radius)                        {  vel.y *= -1; }
+        if (pos.y > globalParam.viewportSize.y - radius)  {  vel.y *= -1; }
+    }
+
+    // Update all used variables
+    vel += globalParam.gravityForce;
+
+    threadgroup_barrier(mem_flags::mem_device);
+
+    velocities[index] = vel;
+    positions[index] = pos + vel;
+
+    if (fc_uses_radii)      radii[index] = radius;
+    if (fc_uses_masses)     masses[index] = mass;
+    if (fc_uses_colors)     colors[index] = color;
+    if (fc_uses_isAlives)   isAlives[index] = isAlive;
+    if (fc_uses_lifetimes)  lifetimes[index] = lifetime;
+
 }
 //
 //kernel
@@ -282,84 +346,3 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
 //        if (fc_uses_lifetimes)  lifetimes[index] = lifetime;
 //    }
 //}
-
-struct VertexOut
-{
-    float4 position[[position]];
-    half4 color;
-};
-
-vertex
-VertexOut particle_vert(constant float2*     positions      [[ buffer(bf_positions_index) ]],
-                        constant float*      radii          [[ buffer(bf_radii_index) ]],
-                        constant half4*     colors         [[ buffer(bf_colors_index) ]],
-                        constant float2*     vertices       [[ buffer(bf_vertices_index) ]],
-                        constant float*      lifetimes      [[ buffer(bf_lifetimes_index),function_constant(fc_uses_lifetimes) ]],
-                        constant float2&     viewport_size  [[ buffer(bf_viewportSize_index) ]],
-                        uint vid                            [[ vertex_id ]],
-                        uint iid                            [[ instance_id ]]
-                        )
-{
-    // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
-    const float2 fpos = -1.0 + (radii[iid] * vertices[vid] + positions[iid]) / (viewport_size / 2.0);
-
-    VertexOut vOut;
-    vOut.position = float4(fpos, 0, 1);
-    vOut.color = colors[iid];
-
-    // Fade out based on lifetime
-//    vOut.color.a = lifetimes[iid];
-
-    return vOut;
-}
-
-struct VertexOutPoint
-{
-    float4 position[[position]];
-    half4 color;
-    float pointSize [[point_size]];
-};
-
-vertex
-VertexOutPoint point_vert(constant float2*     positions      [[ buffer(bf_positions_index) ]],
-                          constant half4*      colors         [[ buffer(bf_colors_index) ]],
-                          constant float*      radii          [[ buffer(bf_radii_index) ]],
-                          constant float*      lifetimes      [[ buffer(bf_lifetimes_index)]],
-                          constant float2&     viewport_size  [[ buffer(bf_viewportSize_index) ]],
-                          const uint vid                      [[ vertex_id ]]
-                          )
-{
-    // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
-    const float2 fpos = -1.0 + (positions[vid]) / (viewport_size / 2.0);
-
-    VertexOutPoint vOut;
-    vOut.position = float4(fpos, 0, 1);
-    vOut.color = colors[vid];
-
-    // We fade the points out
-    vOut.pointSize = radii[vid] * (lifetimes[vid] > 1.0 ? 1.0 : lifetimes[vid]);
-    return vOut;
-}
-
-struct FragmentOut
-{
-    half4 color0[[color(0)]];
-    half4 color1[[color(1)]];
-};
-
-fragment
-FragmentOut particle_frag(VertexOut vert [[stage_in]])
-{
-    return { vert.color, vert.color };
-}
-
-fragment
-FragmentOut point_frag(VertexOutPoint vert [[stage_in]],
-                       const float2 pointCoord [[point_coord]]
-                       )
-{
-    if (length(pointCoord - float2(0.5)) > 0.5) {
-        discard_fragment();
-    }
-    return { vert.color, vert.color };
-}

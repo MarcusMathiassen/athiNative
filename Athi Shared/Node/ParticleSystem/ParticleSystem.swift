@@ -169,7 +169,7 @@ final class ParticleSystem {
     var enableBorderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
     var gravityForce: Float = -0.0981
-    var enableGravity: Bool = false
+    var enableGravity: Bool = true
     var enableCollisions: Bool = false
     var useAccelerometerAsGravity: Bool = false
     var useQuadtree: Bool = true
@@ -213,25 +213,13 @@ final class ParticleSystem {
     private var seedBuffer: MTLBuffer! = nil
     private var fieldNodesBuffer: MTLBuffer! = nil
 
-    private var vertices: [float2] = []
-    private var indices: [UInt16] = []
-
-    // Used for drawing polygon particles
-    private var vertexBuffer: MTLBuffer! = nil
-    private var indexBuffer: MTLBuffer! = nil
-
     private var pipelineState: MTLRenderPipelineState?
-    private var pointPipelineState: MTLRenderPipelineState?
     private var computePipelineState: MTLComputePipelineState?
-    private var initComputePipelineState: MTLComputePipelineState?
-    private var basicComputePipelineState: MTLComputePipelineState?
-
     private var mNoDepthTest: MTLDepthStencilState?
 
     var inTexture: MTLTexture! = nil
     var outTexture: MTLTexture! = nil
     var finalTexture: MTLTexture! = nil
-    var pTexture: MTLTexture! = nil
 
     var bufferSemaphore = DispatchSemaphore(value: 1)
 
@@ -262,7 +250,7 @@ final class ParticleSystem {
         emitter.color = half4(descriptor.particleColor)
         emitter.direction = descriptor.spawnDirection
 
-        emitter.speed = 5
+        emitter.speed = descriptor.particleSpeed
         emitter.spread = descriptor.mozzleSpread
 
         emitter.isActive = descriptor.isActive
@@ -281,7 +269,7 @@ final class ParticleSystem {
          maxParticles: Int = 1_000_000) {
         
         self.maxParticles = maxParticles
-        self.maxEmitterCount = maxParticles / 10
+        self.maxEmitterCount = maxParticles / 100
 
         self.options = options
 
@@ -291,7 +279,6 @@ final class ParticleSystem {
         emitterIndices = [UInt16](repeating: 0, count: maxParticles)
 
         // Initalize our GPU buffers
-        // Always needed
         emittersBuffer = device.makeBuffer(length: MemoryLayout<Emitter>.stride * maxEmitterCount,
                                             options: .storageModeShared)!
         emitterIndicesBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * maxParticles,
@@ -336,13 +323,6 @@ final class ParticleSystem {
                                                 options: gpuOnlyResourceOption)!
         }
 
-        if !usesTexture {
-            vertexBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * numVerticesPerParticle,
-                                             options: staticBufferResourceOption)!
-            indexBuffer = device.makeBuffer(length: MemoryLayout<UInt16>.stride * numVerticesPerParticle * 3,
-                                            options: staticBufferResourceOption)!
-        }
-
         if usesSeedBuffer {
             fieldNodesBuffer = device.makeBuffer(
                 length: MemoryLayout<float2>.stride * Int(framebufferWidth) * Int(framebufferHeight),
@@ -369,13 +349,35 @@ final class ParticleSystem {
         textureDesc.usage = .shaderWrite
         outTexture = device.makeTexture(descriptor: textureDesc)!
         finalTexture = device.makeTexture(descriptor: textureDesc)!
-        pTexture = device.makeTexture(descriptor: textureDesc)!
+
+        let library = device.makeDefaultLibrary()!
+        let pipelineDesc = MTLRenderPipelineDescriptor()
+        pipelineDesc.label = "pipelineDesc"
+        pipelineDesc.vertexFunction = library.makeFunction(name: "particle_vert")!
+        pipelineDesc.fragmentFunction = library.makeFunction(name: "particle_frag")!
+        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
+        pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
+
+        do {
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
+        } catch let error {
+            print("Error: \(error)")
+        }
+
+        let depthStencilDesc = MTLDepthStencilDescriptor()
+        depthStencilDesc.isDepthWriteEnabled = false
+        mNoDepthTest = device.makeDepthStencilState(descriptor: depthStencilDesc)!
 
         let constVals = MTLFunctionConstantValues()
-
-        // Set all values to false first
-        var falseVals = [Bool](repeating: false, count: 9)
-        constVals.setConstantValues(&falseVals, type: .bool, range: 0 ..< falseVals.count)
+//        // Set all values to false first
+        var falseVal = false
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.attractedToMouse.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.borderBound.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.canAddParticles.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.drawToTexture.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.homing.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.intercollision.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.lifetime.rawValue)
 
         // Then set all found in options to true
         var trueVal = true
@@ -385,95 +387,19 @@ final class ParticleSystem {
 
         print(constVals)
 
-        let library = device.makeDefaultLibrary()!
-        var vertexFunc: MTLFunction! = nil
+
+        var computeFunc: MTLFunction! = nil
         do {
-            try vertexFunc = library.makeFunction(name: "particle_vert", constantValues: constVals)
-        } catch let error {
-            print("Error: \(error)")
-        }
-
-        let fragFunc = library.makeFunction(name: "particle_frag")!
-
-        let pipelineDesc = MTLRenderPipelineDescriptor()
-        pipelineDesc.label = "pipelineDesc"
-        pipelineDesc.vertexFunction = vertexFunc
-        pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
-        pipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
-
-//        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
-//        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
-//        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-//        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-//        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-//        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-//        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-
-        do {
-            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
-        } catch let error {
-            print("Error: \(error)")
-        }
-
-        do {
-            try vertexFunc = library.makeFunction(name: "point_vert", constantValues: constVals)
-        } catch let error {
-            print("Error: \(error)")
-        }
-
-        let pointPipelineDesc = MTLRenderPipelineDescriptor()
-        pointPipelineDesc.label = "PointPipelineDesc"
-        pointPipelineDesc.vertexFunction = vertexFunc
-        pointPipelineDesc.fragmentFunction = library.makeFunction(name: "point_frag")!
-        pointPipelineDesc.colorAttachments[0].pixelFormat = Renderer.pixelFormat
-        pointPipelineDesc.colorAttachments[1].pixelFormat = Renderer.pixelFormat
-
-        pointPipelineDesc.colorAttachments[0].isBlendingEnabled = true
-        pointPipelineDesc.colorAttachments[0].rgbBlendOperation = .add
-        pointPipelineDesc.colorAttachments[0].alphaBlendOperation = .add
-        pointPipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pointPipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pointPipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pointPipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-
-        let depthStencilDesc = MTLDepthStencilDescriptor()
-        depthStencilDesc.isDepthWriteEnabled = false
-        mNoDepthTest = device.makeDepthStencilState(descriptor: depthStencilDesc)!
-
-        do {
-            try pointPipelineState = device.makeRenderPipelineState(descriptor: pointPipelineDesc)
-        } catch let error {
-            print("Error: \(error)")
-        }
-
-//        var computeFunc: MTLFunction! = nil
-//        do {
-//            try computeFunc = library.makeFunction(name: "uber_compute", constantValues: constVals)
-//            computeFunc.label = "uber_compute"
-//        } catch let error {
-//            print("Error: \(error)")
-//        }
-//        do {
-//            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
-//        } catch let error {
-//            print("Error: \(error)")
-//        }
-
-        var basicComputeFunc: MTLFunction! = nil
-        do {
-            try basicComputeFunc = library.makeFunction(name: "basic_update", constantValues: constVals)
-            basicComputeFunc.label = "basic_update"
+            try computeFunc = library.makeFunction(name: "basic_update", constantValues: constVals)
+            computeFunc.label = "basic_update"
         } catch let error {
             print("Error: \(error)")
         }
         do {
-            try basicComputePipelineState = device.makeComputePipelineState(function: basicComputeFunc!)
+            try computePipelineState = device.makeComputePipelineState(function: computeFunc!)
         } catch let error {
             print("Error: \(error)")
         }
-
-        buildVertices(numVertices: numVerticesPerParticle)
 
         let byteF = ByteCountFormatter()
         byteF.allowedUnits = .useAll
@@ -490,6 +416,170 @@ final class ParticleSystem {
         #endif
     }
 
+    public func draw(view: MTKView, frameDescriptor: FrameDescriptor, commandBuffer: MTLCommandBuffer) {
+
+        if emitters.count == 0 { return }
+
+        commandBuffer.pushDebugGroup("ParticleSystem Draw")
+
+        let viewRenderPassDesc = view.currentRenderPassDescriptor
+        if viewRenderPassDesc != nil {
+
+            viewRenderPassDesc?.colorAttachments[0].loadAction = .clear
+            viewRenderPassDesc?.colorAttachments[0].texture = inTexture
+            viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
+            viewRenderPassDesc?.colorAttachments[1].texture = outTexture
+
+            let blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
+            blurKernel.encode(commandBuffer: commandBuffer, sourceTexture: inTexture, destinationTexture: outTexture)
+            quad.mix(commandBuffer: commandBuffer, inputTexture1: inTexture, inputTexture2: outTexture, outTexture: (view.currentDrawable?.texture)!, sigma: 5)
+
+            let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
+
+            renderEncoder.pushDebugGroup("Draw particles")
+
+            renderEncoder.setRenderPipelineState(pipelineState!)
+            renderEncoder.setDepthStencilState(mNoDepthTest)
+
+            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
+            renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
+            renderEncoder.setVertexBuffer(lifetimesBuffer,
+                                          offset: 0,
+                                          index: BufferIndex.bf_lifetimes_index.rawValue)
+            renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
+                                         index: BufferIndex.bf_viewportSize_index.rawValue)
+
+            renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
+            renderEncoder.drawPrimitives(
+                type: .point,
+                vertexStart: 0,
+                vertexCount: particleCount
+            )
+
+            renderEncoder.popDebugGroup()
+            renderEncoder.endEncoding()
+
+            commandBuffer.popDebugGroup()
+        }
+    }
+
+    private func update_particles(commandBuffer: MTLCommandBuffer) {
+
+        if emitters.count == 0 { return }
+        if clearParticles {
+            clearGPUParticles(commandBuffer: commandBuffer)
+            clearParticles = false
+        }
+
+        if shouldAddEmitter {
+            updateEmitterIndices(commandBuffer: commandBuffer)
+            setGPUParticleCount(commandBuffer: commandBuffer, value: emitters.count)
+            shouldAddEmitter = false
+        }
+
+        commandBuffer.pushDebugGroup("Particles Update")
+
+        // Update emitter buffers
+        emittersBuffer.contents().copyMemory(from: &emitters, byteCount: MemoryLayout<Emitter>.stride * emitters.count)
+
+        let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
+
+        computeEncoder.setComputePipelineState(computePipelineState!)
+
+        var globalParam = GlobalParam()
+        globalParam.attractPoint = attractPoint
+        globalParam.currentTime = Float(getTime())
+        globalParam.deltaTime = 1/60
+        globalParam.emitterCount = UInt32(emitters.count)
+        globalParam.mousePos = mousePos
+        globalParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
+        globalParam.particleCount = UInt32(particleCount)
+        globalParam.viewportSize = viewportSize
+        globalParam.seed = Int32(randFloat(0, 100))
+
+        computeEncoder.setBytes(&globalParam,
+                                length: MemoryLayout<GlobalParam>.stride,
+                                index: BufferIndex.bf_globalParam_index.rawValue)
+
+        computeEncoder.setBuffer(emittersBuffer, offset: 0, index: BufferIndex.bf_emitters_index.rawValue)
+        computeEncoder.setBuffer(emitterIndicesBuffer, offset: 0, index: BufferIndex.bf_emitter_indices_index.rawValue)
+
+        computeEncoder.setBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
+        computeEncoder.setBuffer(velocitiesBuffer, offset: 0, index: BufferIndex.bf_velocities_index.rawValue)
+        computeEncoder.setBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
+        computeEncoder.setBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
+        computeEncoder.setBuffer(isAlivesBuffer, offset: 0, index: BufferIndex.bf_isAlives_index.rawValue)
+        computeEncoder.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
+
+        if usesMasses {
+            computeEncoder.setBuffer(massesBuffer, offset: 0, index: BufferIndex.bf_masses_index.rawValue)
+        }
+
+        // Reset frame by frame variables
+        emittersToAddCount = 0
+
+        // Compute kernel threadgroup size
+        let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
+
+        // A one dimensional thread group Swift to pass Metal a one dimensional array
+        let threadGroupCount = MTLSize(width: threadExecutionWidth, height: 1, depth: 1)
+        let threadGroups = MTLSize(
+            width: (particleCount + threadGroupCount.width - 1) / threadGroupCount.width,
+            height: 1,
+            depth: 1)
+
+        computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
+
+        // Finish
+        computeEncoder.endEncoding()
+        commandBuffer.popDebugGroup()
+    }
+    
+    public func drawDebug(color: float4,
+                          view: MTKView,
+                          frameDescriptor: FrameDescriptor,
+                          commandBuffer: MTLCommandBuffer) {
+    }
+
+    public func update(commandBuffer: MTLCommandBuffer,
+                       computeDevice: ComputeDeviceOption) {
+
+        if isPaused { return }
+
+        update_particles(commandBuffer: commandBuffer)
+    }
+
+    public func eraseParticles() {
+        self.particleCount = 0
+        self.clearParticles = true
+        self.emitters.removeAll()
+    }
+
+    private func updateEmitterIndices(commandBuffer: MTLCommandBuffer) {
+
+        for emitterIndex in emitters.indices {
+            let counter = emitters[emitterIndex].startIndex
+            let amount = emitters[emitterIndex].startIndex + emitters[emitterIndex].particleCount
+            for i in counter ..< amount {
+                emitterIndices[Int(i)] = UInt16(emitterIndex)
+            }
+        }
+        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+
+        // Set GPU Particles count to 0
+        let buff = device.makeBuffer(bytes: &emitterIndices,
+                                     length: MemoryLayout<UInt16>.stride * maxParticles,
+                                     options: .storageModeShared)!
+        blitCommandEncoder.copy(
+            from: buff,
+            sourceOffset: 0,
+            to: emitterIndicesBuffer,
+            destinationOffset: 0,
+            size: MemoryLayout<UInt16>.stride * maxParticles
+        )
+        blitCommandEncoder.endEncoding()
+    }
     private func clearGPUParticles(commandBuffer: MTLCommandBuffer) {
         let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
 
@@ -538,8 +628,8 @@ final class ParticleSystem {
         let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
 
         let newEmitterBuffer = device.makeBuffer(bytes: &emitters,
-                                     length: MemoryLayout<Emitter>.stride * emitters.count,
-                                     options: .storageModeShared)!
+                                                 length: MemoryLayout<Emitter>.stride * emitters.count,
+                                                 options: .storageModeShared)!
         blitCommandEncoder.copy(
             from: newEmitterBuffer,
             sourceOffset: 0,
@@ -551,11 +641,11 @@ final class ParticleSystem {
     }
 
     /**
-        Adds an emitter to the particle system.
-        Return an ID for future updates to the emitter.
-    */
+     Adds an emitter to the particle system.
+     Return an ID for future updates to the emitter.
+     */
     public func addEmitter(_ emitter: inout Emitter) -> Int {
-        if shouldAddEmitter { return -1 }
+//        if shouldAddEmitter { return -1 }
         if emitters.count+1 > maxEmitterCount ||
             Int(emitter.particleCount) + particleCount > maxParticles { return -1; }
 
@@ -573,305 +663,4 @@ final class ParticleSystem {
         return id
     }
 
-    public func renderPoints() {
-
-    }
-
-    public func draw(view: MTKView, frameDescriptor: FrameDescriptor, commandBuffer: MTLCommandBuffer) {
-
-        if emitters.count == 0 { return }
-
-        commandBuffer.pushDebugGroup("ParticleSystem Draw")
-
-        let renderPassDesc = MTLRenderPassDescriptor()
-        renderPassDesc.colorAttachments[0].clearColor = frameDescriptor.clearColor
-        renderPassDesc.colorAttachments[0].texture = inTexture
-        renderPassDesc.colorAttachments[0].loadAction = .clear
-        renderPassDesc.colorAttachments[0].storeAction = .store
-
-        renderPassDesc.colorAttachments[1].clearColor = frameDescriptor.clearColor
-        renderPassDesc.colorAttachments[1].texture = finalTexture
-        renderPassDesc.colorAttachments[1].loadAction = .clear
-        renderPassDesc.colorAttachments[1].storeAction = .store
-
-        var renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
-
-        if !usesTexture {
-
-            switch renderingOption {
-            case .points:
-                renderEncoder.pushDebugGroup("Draw particles as POINTS(off-screen)")
-                renderEncoder.setRenderPipelineState(pointPipelineState!)
-                renderEncoder.setDepthStencilState(mNoDepthTest)
-
-                if shouldUpdate {
-                    buildVertices(numVertices: numVerticesPerParticle)
-                    shouldUpdate = false
-                }
-
-                renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
-                renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-                renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-                    renderEncoder.setVertexBuffer(lifetimesBuffer,
-                                                  offset: 0,
-                                                  index: BufferIndex.bf_lifetimes_index.rawValue)
-                renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
-                                             index: BufferIndex.bf_viewportSize_index.rawValue)
-
-                renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
-                renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: particleCount)
-
-            case .circles:
-                renderEncoder.pushDebugGroup("Draw particles as CIRCLES (off-screen)")
-                renderEncoder.setRenderPipelineState(pipelineState!)
-                renderEncoder.setDepthStencilState(mNoDepthTest)
-
-                if shouldUpdate {
-                    buildVertices(numVertices: numVerticesPerParticle)
-                    shouldUpdate = false
-                }
-
-                renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
-                renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-                renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-                renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: BufferIndex.bf_vertices_index.rawValue)
-                if usesLifetimes {
-                    renderEncoder.setVertexBuffer(lifetimesBuffer,
-                                                  offset: 0,
-                                                  index: BufferIndex.bf_lifetimes_index.rawValue)
-                }
-                renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<float2>.stride,
-                                             index: BufferIndex.bf_viewportSize_index.rawValue)
-
-                renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
-
-                renderEncoder.drawIndexedPrimitives(
-                    type: .triangle,
-                    indexCount: indices.count,
-                    indexType: .uint16,
-                    indexBuffer: indexBuffer,
-                    indexBufferOffset: 0,
-                    instanceCount: particleCount
-                )
-            case .pixels:
-                break
-            }
-        }
-
-        renderEncoder.popDebugGroup()
-        renderEncoder.endEncoding()
-
-        if enablePostProcessing {
-
-            renderEncoder.pushDebugGroup("Apply Post Processing")
-
-            let blurKernel = MPSImageGaussianBlur(device: device, sigma: blurStrength)
-            blurKernel.encode(
-                commandBuffer: commandBuffer,
-                sourceTexture: usesTexture ? pTexture : inTexture,
-                destinationTexture: outTexture
-                )
-
-            quad.mix(
-                commandBuffer: commandBuffer,
-                inputTexture1: usesTexture ? pTexture : inTexture,
-                inputTexture2: outTexture,
-                outTexture: finalTexture,
-                sigma: 5.0
-                )
-
-            renderEncoder.popDebugGroup()
-        } else if usesTexture {
-            quad.mix(
-                commandBuffer: commandBuffer,
-                inputTexture1: pTexture,
-                inputTexture2: outTexture,
-                outTexture: finalTexture,
-                sigma: 5.0
-            )
-        }
-
-        let viewRenderPassDesc = view.currentRenderPassDescriptor
-        if viewRenderPassDesc != nil {
-
-            if options.contains(.drawToTexture) {
-                viewRenderPassDesc?.colorAttachments[1].clearColor = frameDescriptor.clearColor
-                viewRenderPassDesc?.colorAttachments[1].texture = pTexture
-                viewRenderPassDesc?.colorAttachments[1].loadAction = .clear
-                viewRenderPassDesc?.colorAttachments[1].storeAction = .store
-            }
-
-            renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: viewRenderPassDesc!)!
-            renderEncoder.pushDebugGroup("Draw particles (on-screen)")
-
-            quad.draw(renderEncoder: renderEncoder, texture: finalTexture)
-
-            renderEncoder.popDebugGroup()
-            renderEncoder.endEncoding()
-            commandBuffer.popDebugGroup()
-        }
-    }
-
-    private func basic_update(commandBuffer: MTLCommandBuffer) {
-
-        if emitters.count == 0 { return }
-        if clearParticles {
-            clearGPUParticles(commandBuffer: commandBuffer)
-            clearParticles = false
-        }
-
-        if shouldAddEmitter {
-            updateEmitterIndices(commandBuffer: commandBuffer)
-            setGPUParticleCount(commandBuffer: commandBuffer, value: emitters.count)
-            shouldAddEmitter = false
-        }
-
-        commandBuffer.pushDebugGroup("Particles Update")
-
-        // Update emitter buffers
-        emittersBuffer.contents().copyMemory(from: &emitters, byteCount: MemoryLayout<Emitter>.stride * emitters.count)
-
-        let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
-
-        computeEncoder.setComputePipelineState(basicComputePipelineState!)
-
-        var globalParam = GlobalParam()
-        globalParam.attractPoint = attractPoint
-        globalParam.currentTime = Float(getTime())
-        globalParam.deltaTime = 1/60
-        globalParam.emitterCount = UInt32(emitters.count)
-        globalParam.mousePos = mousePos
-        globalParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
-        globalParam.particleCount = UInt32(particleCount)
-        globalParam.viewportSize = viewportSize
-        globalParam.seed = Int32(randFloat(0, 100))
-
-        computeEncoder.setBytes(&globalParam,
-                                length: MemoryLayout<GlobalParam>.stride,
-                                index: BufferIndex.bf_globalParam_index.rawValue)
-
-        computeEncoder.setBuffer(emittersBuffer, offset: 0, index: BufferIndex.bf_emitters_index.rawValue)
-        computeEncoder.setBuffer(emitterIndicesBuffer, offset: 0, index: BufferIndex.bf_emitter_indices_index.rawValue)
-
-        computeEncoder.setBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
-        computeEncoder.setBuffer(velocitiesBuffer, offset: 0, index: BufferIndex.bf_velocities_index.rawValue)
-        computeEncoder.setBuffer(radiiBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-        computeEncoder.setBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-        computeEncoder.setBuffer(isAlivesBuffer, offset: 0, index: BufferIndex.bf_isAlives_index.rawValue)
-        computeEncoder.setBuffer(lifetimesBuffer, offset: 0, index: BufferIndex.bf_lifetimes_index.rawValue)
-
-        if usesMasses {
-            computeEncoder.setBuffer(massesBuffer, offset: 0, index: BufferIndex.bf_masses_index.rawValue)
-        }
-
-        // Reset frame by frame variables
-        emittersToAddCount = 0
-
-        // Compute kernel threadgroup size
-        let threadExecutionWidth = (basicComputePipelineState?.threadExecutionWidth)!
-
-        // A one dimensional thread group Swift to pass Metal a one dimensional array
-        let threadGroupCount = MTLSize(width: threadExecutionWidth, height: 1, depth: 1)
-        let threadGroups = MTLSize(
-            width: (particleCount + threadGroupCount.width - 1) / threadGroupCount.width,
-            height: 1,
-            depth: 1)
-
-        computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupCount)
-
-        // Finish
-        computeEncoder.endEncoding()
-        commandBuffer.popDebugGroup()
-    }
-    
-    public func drawDebug(color: float4,
-                          view: MTKView,
-                          frameDescriptor: FrameDescriptor,
-                          commandBuffer: MTLCommandBuffer) {
-    }
-
-    public func update(commandBuffer: MTLCommandBuffer,
-                       computeDevice: ComputeDeviceOption) {
-
-        if isPaused { return }
-
-        switch computeDevice {
-        case .cpu:
-            break
-        case .gpu:
-            basic_update(commandBuffer: commandBuffer)
-        }
-    }
-
-    public func eraseParticles() {
-        self.particleCount = 0
-        self.clearParticles = true
-        self.emitters.removeAll()
-    }
-
-    public func setVerticesPerParticle(num: Int) {
-        numVerticesPerParticle = num
-        shouldUpdate = true
-    }
-
-    private func buildVertices(numVertices: Int) {
-
-        precondition(numVertices >= 3, "Can't draw anything with less than 3 vertices")
-
-        // Clear previous values
-        vertices.removeAll()
-        indices.removeAll()
-
-        vertices.reserveCapacity(numVertices)
-        indices.reserveCapacity(numVertices)
-
-        // Add indices
-        for num in 0 ..< numVertices - 2 {
-            indices.append(UInt16(0))
-            indices.append(UInt16(num + 1))
-            indices.append(UInt16(num + 2))
-        }
-
-        // Add vertices
-        for num in 0 ..< numVertices {
-            let cont = Float(num) * Float.pi * 2 / Float(numVertices)
-            vertices.append(float2(cos(cont), sin(cont)))
-        }
-
-        // Update the GPU buffers
-        vertexBuffer = device.makeBuffer(
-            bytes: vertices,
-            length: MemoryLayout<float2>.stride * vertices.count,
-            options: staticBufferResourceOption)!
-
-        indexBuffer = device.makeBuffer(
-            bytes: indices,
-            length: MemoryLayout<UInt16>.stride * indices.count,
-            options: staticBufferResourceOption)!
-    }
-
-    private func updateEmitterIndices(commandBuffer: MTLCommandBuffer) {
-
-        for emitterIndex in emitters.indices {
-            let counter = emitters[emitterIndex].startIndex
-            let amount = emitters[emitterIndex].startIndex + emitters[emitterIndex].particleCount
-            for i in counter ..< amount {
-                emitterIndices[Int(i)] = UInt16(emitterIndex)
-            }
-        }
-        let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
-
-        // Set GPU Particles count to 0
-        let buff = device.makeBuffer(bytes: &emitterIndices,
-                                     length: MemoryLayout<UInt16>.stride * maxParticles,
-                                     options: .storageModeShared)!
-        blitCommandEncoder.copy(
-            from: buff,
-            sourceOffset: 0,
-            to: emitterIndicesBuffer,
-            destinationOffset: 0,
-            size: MemoryLayout<UInt16>.stride * maxParticles
-        )
-        blitCommandEncoder.endEncoding()
-    }
 }

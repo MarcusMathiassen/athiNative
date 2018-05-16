@@ -12,7 +12,6 @@
 #endif
 import Darwin // arc4random
 import simd // float2, float3, float4, etc
-import Accelerate.vImage
 
 // swiftlint:disable identifier_name
 
