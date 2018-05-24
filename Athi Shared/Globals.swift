@@ -18,6 +18,10 @@ enum TreeOption {
     case noTree
 }
 
+var gLifetime: Float = 1.0
+var gSpeed: Float = 1.0
+var gParticleCount: Int = 10
+
 var gSpawnAmount: Int = 10
 var gComputeDeviceOption: ComputeDeviceOption = .gpu
 var gTreeOption: TreeOption = .quadtree

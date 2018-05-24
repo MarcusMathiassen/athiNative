@@ -56,3 +56,45 @@ FragmentOut particle_frag(VertexOut             vert        [[stage_in]],
     }
     return { vert.color, vert.color };
 }
+
+
+
+
+
+
+
+
+
+
+vertex
+VertexOut particleVert( constant float2*     positions      [[ buffer(0) ]],
+                        constant float*      radii          [[ buffer(1) ]],
+                        constant float4*     colors         [[ buffer(2) ]],
+                        constant float*      lifetimes      [[ buffer(3) ]],
+                        constant float2&     viewportSize   [[ buffer(bf_viewportSize_index) ]],
+                        const uint vid                      [[ vertex_id ]]
+                       )
+{
+    // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
+    const float2 fpos = -1.0 + (positions[vid]) / (viewportSize / 2.0);
+
+    VertexOut vOut;
+    vOut.position = float4(fpos, 0, 1);
+    vOut.color = half4(colors[vid]);
+
+    // We fade the points out
+    vOut.pointSize = radii[vid] * (lifetimes[vid] < 1.0 ? lifetimes[vid] : 1.0);
+
+    return vOut;
+}
+
+fragment
+FragmentOut particleFrag( VertexOut             vert        [[stage_in]],
+                          const float2          pointCoord  [[point_coord]]
+                         )
+{
+    if (length(pointCoord - float2(0.5)) > 0.5) {
+        discard_fragment();
+    }
+    return { vert.color, vert.color };
+}

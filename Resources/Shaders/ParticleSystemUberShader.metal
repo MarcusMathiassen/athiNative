@@ -28,6 +28,7 @@ constant bool fc_has_homing              [[function_constant(5)]];
 constant bool fc_has_turbulence          [[function_constant(6)]];
 constant bool fc_has_canAddParticles     [[function_constant(7)]];
 constant bool fc_has_respawns            [[function_constant(8)]];
+constant bool fc_is_friendly             [[function_constant(9)]];
 
 constant bool fc_uses_radii     = true;
 constant bool fc_uses_masses    = fc_has_intercollision || fc_has_attractedToMouse;
@@ -49,8 +50,13 @@ struct Emitter
     float lifetime;
     float spread;
     half4 color;
-    uint particleCount;
-    uint startIndex;
+
+    int particleCount;
+    int maxParticleCount;
+
+    int startIndex;
+
+    float attackDamage;
     
     bool hasHoming;
     bool hasLifetime;
@@ -81,7 +87,8 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
 )
 {
     // Get the emitter for this particle
-    const auto emitter = emitters[emitter_indices[index]];
+    const auto emitterIndex = emitter_indices[index];
+    const auto emitter = emitters[emitterIndex];
 
     auto  pos = positions[index];
     auto  vel = velocities[index];
@@ -93,41 +100,6 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
     auto  isAlive = isAlives[index];
     auto  lifetime = lifetimes[index];
 
-    threadgroup_barrier(mem_flags::mem_device);
-
-    if (fc_has_intercollision)
-    {
-        for (uint otherIndex = 0; otherIndex < globalParam.particleCount; ++otherIndex)
-        {
-//            if (otherIndex == emitter.startIndex) otherIndex += emitter.particleCount;
-            if (index == otherIndex) { continue; }
-
-            if (fc_uses_isAlives)
-            {
-                if (!isAlives[otherIndex]) { continue; }
-            }
-
-            // Skip any emitters without collision
-//            const auto other_emitter = emitters[emitter_indices[otherIndex]];
-//            if (!other_emitter.hasIntercollision)
-//            {
-//                otherIndex = other_emitter.startIndex + other_emitter.particleCount;
-//            }
-
-            const auto other_pos = positions[otherIndex];
-            const auto other_radi = radii[otherIndex];
-
-            if (collision_check(pos, other_pos, radius, other_radi))
-            {
-                const auto other_vel = velocities[otherIndex];
-                const auto other_mass = masses[otherIndex];
-
-                vel = collision_resolve(pos, vel,  mass, other_pos, other_vel, other_mass);
-            }
-        }
-    }
-
-    lifetime -= globalParam.deltaTime;
     if (lifetime < 0)
     {
         const auto new_vel = emitter.direction * emitter.speed;
@@ -136,37 +108,21 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
         vel = new_vel + rand2(-emitter.spread, emitter.spread, index);
 
         // Update variables if available
-        radius = emitter.size * 0.5 + emitter.size * rand_f32(0.0, 0.5, globalParam.seed * index);
+        radius = emitter.size;// * 0.8 + emitter.size * rand_f32(0.0, 0.2, globalParam.seed * index);
         color = emitter.color;
         isAlive = true;
 
-        const auto particleIndexInEmitter = index - emitter.startIndex;
-        lifetime = emitter.lifetime * rand_f32(0, 1, globalParam.seed * particleIndexInEmitter);
+        lifetime = emitter.lifetime * (((index + 1.0f - emitter.startIndex) / emitter.particleCount));
+
         if (fc_uses_masses)  mass = M_PI_F * emitter.size * emitter.size;
-    }
 
-    if (fc_has_homing)
-    {
-        vel = homingMissile(globalParam.attractPoint, 1.0, pos, vel);
-    }
-
-    if (fc_has_attractedToMouse)
-    {
-        vel = attract_to_point(globalParam.mousePos, pos, vel, mass);
-    }
-
-    if (fc_has_borderBound)
-    {
-        if (pos.x < 0 + radius)                        {  vel.x *= -1; }
-        if (pos.x > globalParam.viewportSize.x - radius)  {  vel.x *= -1; }
-        if (pos.y < 0 + radius)                        {  vel.y *= -1; }
-        if (pos.y > globalParam.viewportSize.y - radius)  {  vel.y *= -1; }
+    } else {
+        lifetime -= globalParam.deltaTime;
+        isAlive = true;
     }
 
     // Update all used variables
     vel += globalParam.gravityForce;
-
-    threadgroup_barrier(mem_flags::mem_device);
 
     velocities[index] = vel;
     positions[index] = pos + vel;
@@ -178,171 +134,3 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
     if (fc_uses_lifetimes)  lifetimes[index] = lifetime;
 
 }
-//
-//kernel
-//void uber_compute(
-//
-//  device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
-//  device ushort*   emitter_indices [[ buffer(bf_emitter_indices_index) ]],
-//
-//  device float2*   positions [[ buffer(bf_positions_index) ]],
-//  device float2*   velocities [[ buffer(bf_velocities_index) ]],
-//
-//  device uint&     gpuParticleCount [[ buffer(bf_gpuParticleCount_index) ]],
-//
-//  device float*   radii      [[ buffer(bf_radii_index), function_constant(fc_uses_radii) ]],
-//  device float*   masses     [[ buffer(bf_masses_index), function_constant(fc_uses_masses) ]],
-//  device float4*  colors     [[ buffer(bf_colors_index), function_constant(fc_uses_colors) ]],
-//  device bool*    isAlives   [[ buffer(bf_isAlives_index), ]],
-//  device float*   lifetimes  [[ buffer(bf_lifetimes_index) ]],
-//  //----------------------------------
-//
-//  constant MotionParam&  motionParam  [[ buffer(bf_motionParam_index) ]],
-//  constant SimParam&     simParam     [[ buffer(bf_simParam_index) ]],
-//
-//  const uint index [[ thread_position_in_grid ]],
-//
-//  texture2d<float, access::write>  texture  [[ texture(0), function_constant(fc_uses_texture) ]]
-//)
-//{
-//    // Get the emitter for this particle
-//    const auto emitter_id = emitter_indices[index];
-//    const auto emitter = emitters[emitter_id];
-//
-//    if (fc_has_lifetime)
-//    {
-//        if (emitter.hasLifetime)
-//        {
-//            // Respawn the particle if dead
-////            if (fc_has_respawns)
-////            {
-////                if (emitter.hasRespawns)
-////                {
-//                    if (lifetimes[index] < 0)
-//                    {
-//                        const auto dir = emitter.direction * emitter.speed;
-//
-//                        positions[index] = emitter.position;
-//
-//                        const Range<float> spread_range = {-emitter.spread, emitter.spread};
-//                        const Seed seed = {static_cast<int>(index), static_cast<int>(emitter.particleCount/3), 34};
-//                        velocities[index] = dir + rand2(spread_range, seed);
-//
-//                        if (fc_uses_radii)      radii[index] = emitter.size;
-//                        if (fc_uses_masses)     masses[index] = M_PI_F * emitter.size * emitter.size;
-//                        if (fc_uses_colors)     colors[index] = emitter.color;
-//                        if (fc_uses_isAlives)   isAlives[index] = true;
-//                        if (fc_uses_lifetimes)  lifetimes[index] = emitter.lifetime * rand({static_cast<int>(index), static_cast<int>(index-34 * index), 34});
-//                    }
-//                    else
-//                    {
-//                        // Decrease the lifetime
-//                        lifetimes[index] -= motionParam.deltaTime;
-//
-//                        // Fade the particle out until it's dead
-//                        if (fc_uses_colors)
-//                        {
-//                            colors[index].a = lifetimes[index];
-//                        }
-////                    }
-////                }
-//            }
-//        }
-//    }
-//
-//    auto  pos = positions[index];
-//    auto  vel = velocities[index];
-//
-//    auto  color = colors[index];
-//    auto  radius = radii[index];
-//
-//    auto  mass = masses[index];
-//    auto  isAlive = isAlives[index];
-//    auto  lifetime = lifetimes[index];
-//
-//    threadgroup_barrier(mem_flags::mem_device);
-//
-//    if (fc_has_homing)
-//    {
-//        if (emitter.hasHoming)
-//        {
-//            vel = homingMissile(simParam.attractPoint, 1.0, pos, vel);
-//        }
-//    }
-//
-//    if (fc_has_attractedToMouse)
-//    {
-//        vel = attract_to_point(simParam.mousePos, pos, vel, mass);
-//    }
-//
-//    if (fc_has_intercollision)
-//    {
-//        if (emitter.hasIntercollision)
-//        {
-//            for (uint otherIndex = 0; otherIndex < simParam.particleCount; ++otherIndex)
-//            {
-//                if (index == otherIndex) { continue; }
-//
-//                if (fc_uses_isAlives)
-//                {
-//                    if (!isAlives[otherIndex]) { continue; }
-//                }
-//
-//                // Skip any emitters without collision
-//                const auto other_emitter = emitters[emitter_indices[otherIndex]];
-//                if (!other_emitter.hasIntercollision)
-//                {
-//                    otherIndex = other_emitter.startIndex + other_emitter.particleCount;
-//                }
-//
-//                const auto other_pos = positions[otherIndex];
-//                const auto other_radi = radii[otherIndex];
-//
-//                if (collision_check(pos, other_pos, radius, other_radi))
-//                {
-//                    const auto other_vel = velocities[otherIndex];
-//                    const auto other_mass = masses[otherIndex];
-//
-//                    vel = collision_resolve(pos, vel, mass, other_pos, other_vel, other_mass);
-//                }
-//            }
-//        }
-//    }
-//
-//    if (fc_has_borderBound)
-//    {
-//        if (emitter.hasBorderBound)
-//        {
-//            if (pos.x < 0 + radius)                        {  vel.x *= -1; }
-//            if (pos.x > simParam.viewportSize.x - radius)  {  vel.x *= -1; }
-//            if (pos.y < 0 + radius)                        {  vel.y *= -1; }
-//            if (pos.y > simParam.viewportSize.y - radius)  {  vel.y *= -1; }
-//        }
-//    }
-//
-//    if (fc_has_drawToTexture)
-//    {
-//        if (pos.x > 0 && pos.x < simParam.viewportSize.x &&
-//            pos.y > 0 && pos.y < simParam.viewportSize.y)
-//        {
-//            const auto fpos = ushort2(pos.x, simParam.viewportSize.y - pos.y);
-//            texture.write(color, fpos);
-//        }
-//    }
-//
-//    {
-//        threadgroup_barrier(mem_flags::mem_device);
-//
-//        // Update all used variables
-//        vel += simParam.gravityForce;
-//
-//        velocities[index] = vel;
-//        positions[index] = pos + vel;
-//
-//        if (fc_uses_radii)      radii[index] = radius;
-//        if (fc_uses_masses)     masses[index] = mass;
-//        if (fc_uses_colors)     colors[index] = color;
-//        if (fc_uses_isAlives)   isAlives[index] = isAlive;
-//        if (fc_uses_lifetimes)  lifetimes[index] = lifetime;
-//    }
-//}

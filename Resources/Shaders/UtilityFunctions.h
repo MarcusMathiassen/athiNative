@@ -37,6 +37,8 @@ float rand_f32(float min, float max, int seed);
 float2 rand2(Range<float> range, Seed seed);
 float2 rand2(float min, float max, int seed);
 
+float mapToRange(float input, Range<float> from, Range<float> to);
+
 template <class T>
 T rand(Range<T> range, Seed seed)
 {

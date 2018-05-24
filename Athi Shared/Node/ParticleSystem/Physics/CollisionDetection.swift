@@ -16,16 +16,6 @@ struct MotionParam {
     var deltaTime: Float = 0
 }
 
-enum ComputeDeviceOption {
-    case cpu
-    case gpu
-}
-
-enum TreeOption {
-    case quadtree
-    case noTree
-}
-
 struct ComputeParam {
     var isMultithreaded: Bool = true // Application is multithreaded by default.
     var preferredThreadCount: Int = 0// Uses the machines maximum number by default
@@ -199,10 +189,10 @@ final class CollisionDetection <T: Collidable> {
 
         computeEncoder?.setBytes(&viewportSize,
                                  length: MemoryLayout<float2>.stride,
-                                 index: BufferIndex.ViewportSizeIndex.rawValue)
+                                 index: BufferIndex.bf_viewportSize_index.rawValue)
         computeEncoder?.setBytes(&motionParam,
                                  length: MemoryLayout<MotionParam>.stride,
-                                 index: BufferIndex.MotionParamIndex.rawValue)
+                                 index: BufferIndex.bf_motionParam_index.rawValue)
 
         // Compute kernel threadgroup size
         let threadExecutionWidth = (computePipelineState?.threadExecutionWidth)!
@@ -261,11 +251,11 @@ final class CollisionDetection <T: Collidable> {
 
         computeEncoder?.setBytes(&viewportSize,
                                  length: MemoryLayout<float2>.stride,
-                                 index: BufferIndex.ViewportSizeIndex.rawValue)
+                                 index: BufferIndex.bf_viewportSize_index.rawValue)
 
         computeEncoder?.setBytes(&motionParam,
                                  length: MemoryLayout<MotionParam>.stride,
-                                 index: BufferIndex.MotionParamIndex.rawValue)
+                                 index: BufferIndex.bf_motionParam_index.rawValue)
 
         // Compute kernel threadgroup size
         let threadExecutionWidth = (computePipelineTreeState?.threadExecutionWidth)!

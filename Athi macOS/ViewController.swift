@@ -82,7 +82,7 @@ class MACOSViewController: NSViewController {
     }
 
     @IBAction func postProcessingSamplesSlier(_ sender: NSSlider) {
-        renderer.particleSystem.postProcessingSamples = Int(sender.intValue)
+        gLifetime = Float(Int(sender.intValue))
     }
 
     @IBAction func borderCollisionButton(_ sender: NSButton) {

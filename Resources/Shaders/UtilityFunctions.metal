@@ -49,6 +49,10 @@ float2 rand2(float min, float max, int seed)
     return {xr, yr};
 }
 
+float mapToRange(float input, Range<float> from, Range<float> to) {
+    return to.min + (to.max - to.min) * input / (from.max - from.min);
+}
+
 float2 rand2(Range<float> range, Seed seed)
 {
     const auto inputX = rand(seed);

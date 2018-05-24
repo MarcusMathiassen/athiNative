@@ -57,7 +57,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
     let commandQueue: MTLCommandQueue
 
-    var particleSystemManager: ParticleSystemManager
+    let particleRenderer: ParticleRenderer
 
     public func printDeviceInfo(_ device: MTLDevice) {
         #if os(macOS)
@@ -106,8 +106,6 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         device = view.device!
 
-        particleSystemManager = ParticleSystemManager(device: device)
-
         inFlightSemaphore = DispatchSemaphore(value: maxNumInFlightBuffers)
 
         commandQueue = device.makeCommandQueue()!
@@ -125,7 +123,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 //                        .homing,
                         .respawns,
             //            .turbulence,
-                        .attractedToMouse,
+//                        .attractedToMouse,
 //                        .intercollision,
 //                        .borderBound,
 //                        .drawToTexture,
@@ -137,33 +135,56 @@ final class Renderer: NSObject, MTKViewDelegate {
             maxParticles: 1_000_000
         )
 
-        var emitterDesc = PSEmitterDescriptor()
-        emitterDesc.isActive = true
-        emitterDesc.mozzleSpread = 2
-        emitterDesc.spawnPoint = float2(25, framebufferHeight/2)
-        emitterDesc.spawnDirection = float2(1, 0)
-        emitterDesc.spawnRate = 30000
-        emitterDesc.particleSpeed = 5
-        emitterDesc.particleLifetime = 3
-        emitterDesc.particleSize = 10
-        emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
-        emitterDesc.options = [.lifetime, .respawns]
-        var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
-        _ = particleSystem.addEmitter(&redEmitter)
+//
+//        var emitterDesc = PSEmitterDescriptor()
+//        emitterDesc.isActive = true
+//        emitterDesc.mozzleSpread = 0.1
+//        emitterDesc.spawnPoint = float2(25, framebufferHeight/2)
+//        emitterDesc.spawnDirection = float2(1, 0)
+//        emitterDesc.spawnRate = 10
+//        emitterDesc.attackDamage = 0.1
+//        emitterDesc.particleSpeed = 10
+//        emitterDesc.particleLifetime = 5
+//        emitterDesc.particleSize = 10
+//        emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
+//        emitterDesc.options = [.lifetime, .respawns]
+//        var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+//        _ = particleSystem.addEmitter(&redEmitter)
+//
+//        var emitterDesc1 = PSEmitterDescriptor()
+//        emitterDesc1.isActive = true
+//        emitterDesc1.mozzleSpread = 0.1
+//        emitterDesc1.spawnPoint = float2(framebufferWidth-25, framebufferHeight/2)
+//        emitterDesc1.spawnDirection = float2(-1, 0)
+//        emitterDesc1.spawnRate = 3000
+//        emitterDesc1.attackDamage = 2.1
+//        emitterDesc1.particleSpeed = 10
+//        emitterDesc1.particleLifetime = 5
+//        emitterDesc1.particleSize = 10
+//        emitterDesc1.particleColor = float4(0.45, 0.47, 0.9, 1)
+//        emitterDesc1.options = [.lifetime, .respawns]
+//        var blueEmitter = particleSystem.makeEmitter(descriptor: emitterDesc1)
+//        _ = particleSystem.addEmitter(&blueEmitter)
 
-        var emitterDesc1 = PSEmitterDescriptor()
-        emitterDesc1.isActive = true
-        emitterDesc1.mozzleSpread = 2
-        emitterDesc1.spawnPoint = float2(framebufferWidth-25, framebufferHeight/2)
-        emitterDesc1.spawnDirection = float2(-1, 0)
-        emitterDesc1.spawnRate = 30000
-        emitterDesc1.particleSpeed = 5
-        emitterDesc1.particleLifetime = 3
-        emitterDesc1.particleSize = 10
-        emitterDesc1.particleColor = float4(0.45, 0.47, 0.9, 1)
-        emitterDesc1.options = [.lifetime, .respawns]
-        var blueEmitter = particleSystem.makeEmitter(descriptor: emitterDesc1)
-        _ = particleSystem.addEmitter(&blueEmitter)
+//        let count = 1
+//        for x in 0 ..< count {
+//            var emitterDesc = PSEmitterDescriptor()
+//            emitterDesc.isActive = true
+//            emitterDesc.mozzleSpread = 0
+//            emitterDesc.spawnPoint = float2(framebufferWidth/2 - Float(count) + Float(x*10), 25)
+//            emitterDesc.spawnDirection = float2(0, 1)
+//            emitterDesc.spawnRate = 100
+//            emitterDesc.particleSpeed = 1
+//            emitterDesc.particleLifetime = 60
+//            emitterDesc.particleSize = 20
+//            emitterDesc.particleColor = float4(1, 0.47, 0.47, 1)
+//            emitterDesc.options = [.lifetime, .respawns]
+//            var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+//            _ = particleSystem.addEmitter(&redEmitter)
+//        }
+
+
+        particleRenderer = ParticleRenderer()
 
         super.init()
 
@@ -220,6 +241,13 @@ final class Renderer: NSObject, MTKViewDelegate {
         particleSystem.update(commandBuffer: commandBuffer, computeDevice: gComputeDeviceOption)
         particleSystem.draw(view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
 
+        particleSystemV2.update()
+        particleRenderer.drawParticles(view: view, commandBuffer: commandBuffer)
+
+        if gDrawDebug {
+            particleSystem.drawDebug(color: float4(0,1,0,1), view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
+        }
+
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
@@ -241,19 +269,32 @@ final class Renderer: NSObject, MTKViewDelegate {
         switch gMouseOption {
         case MouseOption.spawn:
 
-            var emitterDesc = PSEmitterDescriptor()
-            emitterDesc.isActive = true
-            emitterDesc.mozzleSpread = 1
-            emitterDesc.spawnPoint = mousePos
-            emitterDesc.spawnDirection = float2(0, 1)
-            emitterDesc.spawnRate = 1000
-            emitterDesc.particleSpeed = 10
-            emitterDesc.particleLifetime = 3
-            emitterDesc.particleSize = gParticleSize
-            emitterDesc.particleColor = particleSystem.particleColor
-            emitterDesc.options = [.lifetime, .respawns]
-            var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
-            _ = particleSystem.addEmitter(&redEmitter)
+            var emitterDesc = EmitterDescriptor()
+
+            emitterDesc.spawnPosition = mousePos
+            emitterDesc.spawnDirection = float2(0, 0)
+            emitterDesc.spawnSpread = 1
+            emitterDesc.spawnSpeed = 10
+            emitterDesc.spawnRate = 10
+            emitterDesc.lifetime = 3
+            emitterDesc.size = gParticleSize
+            emitterDesc.color = particleSystem.particleColor
+
+            let myEmitter1 = particleSystemV2.makeEmitter(descriptor: emitterDesc)
+//
+//            var emitterDesc = PSEmitterDescriptor()
+//            emitterDesc.isActive = true
+//            emitterDesc.mozzleSpread = 1
+//            emitterDesc.spawnPoint = mousePos
+//            emitterDesc.spawnDirection = float2(0, 0)
+//            emitterDesc.spawnRate = 10
+//            emitterDesc.particleSpeed = 10
+//            emitterDesc.particleLifetime = 3
+//            emitterDesc.particleSize = gParticleSize
+//            emitterDesc.particleColor = particleSystem.particleColor
+//            emitterDesc.options = [.lifetime, .respawns]
+//            var redEmitter = particleSystem.makeEmitter(descriptor: emitterDesc)
+//            _ = particleSystem.addEmitter(&redEmitter)
 
         case MouseOption.drag:
              break

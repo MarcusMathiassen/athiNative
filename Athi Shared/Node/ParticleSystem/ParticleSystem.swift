@@ -22,6 +22,7 @@ enum ParticleOption: String {
     case turbulence = "fc_has_turbulence"
     case canAddParticles = "fc_has_canAddParticles"
     case respawns = "fc_has_respawns"
+    case friendly = "fc_is_friendly"
 }
 
 enum RenderingOption {
@@ -40,6 +41,7 @@ enum EmitterOptions {
     case turbulence
     case canAddParticles
     case respawns
+    case friendly
 }
 
 extension float2: Codable {
@@ -89,6 +91,7 @@ struct PSEmitterDescriptor {
     var spawnPoint: float2 = float2(0, 0)
     var spawnDirection: float2 = float2(0, 1)
     var spawnRate: Float = 10.0
+    var attackDamage: Float = 1.0
     var particleSpeed: Float = 5.0
     var particleColor: float4 = float4(1)
     var particleSize: Float = 1.0
@@ -106,9 +109,12 @@ struct Emitter {
     var lifetime: Float32 = 0
     var spread: Float32 = 0
     var color: half4 = half4(0,0,0,0)
-    var particleCount: UInt32 = 0
-    var startIndex: UInt32 = 0
-    
+
+    var particleCount: Int32 = 0
+    var maxParticleCount: Int32 = 0
+    var startIndex: Int32 = 0
+    var attackDamage: Float = 0.5
+
     var hasHoming: Bool = false
     var hasLifetime: Bool = false
     var hasBorderBound: Bool = false
@@ -159,9 +165,10 @@ final class ParticleSystem {
     public var particleCount: Int = 0
 
     var globalParam: GlobalParam = GlobalParam()
-    var simParam: SimParam = SimParam()
 
     var renderingOption: RenderingOption = .points
+
+    var primitiveRenderer: PrimitiveRenderer
 
     // Options
     var shouldRepel: Bool = false
@@ -169,7 +176,7 @@ final class ParticleSystem {
     var enableBorderCollision: Bool = true
     var collisionEnergyLoss: Float = 0.98
     var gravityForce: Float = -0.0981
-    var enableGravity: Bool = true
+    var enableGravity: Bool = false
     var enableCollisions: Bool = false
     var useAccelerometerAsGravity: Bool = false
     var useQuadtree: Bool = true
@@ -242,8 +249,10 @@ final class ParticleSystem {
     public func makeEmitter(descriptor: PSEmitterDescriptor) -> Emitter {
         var emitter = Emitter()
 
-        emitter.particleCount = UInt32(descriptor.spawnRate / descriptor.particleLifetime)
+        emitter.particleCount = Int32(descriptor.spawnRate * descriptor.particleLifetime);
+        emitter.maxParticleCount = Int32(descriptor.spawnRate * descriptor.particleLifetime)
 
+        emitter.attackDamage = descriptor.attackDamage
         emitter.lifetime = descriptor.particleLifetime
         emitter.position = descriptor.spawnPoint
         emitter.size = descriptor.particleSize
@@ -275,6 +284,8 @@ final class ParticleSystem {
 
         self.device = device
         quad = Quad(device: device)
+
+        primitiveRenderer = PrimitiveRenderer(device: device)
 
         emitterIndices = [UInt16](repeating: 0, count: maxParticles)
 
@@ -377,7 +388,8 @@ final class ParticleSystem {
         constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.drawToTexture.rawValue)
         constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.homing.rawValue)
         constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.intercollision.rawValue)
-        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.lifetime.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.respawns.rawValue)
+        constVals.setConstantValue(&falseVal, type: .bool, withName: ParticleOption.friendly.rawValue)
 
         // Then set all found in options to true
         var trueVal = true
@@ -462,11 +474,17 @@ final class ParticleSystem {
 
             commandBuffer.popDebugGroup()
         }
+
+//        for emitter in emitters {
+//            primitiveRenderer.drawRect(position: emitter.position, color: float4(1), size: emitter.size*0.5)
+//        }
+        primitiveRenderer.draw(view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
     }
 
     private func update_particles(commandBuffer: MTLCommandBuffer) {
 
         if emitters.count == 0 { return }
+
         if clearParticles {
             clearGPUParticles(commandBuffer: commandBuffer)
             clearParticles = false
@@ -480,6 +498,11 @@ final class ParticleSystem {
 
         commandBuffer.pushDebugGroup("Particles Update")
 
+        for i in emitters.indices {
+            emitters[i].position.x += Float(sin(getTime())) * 5
+            emitters[i].position.y += Float(cos(getTime())) * 5
+        }
+
         // Update emitter buffers
         emittersBuffer.contents().copyMemory(from: &emitters, byteCount: MemoryLayout<Emitter>.stride * emitters.count)
 
@@ -491,10 +514,10 @@ final class ParticleSystem {
         globalParam.attractPoint = attractPoint
         globalParam.currentTime = Float(getTime())
         globalParam.deltaTime = 1/60
-        globalParam.emitterCount = UInt32(emitters.count)
+        globalParam.emitterCount = Int32(emitters.count)
         globalParam.mousePos = mousePos
         globalParam.gravityForce = enableGravity ? float2(0, gravityForce) : float2(0)
-        globalParam.particleCount = UInt32(particleCount)
+        globalParam.particleCount = Int32(particleCount)
         globalParam.viewportSize = viewportSize
         globalParam.seed = Int32(randFloat(0, 100))
 
@@ -540,6 +563,10 @@ final class ParticleSystem {
                           view: MTKView,
                           frameDescriptor: FrameDescriptor,
                           commandBuffer: MTLCommandBuffer) {
+
+        for emitter in emitters {
+            primitiveRenderer.drawHollowRect(position: emitter.position, color: color, size: emitter.size*0.5)
+        }
     }
 
     public func update(commandBuffer: MTLCommandBuffer,
@@ -637,6 +664,7 @@ final class ParticleSystem {
             destinationOffset: 0,
             size: MemoryLayout<Emitter>.stride * emitters.count
         )
+
         blitCommandEncoder.endEncoding()
     }
 
@@ -649,7 +677,7 @@ final class ParticleSystem {
         if emitters.count+1 > maxEmitterCount ||
             Int(emitter.particleCount) + particleCount > maxParticles { return -1; }
 
-        emitter.startIndex = UInt32(particleCount)
+        emitter.startIndex = Int32(particleCount)
 
         let id = emitters.count
         emitters.append(emitter)

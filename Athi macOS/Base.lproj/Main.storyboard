@@ -818,17 +818,17 @@
                                                             </connections>
                                                         </stepper>
                                                         <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FZL-SJ-iB1">
-                                                            <rect key="frame" x="78" y="192" width="24" height="88"/>
+                                                            <rect key="frame" x="78" y="192" width="19" height="88"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <sliderCell key="cell" continuous="YES" alignment="left" maxValue="10" doubleValue="2.2222222222222223" tickMarkPosition="right" numberOfTickMarks="10" allowsTickMarkValuesOnly="YES" sliderType="linear" id="jsy-yU-Q12"/>
+                                                            <sliderCell key="cell" continuous="YES" alignment="left" maxValue="10" doubleValue="2.2222222222222223" tickMarkPosition="right" sliderType="linear" id="jsy-yU-Q12"/>
                                                             <connections>
                                                                 <action selector="postProcessingSamplesSlier:" target="XfG-lQ-9wD" id="nXY-P0-aZh"/>
                                                             </connections>
                                                         </slider>
                                                         <slider horizontalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="b6D-sh-3H2">
-                                                            <rect key="frame" x="107" y="192" width="24" height="88"/>
+                                                            <rect key="frame" x="107" y="192" width="19" height="88"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                            <sliderCell key="cell" alignment="left" maxValue="10" doubleValue="1.1111111111111112" tickMarkPosition="right" numberOfTickMarks="10" allowsTickMarkValuesOnly="YES" sliderType="linear" id="j54-WZ-lpw">
+                                                            <sliderCell key="cell" alignment="left" maxValue="10" doubleValue="1.1111111111111112" tickMarkPosition="right" allowsTickMarkValuesOnly="YES" sliderType="linear" id="j54-WZ-lpw">
                                                                 <connections>
                                                                     <action selector="particleUpdateSamples:" target="XfG-lQ-9wD" id="7lN-QC-Zc8"/>
                                                                 </connections>

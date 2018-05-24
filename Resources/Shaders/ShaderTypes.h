@@ -45,9 +45,13 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     bf_field_nodes_index,
     bf_emitters_index,
     bf_emitter_indices_index,
-    bf_emitter_count_index,
-    bf_newEmitterCount_index,
     bf_globalParam_index,
+    bf_emitterParticleCounts_index,
+    CollidablesIndex,
+    CollidablesCountIndex,
+    NeighboursIndex,
+    NeighboursIndicesIndex,
+    
 };
 
 typedef struct
@@ -57,14 +61,20 @@ typedef struct
 
 typedef struct
 {
-    uint particleCount;
+    int begin;
+    int end;
+} Neighbours;
+
+typedef struct
+{
+    int particleCount;
     
     vector_float2 viewportSize;
     vector_float2 gravityForce;
     vector_float2 attractPoint;
     vector_float2 mousePos;
     
-    uint emitterCount;
+    int emitterCount;
     
     float currentTime;
     float deltaTime;
@@ -72,33 +82,6 @@ typedef struct
     int seed;
 
 } GlobalParam;
-
-typedef struct
-{
-    vector_float2 viewportSize;
-    vector_float2 attractPoint;
-    vector_float2 gravityForce;
-
-    vector_float2 mousePos;
-    float currentTime;
-
-    uint emitter_count;
-    uint particleCount;
-
-    bool shouldAddParticle;
-    vector_float2 newParticlePosition;
-    vector_float2 newParticleVelocity;
-    float newParticleRadius;
-    float newParticleMass;
-    vector_float4 newParticleColor;
-    float newParticleLifetime;
-    bool clearParticles;
-    float initialVelocity;
-
-    uint add_particles_count;
-    uint selected_emitter_id;
-} SimParam;
-
 
 #endif /* ShaderTypes_h */
 
