@@ -29,15 +29,6 @@ constant bool fc_has_turbulence          [[function_constant(6)]];
 constant bool fc_has_canAddParticles     [[function_constant(7)]];
 constant bool fc_has_respawns            [[function_constant(8)]];
 constant bool fc_is_friendly             [[function_constant(9)]];
-
-constant bool fc_uses_radii     = true;
-constant bool fc_uses_masses    = fc_has_intercollision || fc_has_attractedToMouse;
-
-constant bool fc_uses_texture   = fc_has_drawToTexture;
-constant bool fc_uses_colors    = true;
-
-constant bool fc_uses_isAlives  = fc_has_lifetime;
-constant bool fc_uses_lifetimes = fc_has_lifetime;
 // -------------------------
 
 struct Emitter
@@ -79,8 +70,6 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
                   device bool*    isAlives     [[ buffer(bf_isAlives_index) ]],
                   device float*   lifetimes    [[ buffer(bf_lifetimes_index) ]],
 
-                  device float*   masses  [[ buffer(bf_masses_index), function_constant(fc_uses_masses) ]],
-                  
                   constant GlobalParam&  globalParam [[buffer(bf_globalParam_index)]],
 
                   const uint index [[ thread_position_in_grid ]]
@@ -96,7 +85,6 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
     auto  color = colors[index];
     auto  radius = radii[index];
 
-    auto  mass = masses[index];
     auto  isAlive = isAlives[index];
     auto  lifetime = lifetimes[index];
 
@@ -114,8 +102,6 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
 
         lifetime = emitter.lifetime * (((index + 1.0f - emitter.startIndex) / emitter.particleCount));
 
-        if (fc_uses_masses)  mass = M_PI_F * emitter.size * emitter.size;
-
     } else {
         lifetime -= globalParam.deltaTime;
         isAlive = true;
@@ -127,10 +113,8 @@ void basic_update(device Emitter*  emitters [[ buffer(bf_emitters_index) ]],
     velocities[index] = vel;
     positions[index] = pos + vel;
 
-    if (fc_uses_radii)      radii[index] = radius;
-    if (fc_uses_masses)     masses[index] = mass;
-    if (fc_uses_colors)     colors[index] = color;
-    if (fc_uses_isAlives)   isAlives[index] = isAlive;
-    if (fc_uses_lifetimes)  lifetimes[index] = lifetime;
-
+    radii[index] = radius;
+    colors[index] = color;
+    isAlives[index] = isAlive;
+    lifetimes[index] = lifetime;
 }

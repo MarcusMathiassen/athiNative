@@ -22,7 +22,7 @@ struct EmitterDescriptor {
     var color = float4(1)
 }
 
-class ParticleSystemV2 {
+final class ParticleSystemV2 {
 
     var particleCount: Int = 0
     var maxParticleCount: Int = 10_000
@@ -30,11 +30,10 @@ class ParticleSystemV2 {
     static var _positions:      [float2]    = []
     static var _velocities:     [float2]    = []
     static var _radii:          [Float]     = []
-    static var _masses:         [Float]     = []
     static var _colors:         [float4]    = []
     static var _lifetimes:      [Float]     = []
 
-    class Emitter {
+    final class Emitter {
         var id: Int = 0
         var particleCount = 0
         var maxParticleCount = 0
@@ -55,11 +54,10 @@ class ParticleSystemV2 {
             var position: float2    { get { return ParticleSystemV2._positions[id] }      set { ParticleSystemV2._positions[id] = newValue } }
             var velocity: float2    { get { return ParticleSystemV2._velocities[id] }     set { ParticleSystemV2._velocities[id] = newValue } }
             var radius: Float       { get { return ParticleSystemV2._radii[id] }          set { ParticleSystemV2._radii[id] = newValue } }
-            var mass: Float         { get { return ParticleSystemV2._masses[id] }         set { ParticleSystemV2._masses[id] = newValue } }
             var color: float4       { get { return ParticleSystemV2._colors[id] }         set { ParticleSystemV2._colors[id] = newValue } }
             var lifetime: Float     { get { return ParticleSystemV2._lifetimes[id] }      set { ParticleSystemV2._lifetimes[id] = newValue } }
             var description: String {
-                return "id: \(id), position: \(position), velocity: \(velocity), radius: \(radius), mass: \(mass), color: \(color), lifetime: \(lifetime)"
+                return "id: \(id), position: \(position), velocity: \(velocity), radius: \(radius), color: \(color), lifetime: \(lifetime)"
             }
         }
 
@@ -86,8 +84,6 @@ class ParticleSystemV2 {
 
                 var  color = particles[index].color
                 var  radius = particles[index].radius
-
-                var  mass = particles[index].mass
                 var  lifetime = particles[index].lifetime
 
                 if lifetime < 0 {
@@ -99,10 +95,7 @@ class ParticleSystemV2 {
                     // Update variables if available
                     radius = spawnSize
                     color = spawnColor
-
                     lifetime = spawnLifetime * randFloat(0.5, 1.0)
-                    mass = Float.pi * spawnSize * spawnSize
-
                 } else {
                     lifetime -= 1.0 / 60.0
                 }
@@ -113,7 +106,6 @@ class ParticleSystemV2 {
                 particles[index].position = pos + vel
                 particles[index].color = color
                 particles[index].radius = radius
-                particles[index].mass = mass
                 particles[index].lifetime = lifetime
 
             }
@@ -123,7 +115,6 @@ class ParticleSystemV2 {
     var positions: [float2]     { return ParticleSystemV2._positions }
     var velocities: [float2]    { return ParticleSystemV2._velocities }
     var radii: [Float]          { return ParticleSystemV2._radii }
-    var masses: [Float]         { return ParticleSystemV2._masses }
     var colors: [float4]        { return ParticleSystemV2._colors }
     var lifetimes: [Float]      { return ParticleSystemV2._lifetimes }
 
@@ -138,7 +129,6 @@ class ParticleSystemV2 {
         ParticleSystemV2._positions.reserveCapacity(particleCount + count)
         ParticleSystemV2._velocities.reserveCapacity(particleCount + count)
         ParticleSystemV2._radii.reserveCapacity(particleCount + count)
-        ParticleSystemV2._masses.reserveCapacity(particleCount + count)
         ParticleSystemV2._colors.reserveCapacity(particleCount + count)
         ParticleSystemV2._lifetimes.reserveCapacity(particleCount + count)
 
@@ -146,7 +136,6 @@ class ParticleSystemV2 {
             ParticleSystemV2._positions.append(float2(0))
             ParticleSystemV2._velocities.append(float2(0))
             ParticleSystemV2._radii.append(Float(0))
-            ParticleSystemV2._masses.append(Float(0))
             ParticleSystemV2._colors.append(float4(0))
             ParticleSystemV2._lifetimes.append(Float(0))
         }
@@ -171,14 +160,16 @@ class ParticleSystemV2 {
         emitter.spawnColor = descriptor.color
         emitter.spawnLifetime = descriptor.lifetime
 
-        emitter.resetParticles(particleCount: particleCount)
-        particleCount += emitter.maxParticleCount
-
-        emitters.append(emitter)
         if particleCount > maxParticleCount {
             maxParticleCount = particleCount
         }
+
         increaseBuffers(by: emitter.maxParticleCount)
+        emitter.resetParticles(particleCount: particleCount)
+
+        particleCount += emitter.maxParticleCount
+
+        emitters.append(emitter)
 
         return emitter
     }
@@ -187,6 +178,7 @@ class ParticleSystemV2 {
         for i in emitters.indices {
             emitters[i].update()
         }
+        print(particleCount)
     }
 }
 
@@ -198,6 +190,7 @@ import MetalKit
 class ParticleRenderer {
 
     var particleCount: Int = 0
+    var allocatedParticleCount: Int = 0
 
     var pipelineState: MTLRenderPipelineState! = nil
 
@@ -207,6 +200,29 @@ class ParticleRenderer {
     var lifetimesBuffer: MTLBuffer! = nil
 
     let device: MTLDevice
+
+    func updateGPUBuffers() {
+
+        // Check if we need to allocate more space on the buffers
+        if allocatedParticleCount < particleCount {
+
+            allocatedParticleCount = particleCount
+
+            positionsBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * particleCount, options: .storageModeShared)
+            radiiBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
+            colorsBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * particleCount, options: .storageModeShared)
+            lifetimesBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
+        }
+
+        positionsBuffer.contents().copyMemory(from: particleSystemV2.positions,
+                                              byteCount: MemoryLayout<float2>.stride * particleCount)
+        radiiBuffer.contents().copyMemory(from: particleSystemV2.radii,
+                                              byteCount: MemoryLayout<Float>.stride * particleCount)
+        colorsBuffer.contents().copyMemory(from: particleSystemV2.colors,
+                                              byteCount: MemoryLayout<float4>.stride * particleCount)
+        lifetimesBuffer.contents().copyMemory(from: particleSystemV2.lifetimes,
+                                              byteCount: MemoryLayout<Float>.stride * particleCount)
+    }
 
     init() {
         self.device = MTLCreateSystemDefaultDevice()!
@@ -241,38 +257,15 @@ class ParticleRenderer {
             let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc!)!
 
              renderEncoder.setRenderPipelineState(pipelineState!)
-            
+
             // Update buffers
-            positionsBuffer = device.makeBuffer(
-                bytes: particleSystemV2.positions,
-                length: MemoryLayout<float2>.stride * particleCount,
-                options: .storageModeShared
-            )
-
-            radiiBuffer = device.makeBuffer(
-                bytes: particleSystemV2.radii,
-                length: MemoryLayout<Float>.stride * particleCount,
-                options: .storageModeShared
-            )
-
-            colorsBuffer = device.makeBuffer(
-                bytes: particleSystemV2.colors,
-                length: MemoryLayout<float4>.stride * particleCount,
-                options: .storageModeShared
-            )
-
-            lifetimesBuffer = device.makeBuffer(
-                bytes: particleSystemV2.lifetimes,
-                length: MemoryLayout<Float>.stride * particleCount,
-                options: .storageModeShared
-            )
+            updateGPUBuffers()
 
             // Upload buffers
-            renderEncoder.setVertexBuffers(
-                [positionsBuffer, radiiBuffer, colorsBuffer, lifetimesBuffer],
-                offsets: [0, 0, 0, 0],
-                range: 0 ..< 4
-            )
+            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: 0)
+            renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: 1)
+            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: 2)
+            renderEncoder.setVertexBuffer(lifetimesBuffer, offset: 0, index: 3)
 
             renderEncoder.setVertexBytes(&viewportSize,
                                          length: MemoryLayout<float2>.stride,

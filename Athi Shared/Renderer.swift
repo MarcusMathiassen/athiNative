@@ -254,7 +254,6 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         frametime = Float((getTime() - startTime) * 1000.0)
         framerate = Int(1000 / frametime)
-
     }
 
     func updateVariables() {
@@ -275,12 +274,12 @@ final class Renderer: NSObject, MTKViewDelegate {
             emitterDesc.spawnDirection = float2(0, 0)
             emitterDesc.spawnSpread = 1
             emitterDesc.spawnSpeed = 10
-            emitterDesc.spawnRate = 10
+            emitterDesc.spawnRate = 10000
             emitterDesc.lifetime = 3
             emitterDesc.size = gParticleSize
             emitterDesc.color = particleSystem.particleColor
 
-            let myEmitter1 = particleSystemV2.makeEmitter(descriptor: emitterDesc)
+            let _ = particleSystemV2.makeEmitter(descriptor: emitterDesc)
 //
 //            var emitterDesc = PSEmitterDescriptor()
 //            emitterDesc.isActive = true
