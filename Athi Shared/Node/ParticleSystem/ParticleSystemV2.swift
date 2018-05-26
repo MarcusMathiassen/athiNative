@@ -30,7 +30,7 @@ final class ParticleSystemV2 {
     static var _positions:      [float2]    = []
     static var _velocities:     [float2]    = []
     static var _radii:          [Float]     = []
-    static var _colors:         [float4]    = []
+    static var _colors:         [half4]    = []
     static var _lifetimes:      [Float]     = []
 
     final class Emitter {
@@ -47,14 +47,14 @@ final class ParticleSystemV2 {
         var spawnSize: Float = 0.0
         var spawnLifetime: Float = 0
         var spawnRate: Float = 0
-        var spawnColor = float4(1)
+        var spawnColor = half4(0)
 
         struct Particle: CustomStringConvertible {
             var id: Int = 0
             var position: float2    { get { return ParticleSystemV2._positions[id] }      set { ParticleSystemV2._positions[id] = newValue } }
             var velocity: float2    { get { return ParticleSystemV2._velocities[id] }     set { ParticleSystemV2._velocities[id] = newValue } }
             var radius: Float       { get { return ParticleSystemV2._radii[id] }          set { ParticleSystemV2._radii[id] = newValue } }
-            var color: float4       { get { return ParticleSystemV2._colors[id] }         set { ParticleSystemV2._colors[id] = newValue } }
+            var color: half4       { get { return ParticleSystemV2._colors[id] }         set { ParticleSystemV2._colors[id] = newValue } }
             var lifetime: Float     { get { return ParticleSystemV2._lifetimes[id] }      set { ParticleSystemV2._lifetimes[id] = newValue } }
             var description: String {
                 return "id: \(id), position: \(position), velocity: \(velocity), radius: \(radius), color: \(color), lifetime: \(lifetime)"
@@ -115,7 +115,7 @@ final class ParticleSystemV2 {
     var positions: [float2]     { return ParticleSystemV2._positions }
     var velocities: [float2]    { return ParticleSystemV2._velocities }
     var radii: [Float]          { return ParticleSystemV2._radii }
-    var colors: [float4]        { return ParticleSystemV2._colors }
+    var colors: [half4]         { return ParticleSystemV2._colors }
     var lifetimes: [Float]      { return ParticleSystemV2._lifetimes }
 
     static let sharedInstance = ParticleSystemV2()
@@ -131,14 +131,12 @@ final class ParticleSystemV2 {
         ParticleSystemV2._radii.reserveCapacity(particleCount + count)
         ParticleSystemV2._colors.reserveCapacity(particleCount + count)
         ParticleSystemV2._lifetimes.reserveCapacity(particleCount + count)
-
-        for _ in 0 ..< count {
-            ParticleSystemV2._positions.append(float2(0))
-            ParticleSystemV2._velocities.append(float2(0))
-            ParticleSystemV2._radii.append(Float(0))
-            ParticleSystemV2._colors.append(float4(0))
-            ParticleSystemV2._lifetimes.append(Float(0))
-        }
+        
+        ParticleSystemV2._positions.append(contentsOf: [float2](repeating: float2(0), count: count))
+        ParticleSystemV2._velocities.append(contentsOf: [float2](repeating: float2(0), count: count))
+        ParticleSystemV2._radii.append(contentsOf: [Float](repeating: Float(0), count: count))
+        ParticleSystemV2._colors.append(contentsOf: [half4](repeating: half4(0), count: count))
+        ParticleSystemV2._lifetimes.append(contentsOf: [Float](repeating: Float(0), count: count))
     }
 
     func makeEmitter(descriptor: EmitterDescriptor) -> Emitter {
@@ -157,7 +155,7 @@ final class ParticleSystemV2 {
         emitter.spawnSpread = descriptor.spawnSpread
 
         emitter.spawnSize = descriptor.size
-        emitter.spawnColor = descriptor.color
+        emitter.spawnColor = half4(descriptor.color)
         emitter.spawnLifetime = descriptor.lifetime
 
         if particleCount > maxParticleCount {
@@ -178,7 +176,6 @@ final class ParticleSystemV2 {
         for i in emitters.indices {
             emitters[i].update()
         }
-        print(particleCount)
     }
 }
 
@@ -186,6 +183,11 @@ let particleSystemV2 = ParticleSystemV2.sharedInstance
 
 import Metal
 import MetalKit
+
+enum RenderAs {
+    case points
+    case texturedQuads
+}
 
 class ParticleRenderer {
 
@@ -210,7 +212,7 @@ class ParticleRenderer {
 
             positionsBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * particleCount, options: .storageModeShared)
             radiiBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
-            colorsBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * particleCount, options: .storageModeShared)
+            colorsBuffer = device.makeBuffer(length: MemoryLayout<half4>.stride * particleCount, options: .storageModeShared)
             lifetimesBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
         }
 
@@ -219,7 +221,7 @@ class ParticleRenderer {
         radiiBuffer.contents().copyMemory(from: particleSystemV2.radii,
                                               byteCount: MemoryLayout<Float>.stride * particleCount)
         colorsBuffer.contents().copyMemory(from: particleSystemV2.colors,
-                                              byteCount: MemoryLayout<float4>.stride * particleCount)
+                                              byteCount: MemoryLayout<half4>.stride * particleCount)
         lifetimesBuffer.contents().copyMemory(from: particleSystemV2.lifetimes,
                                               byteCount: MemoryLayout<Float>.stride * particleCount)
     }
@@ -239,7 +241,7 @@ class ParticleRenderer {
 
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
-        } catch let error {
+        } catch {
             print("Error: \(error)")
         }
     }

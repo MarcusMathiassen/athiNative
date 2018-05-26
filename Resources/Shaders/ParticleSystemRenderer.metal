@@ -10,6 +10,13 @@
 using namespace metal;
 #include "ShaderTypes.h"
 
+constexpr constant float2 quadVertices[] =
+{
+    float2(-1,  1),
+    float2( 1,  1),
+    float2( 1, -1),
+    float2(-1, -1),
+};
 
 struct VertexOut
 {
@@ -57,19 +64,10 @@ FragmentOut particle_frag(VertexOut             vert        [[stage_in]],
     return { vert.color, vert.color };
 }
 
-
-
-
-
-
-
-
-
-
 vertex
 VertexOut particleVert( constant float2*     positions      [[ buffer(0) ]],
                         constant float*      radii          [[ buffer(1) ]],
-                        constant float4*     colors         [[ buffer(2) ]],
+                        constant half4*      colors         [[ buffer(2) ]],
                         constant float*      lifetimes      [[ buffer(3) ]],
                         constant float2&     viewportSize   [[ buffer(bf_viewportSize_index) ]],
                         const uint vid                      [[ vertex_id ]]
@@ -89,11 +87,23 @@ VertexOut particleVert( constant float2*     positions      [[ buffer(0) ]],
 }
 
 fragment
-FragmentOut particleFrag( VertexOut             vert        [[stage_in]],
-                          const float2          pointCoord  [[point_coord]]
+FragmentOut particleFrag( VertexOut             vert                [[ stage_in ]],
+                          const float2          pointCoord          [[ point_coord ]],
+                          texture2d<half>       particleTexture     [[ texture(0) ]]
                          )
 {
-    if (length(pointCoord - float2(0.5)) > 0.5) {
+//    constexpr sampler textureSampler (mag_filter::linear,
+//                                      min_filter::linear);
+//
+//    // We return the color of the texture
+//    return {
+//        colorTexture.sample(textureSampler, vert.uv),
+//        colorTexture.sample(textureSampler, vert.uv)
+//    };
+//
+    const float dist = distance(float2(0.5), pointCoord);
+    if (dist > 0.5)
+    {
         discard_fragment();
     }
     return { vert.color, vert.color };

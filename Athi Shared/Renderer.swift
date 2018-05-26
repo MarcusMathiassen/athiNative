@@ -243,6 +243,9 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         particleSystemV2.update()
         particleRenderer.drawParticles(view: view, commandBuffer: commandBuffer)
+        
+        print("Emitters:", particleSystemV2.emitters.count)
+        print("ParticleCount:", particleSystemV2.particleCount)
 
         if gDrawDebug {
             particleSystem.drawDebug(color: float4(0,1,0,1), view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
@@ -274,12 +277,12 @@ final class Renderer: NSObject, MTKViewDelegate {
             emitterDesc.spawnDirection = float2(0, 0)
             emitterDesc.spawnSpread = 1
             emitterDesc.spawnSpeed = 10
-            emitterDesc.spawnRate = 10000
+            emitterDesc.spawnRate = 10
             emitterDesc.lifetime = 3
             emitterDesc.size = gParticleSize
             emitterDesc.color = particleSystem.particleColor
 
-            let _ = particleSystemV2.makeEmitter(descriptor: emitterDesc)
+            _ = particleSystemV2.makeEmitter(descriptor: emitterDesc)
 //
 //            var emitterDesc = PSEmitterDescriptor()
 //            emitterDesc.isActive = true
