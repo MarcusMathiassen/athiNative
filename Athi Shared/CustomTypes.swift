@@ -42,7 +42,7 @@ func toHalf(_ input: [Float]) -> [Half] {
     return value
 }
 
-func toHalf(_ input: Float32) -> Half {
+func toHalf(_ input: Float) -> Half {
     var ink = input
     var value: Half = 0
     var bufferFloat32 = vImage_Buffer(data: &ink, height: 1, width: 1, rowBytes: 4)

@@ -27,11 +27,11 @@ final class ParticleSystemV2 {
     var particleCount: Int = 0
     var maxParticleCount: Int = 10_000
 
-    static var _positions:      [float2]    = []
-    static var _velocities:     [float2]    = []
-    static var _radii:          [Float]     = []
-    static var _colors:         [half4]    = []
-    static var _lifetimes:      [Float]     = []
+    static var _positions: [float2] = []
+    static var _velocities: [float2] = []
+    static var _radii: [Float] = []
+    static var _colors: [half4] = []
+    static var _lifetimes: [Float] = []
 
     final class Emitter {
         var id: Int = 0
@@ -51,11 +51,21 @@ final class ParticleSystemV2 {
 
         struct Particle: CustomStringConvertible {
             var id: Int = 0
-            var position: float2    { get { return ParticleSystemV2._positions[id] }      set { ParticleSystemV2._positions[id] = newValue } }
-            var velocity: float2    { get { return ParticleSystemV2._velocities[id] }     set { ParticleSystemV2._velocities[id] = newValue } }
-            var radius: Float       { get { return ParticleSystemV2._radii[id] }          set { ParticleSystemV2._radii[id] = newValue } }
-            var color: half4       { get { return ParticleSystemV2._colors[id] }         set { ParticleSystemV2._colors[id] = newValue } }
-            var lifetime: Float     { get { return ParticleSystemV2._lifetimes[id] }      set { ParticleSystemV2._lifetimes[id] = newValue } }
+            var position: float2 {
+                get { return ParticleSystemV2._positions[id] }
+                set { ParticleSystemV2._positions[id] = newValue } }
+            var velocity: float2 {
+                get { return ParticleSystemV2._velocities[id] }
+                set { ParticleSystemV2._velocities[id] = newValue } }
+            var radius: Float {
+                get { return ParticleSystemV2._radii[id] }
+                set { ParticleSystemV2._radii[id] = newValue } }
+            var color: half4 {
+                get { return ParticleSystemV2._colors[id] }
+                set { ParticleSystemV2._colors[id] = newValue } }
+            var lifetime: Float {
+                get { return ParticleSystemV2._lifetimes[id] }
+                set { ParticleSystemV2._lifetimes[id] = newValue } }
             var description: String {
                 return "id: \(id), position: \(position), velocity: \(velocity), radius: \(radius), color: \(color), lifetime: \(lifetime)"
             }
@@ -100,7 +110,7 @@ final class ParticleSystemV2 {
                     lifetime -= 1.0 / 60.0
                 }
 
-                vel.y += -0.0981
+//                vel.y += -0.0981
 
                 particles[index].velocity = vel
                 particles[index].position = pos + vel
@@ -182,12 +192,7 @@ final class ParticleSystemV2 {
 let particleSystemV2 = ParticleSystemV2.sharedInstance
 
 import Metal
-import MetalKit
-
-enum RenderAs {
-    case points
-    case texturedQuads
-}
+import MetalKit.MTKView
 
 class ParticleRenderer {
 
@@ -250,9 +255,7 @@ class ParticleRenderer {
 
         particleCount = particleSystemV2.particleCount
         
-        if particleCount == 0 {
-            return
-        }
+        if particleCount == 0 { return }
 
         let renderPassDesc = view.currentRenderPassDescriptor
         if renderPassDesc != nil {
@@ -264,10 +267,10 @@ class ParticleRenderer {
             updateGPUBuffers()
 
             // Upload buffers
-            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: 0)
-            renderEncoder.setVertexBuffer(radiiBuffer, offset: 0, index: 1)
-            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: 2)
-            renderEncoder.setVertexBuffer(lifetimesBuffer, offset: 0, index: 3)
+            renderEncoder.setVertexBuffer(positionsBuffer,  offset: 0, index: 0)
+            renderEncoder.setVertexBuffer(radiiBuffer,      offset: 0, index: 1)
+            renderEncoder.setVertexBuffer(colorsBuffer,     offset: 0, index: 2)
+            renderEncoder.setVertexBuffer(lifetimesBuffer,  offset: 0, index: 3)
 
             renderEncoder.setVertexBytes(&viewportSize,
                                          length: MemoryLayout<float2>.stride,
