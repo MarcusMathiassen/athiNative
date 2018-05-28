@@ -47,6 +47,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     var deltaTime: Float = 0
 
     var particleSystem: ParticleSystem
+    var collisionDetection: CollisionDetection<Particle>
 
     // Tripple buffering
     var maxNumInFlightBuffers = 3
@@ -134,6 +135,8 @@ final class Renderer: NSObject, MTKViewDelegate {
             options: myParticleOptions,
             maxParticles: 1_000_000
         )
+
+        collisionDetection = CollisionDetection<Particle>(device: device)
 
 //
 //        var emitterDesc = PSEmitterDescriptor()
@@ -235,6 +238,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         // Clear the screen
         let renderPassDesc = view.currentRenderPassDescriptor!
+        renderPassDesc.colorAttachments[0].clearColor = frameDescriptor.clearColor
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)
         renderEncoder?.endEncoding()
 
@@ -242,13 +246,26 @@ final class Renderer: NSObject, MTKViewDelegate {
         particleSystem.draw(view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
 
         particleSystemV2.update()
+
+        var motionParam = MotionParam()
+        motionParam.deltaTime = 1.0 / 60.0
+
+        var computeParam = ComputeParam()
+        computeParam.computeDeviceOption = gComputeDeviceOption
+        computeParam.isMultithreaded = false
+        computeParam.preferredThreadCount = 8
+        computeParam.treeOption = gTreeOption
+
+        particleSystemV2.particles = collisionDetection.runTimeStep(commandBuffer: commandBuffer, collidables: particleSystemV2.particles, motionParam: motionParam, computeParam: computeParam)
         particleRenderer.drawParticles(view: view, commandBuffer: commandBuffer)
+
         
         print("Emitters:", particleSystemV2.emitters.count)
         print("ParticleCount:", particleSystemV2.particleCount)
 
         if gDrawDebug {
             particleSystem.drawDebug(color: float4(0,1,0,1), view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
+            collisionDetection.drawDebug(color: float4(0,1,0,1), view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
         }
 
         commandBuffer.present(view.currentDrawable!)
@@ -283,7 +300,7 @@ final class Renderer: NSObject, MTKViewDelegate {
             emitterDesc.color = particleSystem.particleColor
 
             _ = particleSystemV2.makeEmitter(descriptor: emitterDesc)
-//
+
 //            var emitterDesc = PSEmitterDescriptor()
 //            emitterDesc.isActive = true
 //            emitterDesc.mozzleSpread = 1

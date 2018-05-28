@@ -106,7 +106,7 @@ final class Quadtree {
      Returns true if this node contains the index
      */
     func contains(_ index: Int) -> Bool {
-        return bounds.containsPoint(position: Quadtree.data[index].position, radius: Quadtree.data[index].radius)
+        return bounds.containsPoint(position: Quadtree.data[index].position, radius: Quadtree.data[index].size)
     }
 
     /**
@@ -165,16 +165,16 @@ final class Quadtree {
      */
     func getNeighbours(containerOfNodes: inout [Int32], collidable: Collidable) {
         if hasSplit {
-            if (sw?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+            if (sw?.bounds.containsPoint(position: collidable.position, radius: collidable.size)) ?? false {
                 sw?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
             }
-            if (se?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+            if (se?.bounds.containsPoint(position: collidable.position, radius: collidable.size)) ?? false {
                 se?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
             }
-            if (nw?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+            if (nw?.bounds.containsPoint(position: collidable.position, radius: collidable.size)) ?? false {
                 nw?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
             }
-            if (ne?.bounds.containsPoint(position: collidable.position, radius: collidable.radius)) ?? false {
+            if (ne?.bounds.containsPoint(position: collidable.position, radius: collidable.size)) ?? false {
                 ne?.getNeighbours(containerOfNodes: &containerOfNodes, collidable: collidable)
             }
             return

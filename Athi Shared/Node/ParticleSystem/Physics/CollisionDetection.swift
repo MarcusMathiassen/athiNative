@@ -23,11 +23,79 @@ struct ComputeParam {
     var treeOption: TreeOption = .quadtree
 }
 
+enum ColliderType {
+    case rectangle
+    case circle
+}
+
+protocol Collider {
+
+    /// Return the type of collider it is.
+    var type: ColliderType { get }
+
+    /// Return true if the collider fits entirely within the collider.
+    func containsFully(collider: Collider) -> Bool
+
+    /// Return true if the point fits within the collider.
+    func containsPoint(point: float2) -> Bool
+}
+struct RectCollider: Collider {
+
+    var type: ColliderType { return .rectangle }
+
+    var min = float2(0)
+    var max = float2(0)
+
+    init(min: float2, max: float2) {
+        self.min = min
+        self.max = max
+    }
+
+    func containsFully(collider: Collider) -> Bool {
+        switch collider.type {
+        case .rectangle: break
+        case .circle: break
+        }
+        return false
+    }
+
+    func containsPoint(point: float2) -> Bool {
+        if point.x < max.x && point.x > min.x &&
+           point.y < max.y && point.y > min.y {
+            return true
+        }
+        return false
+    }
+}
+struct CircleCollider: Collider {
+    var center = float2(0)
+    var radius: Float = 0.0
+
+    var type: ColliderType { return .circle }
+
+    func containsFully(collider: Collider) -> Bool {
+        switch collider.type {
+        case .rectangle: break
+        case .circle: break
+            // A circle completely fits within another circle if the
+
+        }
+        return false
+    }
+
+    func containsPoint(point: float2) -> Bool {
+        if point.x < center.x + radius && point.x > center.x + radius &&
+            point.y < center.y + radius && point.y > center.y + radius {
+            return true
+        }
+        return false
+    }
+}
 protocol Collidable {
     var position: float2 { get set }
     var velocity: float2 { get set }
-    var radius: Float { get set }
-    var mass: Float { get set }
+    var size: Float { get set }
+    var mass: Float { get }
 }
 
 final class CollisionDetection <T: Collidable> {
@@ -52,9 +120,10 @@ final class CollisionDetection <T: Collidable> {
     var computePipelineState: MTLComputePipelineState?
     var computePipelineTreeState: MTLComputePipelineState?
 
-    var collidablesBuffer: MTLBuffer
-    var neighboursBuffer: MTLBuffer
-    var neighboursIndicesBuffer: MTLBuffer
+    var collidablesBuffer: MTLBuffer! = nil
+    var neighboursBuffer: MTLBuffer! = nil
+    var neighboursIndicesBuffer: MTLBuffer! = nil
+
     var neighboursAllocated: Int = 0
     var neighboursIndicesAllocated: Int = 0
 
@@ -64,17 +133,17 @@ final class CollisionDetection <T: Collidable> {
 
         primitiveRenderer = PrimitiveRenderer(device: device)
 
-        collidablesBuffer = device.makeBuffer(
-            length: MemoryLayout<T>.stride,
-            options: .storageModeShared)!
-
-        neighboursBuffer = device.makeBuffer(
-            length: MemoryLayout<Neighbours>.stride,
-            options: .storageModeShared)!
-
-        neighboursIndicesBuffer = device.makeBuffer(
-            length: MemoryLayout<Int32>.stride,
-            options: .storageModeShared)!
+//        collidablesBuffer = device.makeBuffer(
+//            length: MemoryLayout<T>.stride,
+//            options: .storageModeShared)!
+//
+//        neighboursBuffer = device.makeBuffer(
+//            length: MemoryLayout<Neighbours>.stride,
+//            options: .storageModeShared)!
+//
+//        neighboursIndicesBuffer = device.makeBuffer(
+//            length: MemoryLayout<Int32>.stride,
+//            options: .storageModeShared)!
 
         let library = device.makeDefaultLibrary()
 
@@ -101,7 +170,9 @@ final class CollisionDetection <T: Collidable> {
                             motionParam: MotionParam,
                             computeParam: ComputeParam) -> [T] {
 
-        precondition(collidables.count > 1, "More than one collidable needed")
+        if collidables.count < 2 { return collidables }
+
+//        precondition(collidables.count < 1, "More than one collidable needed")
 
         // If the collidables.count between calls change, just reset the collidablesAllocated count
         if collidables.count < collidablesAllocated { collidablesAllocated = 0 }
@@ -395,7 +466,7 @@ final class CollisionDetection <T: Collidable> {
             primitiveRenderer.drawHollowRect(
                 position: collidable.position,
                 color: color,
-                size: collidable.radius,
+                size: collidable.size,
                 borderWidth: 0.5
             )
         }
@@ -436,20 +507,20 @@ final class CollisionDetection <T: Collidable> {
             // Update our local version of the particles position with the new velocity
 
             // Border collision
-            if coll1.position.x < 0 + coll1.radius {
-                coll1.position.x = 0 + coll1.radius
+            if coll1.position.x < 0 + coll1.size {
+                coll1.position.x = 0 + coll1.size
                 coll1.velocity.x = -coll1.velocity.x
             }
-            if coll1.position.x > viewportSize.x - coll1.radius {
-                coll1.position.x = viewportSize.x - coll1.radius
+            if coll1.position.x > viewportSize.x - coll1.size {
+                coll1.position.x = viewportSize.x - coll1.size
                 coll1.velocity.x = -coll1.velocity.x
             }
-            if coll1.position.y < 0 + coll1.radius {
-                coll1.position.y = 0 + coll1.radius
+            if coll1.position.y < 0 + coll1.size {
+                coll1.position.y = 0 + coll1.size
                 coll1.velocity.y = -coll1.velocity.y
             }
-            if coll1.position.y > viewportSize.y - coll1.radius {
-                coll1.position.y = viewportSize.y - coll1.radius
+            if coll1.position.y > viewportSize.y - coll1.size {
+                coll1.position.y = viewportSize.y - coll1.size
                 coll1.velocity.y = -coll1.velocity.y
             }
             self.collidables[index].velocity = coll1.velocity
@@ -485,20 +556,20 @@ final class CollisionDetection <T: Collidable> {
             // Update our local version of the particles position with the new velocity
 
             // Border collision
-            if coll1.position.x < 0 + coll1.radius {
-                coll1.position.x = 0 + coll1.radius
+            if coll1.position.x < 0 + coll1.size {
+                coll1.position.x = 0 + coll1.size
                 coll1.velocity.x = -coll1.velocity.x
             }
-            if coll1.position.x > viewportSize.x - coll1.radius {
-                coll1.position.x = viewportSize.x - coll1.radius
+            if coll1.position.x > viewportSize.x - coll1.size {
+                coll1.position.x = viewportSize.x - coll1.size
                 coll1.velocity.x = -coll1.velocity.x
             }
-            if coll1.position.y < 0 + coll1.radius {
-                coll1.position.y = 0 + coll1.radius
+            if coll1.position.y < 0 + coll1.size {
+                coll1.position.y = 0 + coll1.size
                 coll1.velocity.y = -coll1.velocity.y
             }
-            if coll1.position.y > viewportSize.y - coll1.radius {
-                coll1.position.y = viewportSize.y - coll1.radius
+            if coll1.position.y > viewportSize.y - coll1.size {
+                coll1.position.y = viewportSize.y - coll1.size
                 coll1.velocity.y = -coll1.velocity.y
             }
 
@@ -513,8 +584,8 @@ final class CollisionDetection <T: Collidable> {
         // Local variables
         let ap = a.position
         let bp = b.position
-        let ar = a.radius
-        let br = b.radius
+        let ar = a.size
+        let br = b.size
 
         // square collision check
         if ap.x - ar < bp.x + br &&
@@ -576,8 +647,8 @@ final class CollisionDetection <T: Collidable> {
         // Local variables
         let ap = a.position
         let bp = b.position
-        let ar = a.radius
-        let br = b.radius
+        let ar = a.size
+        let br = b.size
 
         let collisionDepth = (ar + br) - distance(bp, ap)
 

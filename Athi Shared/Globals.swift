@@ -23,7 +23,7 @@ var gSpeed: Float = 1.0
 var gParticleCount: Int = 10
 
 var gSpawnAmount: Int = 10
-var gComputeDeviceOption: ComputeDeviceOption = .gpu
+var gComputeDeviceOption: ComputeDeviceOption = .cpu
 var gTreeOption: TreeOption = .quadtree
 var gDrawDebug: Bool = false
 

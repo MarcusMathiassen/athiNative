@@ -475,9 +475,9 @@ final class ParticleSystem {
             commandBuffer.popDebugGroup()
         }
 
-//        for emitter in emitters {
-//            primitiveRenderer.drawRect(position: emitter.position, color: float4(1), size: emitter.size*0.5)
-//        }
+        for emitter in emitters {
+            primitiveRenderer.drawRect(position: emitter.position, color: float4(1), size: emitter.size*0.5)
+        }
         primitiveRenderer.draw(view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
     }
 
