@@ -35,6 +35,13 @@ protocol ParticleType {
 // The internal structure of a particle only contains its index.
 // All other data is computed properties
 struct Particle: ParticleType, Collidable, CustomStringConvertible {
+
+    func collidesWith(_ collidable: Collidable) -> Bool {
+        return collider.collidesWith(collider: collidable.collider)
+    }
+
+    var collider: Collider
+
     var id: Int = 0
     var position: float2 {
         get { return ParticleSystemV2._positions[id] }
@@ -109,8 +116,9 @@ final class ParticleSystemV2 {
 
         mutating func resetParticles(particleCount: Int) {
             for i in 0 ..< maxParticleCount {
-                var p = Particle()
-                p.id = i + particleCount
+                 var p = Particle(collider: RectCollider(position: spawnPosition, width: spawnSize / 2, height: spawnSize / 2), id: i + particleCount)
+//                var p = Particle(collider: CircleCollider(position: spawnPosition, radius: spawnSize), id: i + particleCount)
+//                p.id = i + particleCount
                 p.position = spawnPosition
                 p.velocity = (spawnDirection * spawnSpeed) + randFloat2(-spawnSpread, spawnSpread)
                 p.size = spawnSize
@@ -148,6 +156,7 @@ final class ParticleSystemV2 {
 
                 particles[index].velocity = vel
                 particles[index].position = pos + vel
+                particles[index].collider.position = pos + vel
                 particles[index].color = color
                 particles[index].size = size
                 particles[index].lifetime = lifetime
@@ -175,7 +184,7 @@ final class ParticleSystemV2 {
         ParticleSystemV2._sizes.reserveCapacity(particleCount + count)
         ParticleSystemV2._colors.reserveCapacity(particleCount + count)
         ParticleSystemV2._lifetimes.reserveCapacity(particleCount + count)
-        
+
         ParticleSystemV2._positions.append(contentsOf: [float2](repeating: float2(0), count: count))
         ParticleSystemV2._velocities.append(contentsOf: [float2](repeating: float2(0), count: count))
         ParticleSystemV2._sizes.append(contentsOf: [Float](repeating: Float(0), count: count))
@@ -290,7 +299,7 @@ final class ParticleRenderer {
     func drawParticles(view: MTKView, commandBuffer: MTLCommandBuffer) {
 
         particleCount = particleSystemV2.particleCount
-        
+
         if particleCount == 0 { return }
 
         let renderPassDesc = view.currentRenderPassDescriptor

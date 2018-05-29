@@ -18,7 +18,7 @@ struct MotionParam {
 
 struct ComputeParam {
     var isMultithreaded: Bool = true // Application is multithreaded by default.
-    var preferredThreadCount: Int = 0// Uses the machines maximum number by default
+    var preferredThreadCount: Int = 0 // Uses the machines maximum number by default
     var computeDeviceOption: ComputeDeviceOption = .gpu
     var treeOption: TreeOption = .quadtree
 }
@@ -29,73 +29,117 @@ enum ColliderType {
 }
 
 protocol Collider {
-
-    /// Return the type of collider it is.
-    var type: ColliderType { get }
-
-    /// Return true if the collider fits entirely within the collider.
-    func containsFully(collider: Collider) -> Bool
-
-    /// Return true if the point fits within the collider.
-    func containsPoint(point: float2) -> Bool
+    var position: float2 { get set }
+    var type: ColliderType { get }  /// Return the type of collider it is.
+    func collidesWith(collider: Collider) -> Bool /// Return true if the colliders overlap.
+    func containsFully(collider: Collider) -> Bool     /// Return the type of collider it is.
+    func containsPoint(point: float2) -> Bool /// Return true if the point fits within the collider.
 }
+
 struct RectCollider: Collider {
+    var position: float2
+    var width: Float
+    var height: Float
 
-    var type: ColliderType { return .rectangle }
-
-    var min = float2(0)
-    var max = float2(0)
-
-    init(min: float2, max: float2) {
-        self.min = min
-        self.max = max
+    var min: float2 {
+       get {
+           return float2(position.x - width*0.5, position.y - height*0.5)
+       }
+    }
+    var max: float2 {
+       get {
+           return float2(position.x + width*0.5, position.y + height*0.5)
+       }
     }
 
-    func containsFully(collider: Collider) -> Bool {
-        switch collider.type {
-        case .rectangle: break
-        case .circle: break
+   var type: ColliderType { return .rectangle }
+
+    func collidesWith(collider: Collider) -> Bool {
+        switch collider {
+        case let otherCollider as RectCollider:
+
+            let amin = min
+            let amax = max
+            let bmin = otherCollider.min
+            let bmax = otherCollider.max
+
+            return  amin.x < bmax.x &&
+                    amax.x > bmin.x &&
+                    amin.y < bmax.y &&
+                    amax.y > bmin.y
+
+        case let otherCollider as CircleCollider: break
+        default: break
         }
         return false
     }
 
-    func containsPoint(point: float2) -> Bool {
-        if point.x < max.x && point.x > min.x &&
-           point.y < max.y && point.y > min.y {
-            return true
-        }
-        return false
-    }
+   func containsFully(collider: Collider) -> Bool {
+       switch collider.type {
+       case .rectangle: break
+       case .circle: break
+       }
+       return false
+   }
+
+   func containsPoint(point: float2) -> Bool {
+       if point.x < max.x && point.x > min.x &&
+          point.y < max.y && point.y > min.y {
+           return true
+       }
+       return false
+   }
 }
 struct CircleCollider: Collider {
-    var center = float2(0)
-    var radius: Float = 0.0
+
+    var position: float2
+    var radius: Float
 
     var type: ColliderType { return .circle }
 
+    func collidesWith(collider: Collider) -> Bool {
+        switch collider {
+        case let otherCollider as RectCollider: break
+        case let otherCollider as CircleCollider:
+
+            let dp = otherCollider.position - position
+            let sum_radius = radius + otherCollider.radius
+            let sqr_radius = sum_radius * sum_radius
+
+            let distance_sqrd = (dp.x * dp.x) + (dp.y * dp.y)
+
+            return distance_sqrd < sqr_radius
+        default:
+            break
+        }
+        return false
+    }
+
     func containsFully(collider: Collider) -> Bool {
         switch collider.type {
         case .rectangle: break
         case .circle: break
-            // A circle completely fits within another circle if the
-
         }
         return false
     }
 
     func containsPoint(point: float2) -> Bool {
-        if point.x < center.x + radius && point.x > center.x + radius &&
-            point.y < center.y + radius && point.y > center.y + radius {
+        if point.x < radius && point.x > radius &&
+            point.y < radius && point.y > radius {
             return true
         }
         return false
     }
 }
+
 protocol Collidable {
     var position: float2 { get set }
     var velocity: float2 { get set }
     var size: Float { get set }
     var mass: Float { get }
+
+    var collider: Collider { get set }
+    func collidesWith(_ collidable: Collidable) -> Bool
 }
 
 final class CollisionDetection <T: Collidable> {
@@ -463,12 +507,12 @@ final class CollisionDetection <T: Collidable> {
 
         // Draw collision box around collidables
         for collidable in collidables {
-            primitiveRenderer.drawHollowRect(
-                position: collidable.position,
-                color: color,
-                size: collidable.size,
-                borderWidth: 0.5
-            )
+            switch collidable.collider {
+            case let coll as RectCollider:
+                primitiveRenderer.drawHollowRect(min: coll.min, max: coll.max, color: color, borderWidth: 0.5)
+            case let coll as CircleCollider: break
+            default: break
+            }
         }
 
         primitiveRenderer.draw(
@@ -499,7 +543,7 @@ final class CollisionDetection <T: Collidable> {
 
                 // If they collide. Update the first collidable with the new velocity.
                 // We accumulate it though, so we add it to our grabbed velocity.
-                if checkCollision(coll1, coll2) {
+                if coll1.collidesWith(coll2) {
                     coll1.velocity = resolveCollision(coll1, coll2)
                 }
             }
@@ -548,7 +592,7 @@ final class CollisionDetection <T: Collidable> {
 
                 // If they collide. Update the first collidable with the new velocity.
                 // We accumulate it though, so we add it to our grabbed velocity.
-                if (checkCollision(coll1, coll2)) {
+                if coll1.collidesWith(coll2) {
                     coll1.velocity = resolveCollision(coll1, coll2)
                 }
             }

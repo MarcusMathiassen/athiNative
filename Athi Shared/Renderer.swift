@@ -295,7 +295,7 @@ final class Renderer: NSObject, MTKViewDelegate {
             emitterDesc.spawnSpread = 1
             emitterDesc.spawnSpeed = 10
             emitterDesc.spawnRate = 10
-            emitterDesc.lifetime = 3
+            emitterDesc.lifetime = 10
             emitterDesc.size = gParticleSize
             emitterDesc.color = particleSystem.particleColor
 
