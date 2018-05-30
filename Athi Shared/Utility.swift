@@ -73,8 +73,8 @@ func getMinAndMaxPosition(collidables: [Collidable]) -> (float2, float2) {
  */
 func getMinAndMaxPosition(positions: [float2], count: Int) -> (float2, float2) {
 
-    var max = float2(Float((-INT_MAX)), Float(-INT_MAX))
-    var min = float2(Float(INT_MAX), Float(INT_MAX))
+    var max = float2(Float(Int.min), Float(Int.min))
+    var min = float2(Float(Int.max), Float(Int.max))
 
     for i in 0 ..< count {
 

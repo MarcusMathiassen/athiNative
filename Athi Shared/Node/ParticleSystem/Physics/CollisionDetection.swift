@@ -41,18 +41,10 @@ struct RectCollider: Collider {
     var width: Float
     var height: Float
 
-    var min: float2 {
-       get {
-           return float2(position.x - width*0.5, position.y - height*0.5)
-       }
-    }
-    var max: float2 {
-       get {
-           return float2(position.x + width*0.5, position.y + height*0.5)
-       }
-    }
+    var min: float2 { return position - float2(width, height) * 0.5 }
+    var max: float2 { return position + float2(width, height) * 0.5 }
 
-   var type: ColliderType { return .rectangle }
+    var type: ColliderType { return .rectangle }
 
     func collidesWith(collider: Collider) -> Bool {
         switch collider {
@@ -107,8 +99,8 @@ struct CircleCollider: Collider {
             let sqr_radius = sum_radius * sum_radius
 
             let distance_sqrd = (dp.x * dp.x) + (dp.y * dp.y)
-
             return distance_sqrd < sqr_radius
+
         default:
             break
         }
@@ -152,7 +144,7 @@ final class CollisionDetection <T: Collidable> {
     var motionParam: MotionParam! = nil
 
     var primitiveRenderer: PrimitiveRenderer
-    var quadtree: Quadtree?
+    var quadtree: Quadtree! = nil
 
     // Metal resources
     var device: MTLDevice
@@ -176,18 +168,6 @@ final class CollisionDetection <T: Collidable> {
         self.device = device
 
         primitiveRenderer = PrimitiveRenderer(device: device)
-
-//        collidablesBuffer = device.makeBuffer(
-//            length: MemoryLayout<T>.stride,
-//            options: .storageModeShared)!
-//
-//        neighboursBuffer = device.makeBuffer(
-//            length: MemoryLayout<Neighbours>.stride,
-//            options: .storageModeShared)!
-//
-//        neighboursIndicesBuffer = device.makeBuffer(
-//            length: MemoryLayout<Int32>.stride,
-//            options: .storageModeShared)!
 
         let library = device.makeDefaultLibrary()
 
@@ -214,7 +194,7 @@ final class CollisionDetection <T: Collidable> {
                             motionParam: MotionParam,
                             computeParam: ComputeParam) -> [T] {
 
-        if collidables.count < 2 { return collidables }
+        if collidables.count < 1 { return collidables }
 
 //        precondition(collidables.count < 1, "More than one collidable needed")
 
@@ -245,8 +225,8 @@ final class CollisionDetection <T: Collidable> {
                 case .quadtree:
                     let (min, max) = getMinAndMaxPosition(collidables: collidables)
                     quadtree = Quadtree(min: min, max: max)
-                    quadtree?.setInputData(collidables)
-                    quadtree?.inputRange(range: 0 ... collidables.count)
+                    quadtree.setInputData(collidables)
+                    quadtree.inputRange(range: 0 ... collidables.count)
                     DispatchQueue.concurrentPerform(iterations: computeParam.preferredThreadCount) { (index) in
                         let (begin, end) = getBeginAndEnd(
                             i: index,
@@ -269,8 +249,8 @@ final class CollisionDetection <T: Collidable> {
                 case .quadtree:
                     let (min, max) = getMinAndMaxPosition(collidables: collidables)
                     quadtree = Quadtree(min: min, max: max)
-                    quadtree?.setInputData(collidables)
-                    quadtree?.inputRange(range: 0 ... collidables.count)
+                    quadtree.setInputData(collidables)
+                    quadtree.inputRange(range: 0 ... collidables.count)
                     resolveRangeWithNeighbours(range: 0 ... collidables.count)
 
                 case .noTree:
@@ -437,10 +417,6 @@ final class CollisionDetection <T: Collidable> {
 
         // Resize the buffer if needed
         if collidables.count > collidablesAllocated {
-
-            // We copy back the contents
-            collidables.reserveCapacity(collidablesAllocated)
-            memcpy(&collidables, collidablesBuffer.contents(), collidablesAllocated * MemoryLayout<T>.stride)
 
             // Resize the buffer with the new size
             collidablesBuffer = device.makeBuffer(

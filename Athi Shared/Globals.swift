@@ -18,6 +18,7 @@ enum TreeOption {
     case noTree
 }
 
+var gBlurStrength: Float = 5.0
 var gLifetime: Float = 1.0
 var gSpeed: Float = 1.0
 var gParticleCount: Int = 10
@@ -32,6 +33,7 @@ var gPixelScale: Float = 0
 var gParticleSize: Float = 4
 
 var gParticleColorCycle: Bool = false
+var gParticleColor: float4 = float4(1)
 
 var gyroRotation = float3(0, 0, 0)
 var accelerometer = float3(0, 0, 0)

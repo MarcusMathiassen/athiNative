@@ -10,241 +10,238 @@ import Foundation
 
 import simd
 
-struct EmitterDescriptor {
-    var spawnPosition = float2(0)
-    var spawnDirection = float2(0)
-    var spawnSpeed: Float = 0.0
-    var spawnRate: Float = 0.0
-    var spawnSpread: Float = 0.0
+struct EmitterDescriptor: Codable {
+    var spawnPosX: Float = 0
+    var spawnPosY: Float = 0
+    var spawnDirX: Float = 0
+    var spawnDirY: Float = 0
+    var spawnSpeed: Float = 0
+    var spawnRate: Float = 0
+    var spawnSpread: Float = 0
 
     var size: Float = 0.0
     var lifetime: Float = 0.0
-    var color = float4(1)
-}
+    var r: Float = 0
+    var g: Float = 0
+    var b: Float = 0
+    var a: Float = 0
 
-protocol ParticleType {
-    var id: Int { get set }
-
-    var position: float2 { get set }
-    var velocity: float2 { get set }
-    var size: Float { get set }
-    var color: half4 { get set }
-    var lifetime: Float { get set }
-}
-
-// The internal structure of a particle only contains its index.
-// All other data is computed properties
-struct Particle: ParticleType, Collidable, CustomStringConvertible {
-
-    func collidesWith(_ collidable: Collidable) -> Bool {
-        return collider.collidesWith(collider: collidable.collider)
+    var spawnPosition: float2 {
+        get { return float2(spawnPosX, spawnPosY) }
+        set { spawnPosX = newValue.x; spawnPosY = newValue.y }
     }
-
-    var collider: Collider
-
-    var id: Int = 0
-    var position: float2 {
-        get { return ParticleSystemV2._positions[id] }
-        set { ParticleSystemV2._positions[id] = newValue } }
-    var velocity: float2 {
-        get { return ParticleSystemV2._velocities[id] }
-        set { ParticleSystemV2._velocities[id] = newValue } }
-    var size: Float {
-        get { return ParticleSystemV2._sizes[id] }
-        set { ParticleSystemV2._sizes[id] = newValue } }
-
-    /// The mass is based on the radius and with a fixed density of 1.0
-    var mass: Float { return size * size * Float.pi }
-    var color: half4 {
-        get { return ParticleSystemV2._colors[id] }
-        set { ParticleSystemV2._colors[id] = newValue } }
-    var lifetime: Float {
-        get { return ParticleSystemV2._lifetimes[id] }
-        set { ParticleSystemV2._lifetimes[id] = newValue } }
-    var description: String {
-        return "id: \(id), position: \(position), velocity: \(velocity), size: \(size), color: \(color), lifetime: \(lifetime)"
+    var spawnDirection: float2 {
+        get { return float2(spawnDirX, spawnDirY) }
+        set { spawnDirX = newValue.x; spawnDirY = newValue.y }
+    }
+    var color: float4 {
+        get { return float4(r, g, b, a) }
+        set { r = newValue.x; g = newValue.y; b = newValue.z; a = newValue.w }
     }
 }
 
-final class ParticleSystemV2 {
-
-    var particleCount: Int = 0
-    var maxParticleCount: Int = 10_000
-
-    static var _positions: [float2] = []
-    static var _velocities: [float2] = []
-    static var _sizes: [Float] = []
-    static var _colors: [half4] = []
-    static var _lifetimes: [Float] = []
-
-    var particles: [Particle] {
-        get {
-            var allParticles: [Particle] = []
-            for emitter in emitters {
-                allParticles.append(contentsOf: emitter.particles)
-            }
-            return allParticles
-        }
-        set {
-            for index in newValue.indices {
-                ParticleSystemV2._positions[index] = newValue[index].position
-                ParticleSystemV2._velocities[index] = newValue[index].velocity
-                ParticleSystemV2._sizes[index] = newValue[index].size
-                ParticleSystemV2._colors[index] = newValue[index].color
-                ParticleSystemV2._lifetimes[index] = newValue[index].lifetime
-            }
-        }
-    }
+final class ParticleSystem {
 
     struct Emitter {
-        var id: Int = 0
 
-        var particles: [Particle] = []
+        var id: Int = 0
+        var startIndex: Int = 0
+        var particleIndices: CountableRange<Int> { return startIndex ..< startIndex + maxParticleCount }
+
         var particleCount = 0
         var maxParticleCount = 0
 
         var spawnPosition = float2(0)
         var spawnDirection = float2(0)
         var spawnSpeed: Float = 0.0
-
         var spawnSpread: Float = 0.0
-
         var spawnSize: Float = 0.0
         var spawnLifetime: Float = 0
         var spawnRate: Float = 0
         var spawnColor = half4(0)
 
-        mutating func resetParticles(particleCount: Int) {
-            for i in 0 ..< maxParticleCount {
-                 var p = Particle(collider: RectCollider(position: spawnPosition, width: spawnSize / 2, height: spawnSize / 2), id: i + particleCount)
-//                var p = Particle(collider: CircleCollider(position: spawnPosition, radius: spawnSize), id: i + particleCount)
-//                p.id = i + particleCount
-                p.position = spawnPosition
-                p.velocity = (spawnDirection * spawnSpeed) + randFloat2(-spawnSpread, spawnSpread)
-                p.size = spawnSize
-                p.color = spawnColor
-                p.lifetime = spawnLifetime * randFloat(0.5, 1.0)
-                particles.append(p)
-            }
-        }
+        init(_ descriptor: EmitterDescriptor) {
+            particleCount = 0
+            maxParticleCount = Int(descriptor.spawnRate * descriptor.lifetime)
+            spawnPosition = descriptor.spawnPosition
+            spawnDirection = descriptor.spawnDirection
+            spawnSpeed = descriptor.spawnSpeed
+            spawnRate = descriptor.spawnRate
+            spawnSpread = descriptor.spawnSpread
 
-        mutating func update() {
-            for index in particles.indices {
-
-                var  pos = particles[index].position
-                var  vel = particles[index].velocity
-
-                var  color = particles[index].color
-                var  size = particles[index].size
-                var  lifetime = particles[index].lifetime
-
-                if lifetime < 0 {
-                    let newVel = spawnDirection * spawnSpeed
-
-                    pos = spawnPosition
-                    vel = newVel + randFloat2(-spawnSpread, spawnSpread)
-
-                    // Update variables if available
-                    size = spawnSize
-                    color = spawnColor
-                    lifetime = spawnLifetime * randFloat(0.5, 1.0)
-                } else {
-                    lifetime -= 1.0 / 60.0
-                }
-
-//                vel.y += -0.0981
-
-                particles[index].velocity = vel
-                particles[index].position = pos + vel
-                particles[index].collider.position = pos + vel
-                particles[index].color = color
-                particles[index].size = size
-                particles[index].lifetime = lifetime
-
-            }
+            spawnSize = descriptor.size
+            spawnColor = half4(descriptor.color)
+            spawnLifetime = descriptor.lifetime
         }
     }
 
-    var positions: [float2]     { return ParticleSystemV2._positions }
-    var velocities: [float2]    { return ParticleSystemV2._velocities }
-    var sizes: [Float]          { return ParticleSystemV2._sizes }
-    var colors: [half4]         { return ParticleSystemV2._colors }
-    var lifetimes: [Float]      { return ParticleSystemV2._lifetimes }
+    var emitterDescriptions: [EmitterDescriptor] = []
+    var emitters: [Emitter] = []
 
-    static let sharedInstance = ParticleSystemV2()
-    private init() {
+    var particleCount: Int = 0
+    var maxParticleCount: Int = 10_000
+
+    // Particle data
+    var positions: [float2] = []
+    var velocities: [float2] = []
+    var sizes: [Float] = []
+    var colors: [half4] = []
+    var lifetimes: [Float] = []
+
+    struct Particle {
+        var position = float2(0)
+        var velocity = float2(0)
+        var size = Float(0)
+        var color = half4(0)
+        var lifetime = Float(0)
+    }
+
+    init(maxParticleCount: Int) {
         increaseBuffers(by: maxParticleCount)
     }
-    var emitters: [Emitter] = []
+
+    func save() {
+        if let encodedData = try? JSONEncoder().encode(emitterDescriptions) {
+            let path = "emitters.json"
+            do {
+                try encodedData.write(to: URL(fileURLWithPath: path))
+            }
+            catch {
+                print("Failed to write JSON data: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func load() {
+        do {
+            let path = "emitters.json"
+            let data = try Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe)
+            do {
+                let decodedData = try JSONDecoder().decode([EmitterDescriptor].self, from: data)
+                clearEmitters()
+                emitterDescriptions.removeAll()
+                emitters.reserveCapacity(decodedData.count)
+                emitterDescriptions.reserveCapacity(decodedData.count)
+                for emitterDesc in decodedData {
+                    _ = makeEmitter(descriptor: emitterDesc)
+                }
+            } catch {
+                print("Error reading file \(path): \(error.localizedDescription)")
+            }
+        } catch {
+            print("Failed to read JSON data: \(error.localizedDescription)")
+        }
+    }
+
+    func clearEmitters() {
+        emitters.removeAll(keepingCapacity: true)
+        particleCount = 0
+        maxParticleCount = 0
+    }
 
     func increaseBuffers(by count: Int) {
 
-        ParticleSystemV2._positions.reserveCapacity(particleCount + count)
-        ParticleSystemV2._velocities.reserveCapacity(particleCount + count)
-        ParticleSystemV2._sizes.reserveCapacity(particleCount + count)
-        ParticleSystemV2._colors.reserveCapacity(particleCount + count)
-        ParticleSystemV2._lifetimes.reserveCapacity(particleCount + count)
+        if positions.capacity >= particleCount + count {
+            return
+        }
 
-        ParticleSystemV2._positions.append(contentsOf: [float2](repeating: float2(0), count: count))
-        ParticleSystemV2._velocities.append(contentsOf: [float2](repeating: float2(0), count: count))
-        ParticleSystemV2._sizes.append(contentsOf: [Float](repeating: Float(0), count: count))
-        ParticleSystemV2._colors.append(contentsOf: [half4](repeating: half4(0), count: count))
-        ParticleSystemV2._lifetimes.append(contentsOf: [Float](repeating: Float(0), count: count))
+        positions.reserveCapacity(particleCount + count)
+        velocities.reserveCapacity(particleCount + count)
+        sizes.reserveCapacity(particleCount + count)
+        colors.reserveCapacity(particleCount + count)
+        lifetimes.reserveCapacity(particleCount + count)
+
+        positions.append(contentsOf: [float2](repeating: float2(0), count: count))
+        velocities.append(contentsOf: [float2](repeating: float2(0), count: count))
+        sizes.append(contentsOf: [Float](repeating: Float(0), count: count))
+        colors.append(contentsOf: [half4](repeating: half4(0), count: count))
+        lifetimes.append(contentsOf: [Float](repeating: Float(-1), count: count))
     }
 
-    typealias EmitterHandle = Int
-    func makeEmitter(descriptor: EmitterDescriptor) -> EmitterHandle {
+    func makeEmitter(descriptor: EmitterDescriptor) -> Int {
 
-        var emitter = Emitter()
-
-        emitter.particleCount = 0
-        emitter.maxParticleCount = Int(descriptor.spawnRate * descriptor.lifetime)
+        var emitter = Emitter(descriptor)
 
         emitter.id = emitters.count
-
-        emitter.spawnPosition = descriptor.spawnPosition
-        emitter.spawnDirection = descriptor.spawnDirection
-        emitter.spawnSpeed = descriptor.spawnSpeed
-        emitter.spawnRate = descriptor.spawnRate
-        emitter.spawnSpread = descriptor.spawnSpread
-
-        emitter.spawnSize = descriptor.size
-        emitter.spawnColor = half4(descriptor.color)
-        emitter.spawnLifetime = descriptor.lifetime
+        emitter.startIndex = particleCount
 
         if particleCount > maxParticleCount {
             maxParticleCount = particleCount
         }
 
         increaseBuffers(by: emitter.maxParticleCount)
-        emitter.resetParticles(particleCount: particleCount)
 
         particleCount += emitter.maxParticleCount
 
         let emitterHandle = emitters.count
         emitters.append(emitter)
+        emitterDescriptions.append(descriptor)
 
         return emitterHandle
     }
 
     func update() {
-        for i in emitters.indices {
-            emitters[i].update()
+        for emitter in emitters {
+            for index in emitter.particleIndices {
+
+                var  pos = positions[index]
+                var  vel = velocities[index]
+
+                var  color = colors[index]
+                var  size = sizes[index]
+                var  lifetime = lifetimes[index]
+
+                if lifetime < 0 {
+                    let newVel = emitter.spawnDirection * emitter.spawnSpeed
+
+                    pos = emitter.spawnPosition
+                    vel = newVel + randFloat2(-emitter.spawnSpread, emitter.spawnSpread)
+
+                    // Update variables if available
+                    size = emitter.spawnSize
+                    color = emitter.spawnColor
+                    lifetime = emitter.spawnLifetime * randFloat(0.5, 1.0)
+                } else {
+                    lifetime -= 1.0 / 60.0
+                }
+
+                vel.y += -0.0981
+
+                velocities[index] = vel
+                positions[index] = pos + vel
+                colors[index] = color
+                sizes[index] = size
+                lifetimes[index] = lifetime
+            }
         }
     }
 }
 
-let particleSystemV2 = ParticleSystemV2.sharedInstance
-
 import Metal
-import MetalKit.MTKView
+import MetalKit
+import MetalPerformanceShaders
 
 final class ParticleRenderer {
+
+    var fullscreenEffect: Quad
 
     var particleCount: Int = 0
     var allocatedParticleCount: Int = 0
 
     var pipelineState: MTLRenderPipelineState! = nil
+
+    var textureLoader: MTKTextureLoader! = nil
+    var particleTexture: MTLTexture! = nil
+
+    var inTexture: MTLTexture! = nil
+    var outTexture: MTLTexture! = nil
+
+    var indexBuffer: MTLBuffer
+
+    var positions: [float2] = []
+    var sizes: [Float] = []
+    var colors: [half4] = []
+    var lifetimes: [Float] = []
 
     var positionsBuffer: MTLBuffer! = nil
     var sizesBuffer: MTLBuffer! = nil
@@ -252,6 +249,93 @@ final class ParticleRenderer {
     var lifetimesBuffer: MTLBuffer! = nil
 
     let device: MTLDevice
+
+    init() {
+        self.device = MTLCreateSystemDefaultDevice()!
+
+        fullscreenEffect = Quad(device: device)
+
+        let textureDescriptor = MTLTextureDescriptor()
+        textureDescriptor.resourceOptions = .storageModePrivate
+        textureDescriptor.width = Int(framebufferWidth)
+        textureDescriptor.height = Int(framebufferHeight)
+        textureDescriptor.depth = 1
+        textureDescriptor.pixelFormat = .bgra8Unorm
+        textureDescriptor.storageMode = .private
+        textureDescriptor.sampleCount = 1
+        textureDescriptor.textureType = .type2D
+        textureDescriptor.usage = [.shaderRead, .renderTarget]
+
+        inTexture = device.makeTexture(descriptor: textureDescriptor)
+
+        textureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+        outTexture = device.makeTexture(descriptor: textureDescriptor)
+
+        let indices: [UInt16] = [0, 1, 2, 0, 2, 3]
+        indexBuffer = device.makeBuffer(
+            bytes: indices,
+            length: MemoryLayout<UInt16>.stride * 6,
+            options: .storageModeShared)!
+
+        textureLoader = MTKTextureLoader(device: device)
+
+        do {
+            try particleTexture = textureLoader.newTexture(name: "particleTexture", scaleFactor: 1.0, bundle: Bundle.main)
+        } catch {
+            print("Error: \(error)")
+        }
+
+        let library = device.makeDefaultLibrary()!
+        let vertFunc = library.makeFunction(name: "particleVert")!
+        let fragFunc = library.makeFunction(name: "particleFrag")!
+
+        let pipelineDesc = MTLRenderPipelineDescriptor()
+        pipelineDesc.label = "pipelineDesc"
+        pipelineDesc.vertexFunction = vertFunc
+        pipelineDesc.fragmentFunction = fragFunc
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
+        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
+        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+        pipelineDesc.colorAttachments[1].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[1].isBlendingEnabled = true
+        pipelineDesc.colorAttachments[1].rgbBlendOperation = .add
+        pipelineDesc.colorAttachments[1].alphaBlendOperation = .add
+        pipelineDesc.colorAttachments[1].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[1].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[1].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pipelineDesc.colorAttachments[1].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+        do {
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
+        } catch {
+            print("Error: \(error)")
+        }
+    }
+
+    func resizeTextures(newWidth: Int, newHeight: Int) {
+        let textureDescriptor = MTLTextureDescriptor()
+        textureDescriptor.resourceOptions = .storageModePrivate
+        textureDescriptor.width = newWidth
+        textureDescriptor.height = newHeight
+        textureDescriptor.depth = 1
+        textureDescriptor.pixelFormat = .bgra8Unorm
+        textureDescriptor.storageMode = .private
+        textureDescriptor.sampleCount = 1
+        textureDescriptor.textureType = .type2D
+        textureDescriptor.usage = [.shaderRead, .renderTarget]
+
+        inTexture = device.makeTexture(descriptor: textureDescriptor)
+
+        textureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+        outTexture = device.makeTexture(descriptor: textureDescriptor)
+
+    }
 
     func updateGPUBuffers() {
 
@@ -266,68 +350,66 @@ final class ParticleRenderer {
             lifetimesBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
         }
 
-        positionsBuffer.contents().copyMemory(from: particleSystemV2.positions,
-                                              byteCount: MemoryLayout<float2>.stride * particleCount)
-        sizesBuffer.contents().copyMemory(from: particleSystemV2.sizes,
-                                              byteCount: MemoryLayout<Float>.stride * particleCount)
-        colorsBuffer.contents().copyMemory(from: particleSystemV2.colors,
-                                              byteCount: MemoryLayout<half4>.stride * particleCount)
-        lifetimesBuffer.contents().copyMemory(from: particleSystemV2.lifetimes,
-                                              byteCount: MemoryLayout<Float>.stride * particleCount)
+        positionsBuffer.contents().copyMemory(from: positions, byteCount: MemoryLayout<float2>.stride * particleCount)
+        sizesBuffer.contents().copyMemory(from: sizes, byteCount: MemoryLayout<Float>.stride * particleCount)
+        colorsBuffer.contents().copyMemory(from: colors, byteCount: MemoryLayout<half4>.stride * particleCount)
+        lifetimesBuffer.contents().copyMemory(from: lifetimes, byteCount: MemoryLayout<Float>.stride * particleCount)
     }
 
-    init() {
-        self.device = MTLCreateSystemDefaultDevice()!
-
-        let library = device.makeDefaultLibrary()!
-        let vertFunc = library.makeFunction(name: "particleVert")!
-        let fragFunc = library.makeFunction(name: "particleFrag")!
-
-        let pipelineDesc = MTLRenderPipelineDescriptor()
-        pipelineDesc.label = "pipelineDesc"
-        pipelineDesc.vertexFunction = vertFunc
-        pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
-
-        do {
-            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
-        } catch {
-            print("Error: \(error)")
-        }
-    }
-
-    func drawParticles(view: MTKView, commandBuffer: MTLCommandBuffer) {
-
-        particleCount = particleSystemV2.particleCount
+    func drawParticles(view: MTKView, commandBuffer: MTLCommandBuffer, frameDescriptor: FrameDescriptor) {
 
         if particleCount == 0 { return }
 
-        let renderPassDesc = view.currentRenderPassDescriptor
-        if renderPassDesc != nil {
-            let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc!)!
+        let renderPassDesc = MTLRenderPassDescriptor()
+        renderPassDesc.colorAttachments[0].texture = inTexture
+        renderPassDesc.colorAttachments[1].texture = outTexture
+        renderPassDesc.colorAttachments[0].loadAction = .clear
+        renderPassDesc.colorAttachments[1].loadAction = .clear
+        renderPassDesc.colorAttachments[0].clearColor = frameDescriptor.clearColor
+        renderPassDesc.colorAttachments[1].clearColor = frameDescriptor.clearColor
 
-             renderEncoder.setRenderPipelineState(pipelineState!)
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
 
-            // Update buffers
-            updateGPUBuffers()
+        renderEncoder.setRenderPipelineState(pipelineState!)
+        renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
 
-            // Upload buffers
-            renderEncoder.setVertexBuffers(
-                [positionsBuffer, sizesBuffer, colorsBuffer, lifetimesBuffer],
-                offsets: [0,0,0,0],
-                range: 0 ..< 4)
+        // Update buffers
+        updateGPUBuffers()
 
-            renderEncoder.setVertexBytes(&viewportSize,
-                                         length: MemoryLayout<float2>.stride,
-                                         index: BufferIndex.bf_viewportSize_index.rawValue)
+        // Upload buffers
+        renderEncoder.setVertexBuffers(
+            [positionsBuffer, sizesBuffer, colorsBuffer, lifetimesBuffer],
+            offsets: [0, 0, 0, 0],
+            range: 0 ..< 4)
 
-            renderEncoder.drawPrimitives(
-                type: .point,
-                vertexStart: 0,
-                vertexCount: particleCount
-            )
+        renderEncoder.setFragmentTexture(particleTexture, index: 0)
 
-            renderEncoder.endEncoding()
-        }
+        renderEncoder.setVertexBytes(&viewportSize,
+                                     length: MemoryLayout<float2>.stride,
+                                     index: BufferIndex.bf_viewportSize_index.rawValue)
+
+        renderEncoder.drawIndexedPrimitives(
+            type: .triangle,
+            indexCount: 6,
+            indexType: .uint16,
+            indexBuffer: indexBuffer,
+            indexBufferOffset: 0,
+            instanceCount: particleCount
+        )
+
+        renderEncoder.endEncoding()
+
+        // Blur
+        let blurKernel = MPSImageGaussianBlur(device: device, sigma: gBlurStrength)
+        blurKernel.encode(commandBuffer: commandBuffer, sourceTexture: inTexture, destinationTexture: outTexture)
+
+        fullscreenEffect.mix(commandBuffer: commandBuffer,
+                             inputTexture1: inTexture,
+                             inputTexture2: outTexture,
+                             outTexture: (view.currentDrawable?.texture)!,
+                             sigma: 5.0)
     }
+}
+
+func previewEmitter(emitterDescriptor: EmitterDescriptor) {
 }

@@ -18,36 +18,13 @@ class IOSViewController: UIViewController {
     var renderer: Renderer!
     var mtkView: MTKView!
 
-    @IBAction func enablePostProcessingSwitch(_ sender: UISwitch) {
-        renderer.particleSystem.enablePostProcessing = sender.isOn
-    }
-
-    @IBAction func enableParticleCollision(_ sender: UISwitch) {
-        renderer.particleSystem.enableCollisions = sender.isOn
-    }
-
-    @IBAction func useQuadtree(_ sender: UISwitch) {
-        renderer.particleSystem.useQuadtree = sender.isOn
-    }
-
-    @IBAction func enableMultithreadingSwitch(_ sender: UISwitch) {
-        renderer.particleSystem.enableMultithreading = sender.isOn
-    }
-
-    @IBAction func clearAllButton(_: UIButton) {
-        renderer.particleSystem.eraseParticles()
-    }
-
-    @IBAction func blurStrengthSlider(_ sender: UISlider) {
-        renderer.particleSystem.blurStrength = sender.value
-    }
     @IBAction func particleSizeSlider(_ sender: UISlider) {
         gParticleSize = sender.value
     }
 
     @IBOutlet var particleCountLabel: UILabel?
     override func touchesMoved(_ touches: Set<UITouch>, with _: UIEvent?) {
-        particleCountLabel?.text = "Particles: " + String(renderer.particleSystem.particleCount)
+        particleCountLabel?.text = "Particles: " + String(particleSystemV2.particleCount)
 
         for touch in touches {
             var point: float2 = float2(Float(touch.location(in: view).x), Float(touch.location(in: view).y))

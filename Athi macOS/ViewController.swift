@@ -43,10 +43,6 @@ class MACOSViewController: NSViewController {
         isMouseDown = true
     }
 
-    override func rightMouseDown(with _: NSEvent) {
-        renderer.particleSystem.attractPoint = mousePos
-    }
-
     override func mouseUp(with _: NSEvent) {
         isMouseDown = false
         isMouseDragging = false
@@ -55,21 +51,19 @@ class MACOSViewController: NSViewController {
     @IBAction func particleUpdateSamples(_ sender: NSSliderCell) {
     }
 
-    @IBAction func particleCollisionButton(_ sender: NSButton) {
-        renderer.particleSystem.enableCollisions = (sender.state.rawValue == 0) ? false : true
+    @IBAction func loadParticles(_ sender: Any) {
+         renderer.particleSystem.load()
     }
-
-    @IBAction func gravitySwitch(_ sender: NSButton) {
-        renderer.particleSystem.enableGravity = (sender.state.rawValue == 0) ? false : true
+    @IBAction func saveParticles(_ sender: Any) {
+        renderer.particleSystem.save()
     }
-
     @IBOutlet weak var emitterCountLabel: NSTextField!
     @IBOutlet var mouseOptionButton: NSPopUpButton!
     @IBOutlet var particleColorWellOutlet: NSColorWell!
     @IBAction func particleColorWell(_ sender: NSColorWell) {
         let color = sender.color.usingColorSpace(colorSpace!)!
 
-        renderer.particleSystem.particleColor = float4(
+        gParticleColor = float4(
             Float(color.redComponent),
             Float(color.greenComponent),
             Float(color.blueComponent),
@@ -82,19 +76,7 @@ class MACOSViewController: NSViewController {
     }
 
     @IBAction func postProcessingSamplesSlier(_ sender: NSSlider) {
-        gLifetime = Float(Int(sender.intValue))
-    }
-
-    @IBAction func borderCollisionButton(_ sender: NSButton) {
-        renderer.particleSystem.enableBorderCollision = (sender.state.rawValue == 0) ? false : true
-
-    }
-    @IBAction func postprocessingButton(_ sender: NSButton) {
-        renderer.particleSystem.enablePostProcessing = (sender.state.rawValue == 0) ? false : true
-    }
-
-    @IBAction func useQuadtree(_ sender: NSButton) {
-        renderer.particleSystem.useQuadtree = (sender.state.rawValue == 0) ? false : true
+        gBlurStrength = Float(Int(sender.intValue))
     }
 
     @IBAction func wireframeSwitch(_ sender: NSButton) {
@@ -112,27 +94,6 @@ class MACOSViewController: NSViewController {
         gDrawDebug = (sender.state.rawValue == 0) ? false : true
     }
 
-    @IBAction func clearParticlesButton(_: NSButton) {
-        renderer.particleSystem.eraseParticles()
-    }
-
-    @IBAction func pauseButton(_ sender: NSButton) {
-        let buttonState = (sender.state.rawValue == 0) ? false : true
-        renderer.particleSystem.isPaused = buttonState
-        if buttonState {
-            sender.title = "Resume"
-        } else {
-            sender.title = "Pause"
-        }
-    }
-    @IBAction func blurStrengthSlider(_ sender: NSSlider) {
-        renderer.particleSystem.blurStrength = sender.floatValue
-    }
-
-    @IBAction func particleVerticesStepper(_ sender: NSStepper) {
-        let val = Int(sender.intValue)
-//        renderer.particleSystem.setVerticesPerParticle(num: val)
-    }
 
     @IBAction func particleSizeSlider(_ sender: NSSlider) {
         gParticleSize = sender.floatValue
@@ -148,26 +109,16 @@ class MACOSViewController: NSViewController {
 
                           self.framerateLabel?.stringValue = "Framerate: " + String(self.renderer.framerate)
 
-                        self.emitterCountLabel?.stringValue = "Emitters: "
- + String(self.renderer.particleSystem.emitters.count)
-                        
+                        self.emitterCountLabel?.stringValue = "Emitters: " + String(self.renderer.particleSystem.emitters.count)
+
                           let particleColor = NSColor(
-                              red: CGFloat(self.renderer.particleSystem.particleColor.x),
-                              green: CGFloat(self.renderer.particleSystem.particleColor.y),
-                              blue: CGFloat(self.renderer.particleSystem.particleColor.z),
-                              alpha: CGFloat(self.renderer.particleSystem.particleColor.w)
+                              red: CGFloat(gParticleColor.x),
+                              green: CGFloat(gParticleColor.y),
+                              blue: CGFloat(gParticleColor.z),
+                              alpha: CGFloat(gParticleColor.w)
                           )
 
                           self.particleColorWellOutlet.color = particleColor
-
-                          let mouseVal = self.mouseOptionButton.indexOfSelectedItem
-                          switch mouseVal {
-                          case 0: gMouseOption = MouseOption.spawn
-                          case 1: gMouseOption = MouseOption.color
-                          case 2: gMouseOption = MouseOption.drag
-                          case 3: gMouseOption = MouseOption.repel
-                          default: break
-                          }
 
                         switch self.computeDeviceOptionButton.indexOfSelectedItem {
                         case 0: gComputeDeviceOption = .gpu
@@ -187,6 +138,9 @@ class MACOSViewController: NSViewController {
         RunLoop.current.add(timer!, forMode: .defaultRunLoopMode)
     }
 
+    @IBAction func clearParticlesButton(_ sender: Any) {
+        self.renderer.particleSystem.clearEmitters()
+    }
     @IBOutlet weak var treeOptionButton: NSPopUpButton!
     @IBOutlet weak var computeDeviceOptionButton: NSPopUpButton!
 
@@ -215,8 +169,6 @@ class MACOSViewController: NSViewController {
 
         framebufferWidth = Float(view.frame.width) * gPixelScale
         framebufferHeight = Float(view.frame.height) * gPixelScale
-
-        mouseOptionButton.addItem(withTitle: "Repel")
 
         guard let mtkView = self.view as? MTKView else {
             print("View attached to ViewController is not an MTKView")

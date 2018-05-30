@@ -100,7 +100,7 @@ struct PSEmitterDescriptor {
     var options: [EmitterOptions] = [.lifetime, .respawns]
 }
 
-struct Emitter {
+fileprivate struct Emitter {
     var isActive: Bool = false
     var position: float2 = float2(0)
     var direction: float2 = float2(0)

@@ -186,6 +186,11 @@ class PrimitiveRenderer {
 
         rectCount = positions.count
     }
+    /**
+     Draws a hollow circle at the position with the specified color and size.
+     */
+    public func drawHollowCircle(position: float2, color: float4, size: Float, borderWidth: Float = 1.0) {
+    }
 
     /**
      Draws a rectangle at the position with the specified color and size.
