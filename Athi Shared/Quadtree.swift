@@ -12,9 +12,9 @@ import simd.vector_types // float2, float4
 
 struct Rect {
     
-    var min = float2(0)
-    var max = float2(0)
-    var color = float4(1)
+    var min = float2(0, 0)
+    var max = float2(0, 0)
+    var color = float4(1, 1, 1, 1)
 
     init(min: float2, max: float2) {
         self.min = min

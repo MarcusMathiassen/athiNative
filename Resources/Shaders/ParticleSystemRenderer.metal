@@ -40,22 +40,20 @@ struct FragmentOut
 };
 
 vertex
-VertexOut particleVert( constant float2*     positions      [[ buffer(0) ]],
-                        constant float*      radii          [[ buffer(1) ]],
-                        constant half4*      colors         [[ buffer(2) ]],
-                        constant float*      lifetimes      [[ buffer(3) ]],
-                        constant float2&     viewportSize   [[ buffer(bf_viewportSize_index) ]],
+VertexOut particleVert( constant float2*      positions      [[ buffer(0) ]],
+                        constant float*       size          [[ buffer(1) ]],
+                        constant half4*       colors         [[ buffer(2) ]],
+                        constant float2&      viewportSize   [[ buffer(bf_viewportSize_index) ]],
                         const uint vid                      [[ vertex_id ]],
                         const uint iid                      [[ instance_id ]]
                        )
 {
     // We shift the position by -1.0 on both x and y axis because of metals viewspace coords
-    const float2 fpos = -1.0 + (radii[iid] * quadVertices[vid] + positions[iid]) / (viewportSize / 2.0);
+    const float2 fpos = -1.0 + (size[iid] * quadVertices[vid] + positions[iid]) / (viewportSize / 2.0);
 
     VertexOut vOut;
     vOut.position = float4(fpos, 0, 1);
     vOut.color = colors[iid];
-    vOut.color.a = lifetimes[iid] < 1.0  ? lifetimes[iid] : 1.0;
     vOut.uv = quadUvs[vid];
 
     return vOut;

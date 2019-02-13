@@ -8,8 +8,8 @@
 
 #include <metal_stdlib>
 using namespace metal;
-#include "../../../../Resources/Shaders/ShaderTypes.h"
-#include "../../../../Resources/Shaders/UtilityFunctions.h" // collision_check, collision_resolve
+#include "../Resources/Shaders/ShaderTypes.h"
+#include "../Resources/Shaders/UtilityFunctions.h" // collision_check, collision_resolve
 
 
 struct Collidable

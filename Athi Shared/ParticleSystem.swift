@@ -51,8 +51,8 @@ final class ParticleSystem {
         var particleCount = 0
         var maxParticleCount = 0
 
-        var spawnPosition = float2(0)
-        var spawnDirection = float2(0)
+        var spawnPosition = float2(0, 0)
+        var spawnDirection = float2(0, 0)
         var spawnSpeed: Float = 0.0
         var spawnSpread: Float = 0.0
         var spawnSize: Float = 0.0
@@ -79,7 +79,7 @@ final class ParticleSystem {
     var emitters: [Emitter] = []
 
     var particleCount: Int = 0
-    var maxParticleCount: Int = 10_000
+    var maxParticleCount: Int = 0
 
     // Particle data
     var positions: [float2] = []
@@ -89,15 +89,14 @@ final class ParticleSystem {
     var lifetimes: [Float] = []
 
     struct Particle {
-        var position = float2(0)
-        var velocity = float2(0)
+        var position = float2(0, 0)
+        var velocity = float2(0, 0)
         var size = Float(0)
         var color = half4(0)
         var lifetime = Float(0)
     }
 
-    init(maxParticleCount: Int) {
-        increaseBuffers(by: maxParticleCount)
+    init() {
     }
 
     func save() {
@@ -151,8 +150,8 @@ final class ParticleSystem {
         colors.reserveCapacity(particleCount + count)
         lifetimes.reserveCapacity(particleCount + count)
 
-        positions.append(contentsOf: [float2](repeating: float2(0), count: count))
-        velocities.append(contentsOf: [float2](repeating: float2(0), count: count))
+        positions.append(contentsOf: [float2](repeating: float2(0, 0), count: count))
+        velocities.append(contentsOf: [float2](repeating: float2(0, 0), count: count))
         sizes.append(contentsOf: [Float](repeating: Float(0), count: count))
         colors.append(contentsOf: [half4](repeating: half4(0), count: count))
         lifetimes.append(contentsOf: [Float](repeating: Float(-1), count: count))
@@ -164,15 +163,9 @@ final class ParticleSystem {
 
         emitter.id = emitters.count
         emitter.startIndex = particleCount
-
-        if particleCount > maxParticleCount {
-            maxParticleCount = particleCount
-        }
-
+        
         increaseBuffers(by: emitter.maxParticleCount)
-
-        particleCount += emitter.maxParticleCount
-
+        
         let emitterHandle = emitters.count
         emitters.append(emitter)
         emitterDescriptions.append(descriptor)
@@ -183,7 +176,7 @@ final class ParticleSystem {
     func update() {
         for emitter in emitters {
             for index in emitter.particleIndices {
-
+                
                 var  pos = positions[index]
                 var  vel = velocities[index]
 
@@ -206,6 +199,8 @@ final class ParticleSystem {
                 }
 
                 vel.y += -0.0981
+                
+                color.w = toHalf(lifetime)
 
                 velocities[index] = vel
                 positions[index] = pos + vel
@@ -241,12 +236,10 @@ final class ParticleRenderer {
     var positions: [float2] = []
     var sizes: [Float] = []
     var colors: [half4] = []
-    var lifetimes: [Float] = []
 
     var positionsBuffer: MTLBuffer! = nil
     var sizesBuffer: MTLBuffer! = nil
     var colorsBuffer: MTLBuffer! = nil
-    var lifetimesBuffer: MTLBuffer! = nil
 
     let device: MTLDevice
 
@@ -347,13 +340,11 @@ final class ParticleRenderer {
             positionsBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * particleCount, options: .storageModeShared)
             sizesBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
             colorsBuffer = device.makeBuffer(length: MemoryLayout<half4>.stride * particleCount, options: .storageModeShared)
-            lifetimesBuffer = device.makeBuffer(length: MemoryLayout<Float>.stride * particleCount, options: .storageModeShared)
         }
 
         positionsBuffer.contents().copyMemory(from: positions, byteCount: MemoryLayout<float2>.stride * particleCount)
         sizesBuffer.contents().copyMemory(from: sizes, byteCount: MemoryLayout<Float>.stride * particleCount)
         colorsBuffer.contents().copyMemory(from: colors, byteCount: MemoryLayout<half4>.stride * particleCount)
-        lifetimesBuffer.contents().copyMemory(from: lifetimes, byteCount: MemoryLayout<Float>.stride * particleCount)
     }
 
     func drawParticles(view: MTKView, commandBuffer: MTLCommandBuffer, frameDescriptor: FrameDescriptor) {
@@ -378,9 +369,9 @@ final class ParticleRenderer {
 
         // Upload buffers
         renderEncoder.setVertexBuffers(
-            [positionsBuffer, sizesBuffer, colorsBuffer, lifetimesBuffer],
+            [positionsBuffer, sizesBuffer, colorsBuffer],
             offsets: [0, 0, 0, 0],
-            range: 0 ..< 4)
+            range: 0 ..< 3)
 
         renderEncoder.setFragmentTexture(particleTexture, index: 0)
 

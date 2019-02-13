@@ -26,8 +26,8 @@ struct FrameDescriptor {
 
     var fillMode: MTLTriangleFillMode = .fill
 
-    var framebufferSize: float2 = float2(0)
-    var viewportSize: float2 = float2(0)
+    var framebufferSize: float2 = float2(0, 0)
+    var viewportSize: float2 = float2(0, 0)
 
     var clearColor: MTLClearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
     var pixelFormat: MTLPixelFormat = Renderer.pixelFormat
@@ -117,7 +117,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
 
-        particleSystem = ParticleSystem(maxParticleCount: 10_000)
+        particleSystem = ParticleSystem()
         particleRenderer = ParticleRenderer()
 
         super.init()
@@ -188,7 +188,6 @@ final class Renderer: NSObject, MTKViewDelegate {
         particleRenderer.positions = particleSystem.positions
         particleRenderer.colors = particleSystem.colors
         particleRenderer.sizes = particleSystem.sizes
-        particleRenderer.lifetimes = particleSystem.lifetimes
 
         particleRenderer.drawParticles(view: view, commandBuffer: commandBuffer, frameDescriptor: frameDescriptor)
 

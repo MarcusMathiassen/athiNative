@@ -135,7 +135,7 @@ class MACOSViewController: NSViewController {
         })
 
         // Add the timer to the current run loop.
-        RunLoop.current.add(timer!, forMode: .defaultRunLoopMode)
+        RunLoop.current.add(timer!, forMode: RunLoop.Mode.default)
     }
 
     @IBAction func clearParticlesButton(_ sender: Any) {
