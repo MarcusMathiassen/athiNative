@@ -10,19 +10,19 @@ import MetalKit
 import simd
 
 class PrimitiveRenderer {
-
+    
+    var instanceCount = 0
+    var allocatedCount = 1
+    
     var indexBuffer: MTLBuffer
 
-    var positionsBuffer: MTLBuffer
-    var colorsBuffer: MTLBuffer
-    var sizesBuffer: MTLBuffer
+    var positionsBuffer: MTLBuffer! = nil
+    var sizesBuffer: MTLBuffer! = nil
+    var colorsBuffer: MTLBuffer! = nil
 
     var positions: [float2] = []
     var sizes: [float2] = []
     var colors: [float4] = []
-
-    var rectCount = 0
-    var rectsAllocatedCount = 0
 
     var device: MTLDevice
     var pipelineState: MTLRenderPipelineState?
@@ -39,7 +39,14 @@ class PrimitiveRenderer {
         pipelineDesc.label = "PrimitiveRenderer"
         pipelineDesc.vertexFunction = vertexFunc
         pipelineDesc.fragmentFunction = fragFunc
-        pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormat.bgra8Unorm
+        pipelineDesc.colorAttachments[0].pixelFormat = .bgra8Unorm
+        pipelineDesc.colorAttachments[0].isBlendingEnabled = true
+        pipelineDesc.colorAttachments[0].rgbBlendOperation = .add
+        pipelineDesc.colorAttachments[0].alphaBlendOperation = .add
+        pipelineDesc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDesc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
         do {
             try pipelineState = device.makeRenderPipelineState(descriptor: pipelineDesc)
@@ -48,15 +55,15 @@ class PrimitiveRenderer {
         }
 
         positionsBuffer = device.makeBuffer(
-            length: MemoryLayout<float2>.stride,
+            length: MemoryLayout<float2>.stride * allocatedCount,
             options: .storageModeShared)!
 
         sizesBuffer = device.makeBuffer(
-            length: MemoryLayout<float2>.stride,
+            length: MemoryLayout<float2>.stride * allocatedCount,
             options: .storageModeShared)!
 
         colorsBuffer = device.makeBuffer(
-            length: MemoryLayout<float4>.stride,
+            length: MemoryLayout<float4>.stride * allocatedCount,
             options: .storageModeShared)!
 
         let indices: [UInt16] = [0, 1, 2, 0, 2, 3]
@@ -66,97 +73,62 @@ class PrimitiveRenderer {
             options: .cpuCacheModeWriteCombined)!
 
     }
-
-    func draw(
-        view: MTKView,
-        frameDescriptor: FrameDescriptor,
-        commandBuffer: MTLCommandBuffer
-        ) {
-
-        if rectCount == 0 { return }
-
-        commandBuffer.pushDebugGroup("PrimitiveRenderer Draw")
-
-        let renderPassDesc = view.currentRenderPassDescriptor
-        renderPassDesc?.colorAttachments[0].loadAction = .load
-
-        if renderPassDesc != nil {
-
-            let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc!)!
-
-            renderEncoder.pushDebugGroup("Draw primitives")
-
-            renderEncoder.setRenderPipelineState(pipelineState!)
-            renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
-
-            renderEncoder.label = "PrimitiveShapes"
-            renderEncoder.setRenderPipelineState(pipelineState!)
-
-            renderEncoder.setVertexBytes(&viewportSize,
-                                         length: MemoryLayout<float2>.stride,
-                                         index: BufferIndex.bf_viewportSize_index.rawValue)
-
-            updateGPUBuffers(commandBuffer: commandBuffer)
-
-            renderEncoder.setVertexBuffer(positionsBuffer, offset: 0, index: BufferIndex.bf_positions_index.rawValue)
-            renderEncoder.setVertexBuffer(sizesBuffer, offset: 0, index: BufferIndex.bf_radii_index.rawValue)
-            renderEncoder.setVertexBuffer(colorsBuffer, offset: 0, index: BufferIndex.bf_colors_index.rawValue)
-
-            renderEncoder.drawIndexedPrimitives(
-                type: .triangle,
-                indexCount: 6,
-                indexType: .uint16,
-                indexBuffer: indexBuffer,
-                indexBufferOffset: 0,
-                instanceCount: rectCount
-            )
-
-            renderEncoder.endEncoding()
-
-            positions.removeAll()
-            sizes.removeAll()
-            colors.removeAll()
-
-            rectCount = 0
-            rectsAllocatedCount = 0
+    
+    func updateGPUBuffers() {
+        
+        // Check if we need to allocate more space on the buffers
+        if instanceCount > allocatedCount {
+            
+            allocatedCount = instanceCount
+            positionsBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * instanceCount, options: .storageModeShared)
+            sizesBuffer = device.makeBuffer(length: MemoryLayout<float2>.stride * instanceCount, options: .storageModeShared)
+            colorsBuffer = device.makeBuffer(length: MemoryLayout<float4>.stride * instanceCount, options: .storageModeShared)
         }
+        
+        positionsBuffer.contents().copyMemory(from: positions, byteCount: positionsBuffer.allocatedSize)
+        sizesBuffer.contents().copyMemory(from: sizes, byteCount: sizesBuffer.allocatedSize)
+        colorsBuffer.contents().copyMemory(from: colors, byteCount: colorsBuffer.allocatedSize)
     }
 
-    private func updateGPUBuffers(commandBuffer: MTLCommandBuffer) {
+    func draw(view: MTKView, frameDescriptor: FrameDescriptor, commandBuffer: MTLCommandBuffer) {
 
-        // Reallocate more if needed
-        if rectCount > rectsAllocatedCount {
+        if instanceCount == 0 { return }
+        
+        let renderPassDesc = MTLRenderPassDescriptor()
+        renderPassDesc.colorAttachments[0].texture = view.currentDrawable?.texture
+        renderPassDesc.colorAttachments[0].loadAction = .clear
+        renderPassDesc.colorAttachments[0].clearColor = frameDescriptor.clearColor
 
-            // Update the allocated particle count
-            rectsAllocatedCount = rectCount
-
-            // Update the size of the GPU buffers
-            positionsBuffer = device.makeBuffer(
-                length: rectsAllocatedCount * MemoryLayout<float2>.stride,
-                options: .storageModeShared)!
-
-            sizesBuffer = device.makeBuffer(
-                length: rectsAllocatedCount * MemoryLayout<float2>.stride,
-                options: .storageModeShared)!
-
-            colorsBuffer = device.makeBuffer(
-                length: rectsAllocatedCount * MemoryLayout<float4>.stride,
-                options: .storageModeShared)!
-        }
-
-        positionsBuffer.contents().copyMemory(
-            from: &positions,
-            byteCount: rectsAllocatedCount * MemoryLayout<float2>.stride)
-
-        sizesBuffer.contents().copyMemory(
-            from: &sizes,
-            byteCount: rectsAllocatedCount * MemoryLayout<float2>.stride)
-
-        colorsBuffer.contents().copyMemory(
-            from: &colors,
-            byteCount: rectsAllocatedCount * MemoryLayout<float4>.stride)
-
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc)!
+        renderEncoder.pushDebugGroup("Primitive Renderer Draw")
+        
+        renderEncoder.setRenderPipelineState(pipelineState!)
+        renderEncoder.setTriangleFillMode(frameDescriptor.fillMode)
+        
+        updateGPUBuffers()
+                
+        renderEncoder.setVertexBuffers(
+            [positionsBuffer, sizesBuffer, colorsBuffer],
+            offsets: [0, 0, 0, 0],
+            range: 0 ..< 3)
+        
+        renderEncoder.setVertexBytes(&viewportSize,
+                                     length: MemoryLayout<float2>.stride,
+                                     index: BufferIndex.bf_viewportSize_index.rawValue)
+        
+        renderEncoder.drawIndexedPrimitives(
+            type: .triangle,
+            indexCount: 6,
+            indexType: .uint16,
+            indexBuffer: indexBuffer,
+            indexBufferOffset: 0,
+            instanceCount: instanceCount
+        )
+        
+        renderEncoder.popDebugGroup()
+        renderEncoder.endEncoding()
     }
+    
 
     /**
      Draws a rectangle at the position with the specified color and size.
@@ -167,7 +139,7 @@ class PrimitiveRenderer {
         self.colors.append(color)
         self.sizes.append(float2(size, size))
 
-        rectCount = positions.count
+        instanceCount += 1
     }
 
     /**
@@ -184,7 +156,7 @@ class PrimitiveRenderer {
         self.sizes.append(float2(width/2, height/2))
         self.colors.append(color)
 
-        rectCount = positions.count
+        instanceCount += 1
     }
     /**
      Draws a hollow circle at the position with the specified color and size.

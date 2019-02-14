@@ -27,7 +27,8 @@ typedef NS_ENUM(NSInteger, BufferIndex)
     bf_positions_index,
     bf_velocities_index,
     bf_gpuParticleCount_index,
-
+    
+    bf_sizes_index,
     bf_radii_index,
     bf_masses_index,
 

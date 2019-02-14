@@ -56,7 +56,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     let commandQueue: MTLCommandQueue
 
     let particleSystem: ParticleSystem
-    let particleRenderer: ParticleRenderer
+    let primitiveRenderer: PrimitiveRenderer
 
     public func printDeviceInfo(_ device: MTLDevice) {
         #if os(macOS)
@@ -118,7 +118,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         view.enableSetNeedsDisplay = false
 
         particleSystem = ParticleSystem()
-        particleRenderer = ParticleRenderer()
+        primitiveRenderer = PrimitiveRenderer(device: device)
 
         super.init()
 
@@ -184,12 +184,21 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         particleSystem.update()
 
-        particleRenderer.particleCount = particleSystem.particleCount
-        particleRenderer.positions = particleSystem.positions
-        particleRenderer.colors = particleSystem.colors
-        particleRenderer.sizes = particleSystem.sizes
-
-        particleRenderer.drawParticles(view: view, commandBuffer: commandBuffer, frameDescriptor: frameDescriptor)
+        primitiveRenderer.instanceCount = particleSystem.particleCount
+        primitiveRenderer.positions = particleSystem.positions
+        primitiveRenderer.colors = particleSystem.colors
+        
+        var sizes: [float2] = []
+        sizes.reserveCapacity(particleSystem.sizes.count)
+        for size in particleSystem.sizes {
+            sizes.append(float2(size, size))
+        }
+        primitiveRenderer.sizes = sizes
+        
+//        primitiveRenderer.drawHollowRect(position: mousePos, color: float4(1,0,1,1), size: 10.0)
+        
+        primitiveRenderer.draw(view: view, frameDescriptor: frameDescriptor, commandBuffer: commandBuffer)
+    
 
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
@@ -210,18 +219,17 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         switch gMouseOption {
         case MouseOption.spawn:
-
+            
             var emitterDesc = EmitterDescriptor()
-
             emitterDesc.spawnPosition = mousePos
             emitterDesc.spawnDirection = float2(0, 1)
-            emitterDesc.spawnSpread = 1
+            emitterDesc.spawnSpread = 2
             emitterDesc.spawnSpeed = 1
             emitterDesc.spawnRate = 10
             emitterDesc.lifetime = 1
             emitterDesc.size = gParticleSize
             emitterDesc.color = gParticleColor
-
+            
             _ = particleSystem.makeEmitter(descriptor: emitterDesc)
             
         case MouseOption.drag:
@@ -248,8 +256,6 @@ final class Renderer: NSObject, MTKViewDelegate {
         viewportSize.y = framebufferHeight
 
         #if os(macOS)
-        particleRenderer.resizeTextures(newWidth: Int(size.width), newHeight: Int(size.height))
-
             let area = NSTrackingArea(
                 rect: view.bounds,
                 options: [.activeAlways, .mouseMoved, .enabledDuringMouseDrag],
